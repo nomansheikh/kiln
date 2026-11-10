@@ -159,7 +159,7 @@ public actor DownloadManager {
                     sha256: component.sha256
                 )
                 try await downloader.download(item) { [weak self] event in
-                    Task { await self?.handle(event, for: id, bytesBefore: done) }
+                    Task { await self?.handle(event, for: id, file: component.file, bytesBefore: done) }
                 }
             }
             finish(id) { status in
@@ -176,9 +176,12 @@ public actor DownloadManager {
         }
     }
 
-    private func handle(_ event: TransferEvent, for id: String, bytesBefore: Int64) {
-        // Late events from a transfer that was paused or cancelled must not revive it.
-        guard active?.id == id, let state = statuses[id]?.state, state == .downloading || state == .verifying else {
+    private func handle(_ event: TransferEvent, for id: String, file: String, bytesBefore: Int64) {
+        // Late events from an earlier file, or from a transfer that was paused or
+        // cancelled, must not change the current state.
+        guard active?.id == id, let status = statuses[id], status.currentFile == file,
+              status.state == .downloading || status.state == .verifying
+        else {
             return
         }
         update(id) { status in
