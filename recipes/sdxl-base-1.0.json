@@ -1,0 +1,24 @@
+{
+  "id": "sdxl-base-1.0",
+  "name": "Stable Diffusion XL Base 1.0",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "checkpoint",
+      "repo": "stabilityai/stable-diffusion-xl-base-1.0",
+      "file": "sd_xl_base_1.0.safetensors",
+      "revision": "462165984030d82259a11f4367a4eed129e94a7b",
+      "size_bytes": 6938078334,
+      "sha256": "31e35c80fc4829d14f90153f4c74cd59c90b779f6afe05a74cd6120b893f7e5b"
+    }
+  ],
+  "defaults": {
+    "steps": 30,
+    "cfg": 7.0,
+    "sampler": "euler",
+    "width": 1024,
+    "height": 1024
+  },
+  "license_note": "CreativeML Open RAIL++-M License.",
+  "min_memory_gb": 16
+}
