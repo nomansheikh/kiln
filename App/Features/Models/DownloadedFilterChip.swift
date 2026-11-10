@@ -10,6 +10,7 @@ struct DownloadedFilterChip: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: isOn ? "checkmark.circle.fill" : "arrow.down.circle")
+                    .contentTransition(.symbolEffect(.replace))
                     .imageScale(.small)
                 Text("Downloaded")
             }

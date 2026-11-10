@@ -19,18 +19,22 @@ struct RecipeTransferView: View {
             RecipeTransferRow(value: 0, caption: "Waiting…") {
                 cancelButton
             }
-        case .downloading:
-            RecipeTransferRow(value: status.fraction, caption: downloadingCaption) {
-                ModelsIconButton(systemImage: "pause.fill", help: "Pause download", action: pause)
+        case .downloading, .paused:
+            // One row for both states, so the button's symbol morphs between pause and play.
+            let isPaused = status.state == .paused
+            RecipeTransferRow(
+                value: status.fraction,
+                caption: isPaused ? "Paused · " + status.transferCaption : downloadingCaption
+            ) {
+                ModelsIconButton(
+                    systemImage: isPaused ? "play.fill" : "pause.fill",
+                    help: isPaused ? "Resume download" : "Pause download",
+                    action: isPaused ? download : pause
+                )
                 cancelButton
             }
         case .verifying:
             RecipeTransferRow(value: nil, caption: "Verifying…") { EmptyView() }
-        case .paused:
-            RecipeTransferRow(value: status.fraction, caption: "Paused · " + status.transferCaption) {
-                ModelsIconButton(systemImage: "play.fill", help: "Resume download", action: download)
-                cancelButton
-            }
         case .failed(let message):
             RecipeTransferFailure(message: message, retry: download, dismiss: dismiss)
         case .completed:

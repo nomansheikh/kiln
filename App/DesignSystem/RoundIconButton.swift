@@ -10,6 +10,7 @@ struct RoundIconButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 10, weight: .bold))
+                .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(.secondary)
                 .frame(width: 24, height: 24)
                 .background(Theme.card, in: Circle())

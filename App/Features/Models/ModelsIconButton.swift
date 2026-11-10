@@ -10,6 +10,7 @@ struct ModelsIconButton: View {
     var body: some View {
         Button(role: role, action: action) {
             Image(systemName: systemImage)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(width: 14, height: 17)
         }
         .buttonStyle(SoftButtonStyle())

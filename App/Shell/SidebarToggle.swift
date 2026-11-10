@@ -8,6 +8,7 @@ struct SidebarToggle: View {
             isVisible.toggle()
         } label: {
             Image(systemName: "sidebar.left")
+                .symbolEffect(.bounce, value: isVisible)
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .frame(width: 26, height: 22)

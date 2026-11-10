@@ -66,11 +66,14 @@ struct DownloadDetailRow: View {
         switch status.state {
         case .queued:
             RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
-        case .downloading:
-            RoundIconButton(systemImage: "pause.fill", help: "Pause", action: pause)
-            RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
-        case .paused:
-            RoundIconButton(systemImage: "play.fill", help: "Resume", action: start)
+        case .downloading, .paused:
+            // One button for both states, so its symbol morphs between pause and play.
+            let isPaused = status.state == .paused
+            RoundIconButton(
+                systemImage: isPaused ? "play.fill" : "pause.fill",
+                help: isPaused ? "Resume" : "Pause",
+                action: isPaused ? start : pause
+            )
             RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
         case .verifying:
             EmptyView()
