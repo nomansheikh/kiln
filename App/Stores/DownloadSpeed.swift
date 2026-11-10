@@ -19,6 +19,15 @@ struct DownloadSpeed: Equatable {
         return "About \(text) left"
     }
 
+    /// The compact form, for example "4 min left".
+    var shortRemainingText: String? {
+        guard let secondsRemaining else { return nil }
+        guard secondsRemaining >= 5 else { return "a few sec left" }
+        let duration = Duration.seconds(Int(secondsRemaining.rounded()))
+        let text = duration.formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated, maximumUnitCount: 1))
+        return "\(text) left"
+    }
+
     /// Speed and time left on one line.
     var summary: String {
         [speedText, remainingText].compactMap { $0 }.joined(separator: " · ")

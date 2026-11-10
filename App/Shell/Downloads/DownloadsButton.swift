@@ -34,6 +34,7 @@ struct DownloadsButton: View {
             )
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .onHover { hovering = $0 }
         .help("Show downloads")
         .popover(isPresented: $showsDetails, arrowEdge: .trailing) {

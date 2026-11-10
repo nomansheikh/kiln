@@ -1,7 +1,8 @@
 import KilnCore
 import SwiftUI
 
-/// One download in the downloads popover: what it is, how far along, and its controls.
+/// One download in the downloads popover: its name, a progress bar with
+/// its controls, and a single line saying where it stands.
 struct DownloadDetailRow: View {
     let name: String
     let status: DownloadStatus
@@ -15,119 +16,93 @@ struct DownloadDetailRow: View {
     let use: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(name)
-                    .font(.callout.weight(.semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                Text(stateText)
-                    .font(.caption)
-                    .foregroundStyle(stateColor)
-            }
-
-            if showsProgress {
-                ProgressView(value: status.state == .verifying ? nil : status.fraction)
-                    .progressViewStyle(.linear)
-                    .tint(Theme.accent)
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(details, id: \.self) { line in
-                    Text(line)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
-                }
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Text(name)
+                .font(.callout.weight(.medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(name)
 
             HStack(spacing: 6) {
+                progress
                 controls
             }
-            .padding(.top, 2)
+
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(isFailed ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .monospacedDigit()
+                .lineLimit(isFailed ? 3 : 1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
     }
 
-    // MARK: - Content
+    // MARK: - Pieces
 
-    private var showsProgress: Bool {
-        switch status.state {
-        case .queued, .downloading, .verifying, .paused: true
-        case .completed, .failed: false
-        }
+    private var isFailed: Bool {
+        if case .failed = status.state { true } else { false }
     }
 
-    private var stateText: String {
+    @ViewBuilder
+    private var progress: some View {
         switch status.state {
-        case .queued: "Waiting"
-        case .downloading: status.percentText ?? "Downloading"
-        case .verifying: "Verifying"
-        case .paused: "Paused"
-        case .completed: "Ready"
-        case .failed: "Failed"
-        }
-    }
-
-    private var stateColor: Color {
-        switch status.state {
-        case .completed: .green
-        case .failed: .red
-        default: .secondary
-        }
-    }
-
-    /// The lines under the progress bar: bytes, speed and time left, and the current file.
-    private var details: [String] {
-        switch status.state {
-        case .failed(let message):
-            return [message]
-        case .completed:
-            return [status.receivedBytes.formatted(.byteCount(style: .file)) + " downloaded and verified"]
+        case .queued, .downloading, .paused:
+            ProgressView(value: status.fraction ?? 0)
+                .progressViewStyle(.linear)
+                .tint(status.state == .paused ? .secondary : Theme.accent)
         case .verifying:
-            return ["Checking the files against their checksums"]
-        case .queued:
-            return ["Starts when the current download finishes"]
-        case .downloading, .paused:
-            var lines = [bytesLine]
-            if status.state == .downloading {
-                lines.append(speed?.summary ?? "Estimating time left…")
-            }
-            if let file = status.currentFile?.split(separator: "/").last {
-                lines.append(String(file))
-            }
-            return lines
+            ProgressView()
+                .progressViewStyle(.linear)
+                .tint(Theme.accent)
+        case .completed, .failed:
+            Spacer(minLength: 0)
         }
-    }
-
-    private var bytesLine: String {
-        let received = status.receivedBytes.formatted(.byteCount(style: .file))
-        guard let total = status.totalBytes else { return "\(received) downloaded" }
-        let remaining = max(0, total - status.receivedBytes).formatted(.byteCount(style: .file))
-        return "\(received) of \(total.formatted(.byteCount(style: .file))) · \(remaining) remaining"
     }
 
     @ViewBuilder
     private var controls: some View {
         switch status.state {
-        case .queued, .verifying:
-            Button("Cancel", action: cancel).buttonStyle(SoftButtonStyle())
+        case .queued:
+            RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
         case .downloading:
-            Button("Pause", systemImage: "pause.fill", action: pause).buttonStyle(SoftButtonStyle())
-            Button("Cancel", action: cancel).buttonStyle(SoftButtonStyle())
+            RoundIconButton(systemImage: "pause.fill", help: "Pause", action: pause)
+            RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
         case .paused:
-            Button("Resume", systemImage: "play.fill", action: start).buttonStyle(SoftButtonStyle())
-            Button("Cancel", action: cancel).buttonStyle(SoftButtonStyle())
+            RoundIconButton(systemImage: "play.fill", help: "Resume", action: start)
+            RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
+        case .verifying:
+            EmptyView()
         case .failed:
-            Button("Try Again", systemImage: "arrow.clockwise", action: start).buttonStyle(SoftButtonStyle())
-            Button("Dismiss", action: dismiss).buttonStyle(SoftButtonStyle())
+            RoundIconButton(systemImage: "arrow.clockwise", help: "Try again", action: start)
+            RoundIconButton(systemImage: "xmark", help: "Dismiss", action: dismiss)
         case .completed:
-            Button("Use", systemImage: "wand.and.stars", action: use).buttonStyle(AccentButtonStyle())
-            Button("Dismiss", action: dismiss).buttonStyle(SoftButtonStyle())
+            Button("Use", action: use)
+                .buttonStyle(AccentButtonStyle())
+                .controlSize(.small)
+                .focusable(false)
+            RoundIconButton(systemImage: "xmark", help: "Dismiss", action: dismiss)
+        }
+    }
+
+    /// One line: how much, how fast, how long. For example "4.2 GB of 8.7 GB · 18 MB/s · 4 min left".
+    private var detail: String {
+        let received = status.receivedBytes.formatted(.byteCount(style: .file))
+        let amount = status.totalBytes.map { "\(received) of \($0.formatted(.byteCount(style: .file)))" } ?? received
+        switch status.state {
+        case .queued:
+            return "Waiting for the current download"
+        case .downloading:
+            return [amount, speed?.speedText, speed?.shortRemainingText].compactMap { $0 }.joined(separator: " · ")
+        case .paused:
+            return "Paused · \(amount)"
+        case .verifying:
+            return "Verifying…"
+        case .completed:
+            return "Ready · \(received)"
+        case .failed(let message):
+            return message
         }
     }
 }
