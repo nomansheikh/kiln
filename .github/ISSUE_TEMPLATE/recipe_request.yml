@@ -1,0 +1,69 @@
+name: Recipe request
+description: Ask for a model to be added as a curated recipe
+labels: ["recipe"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A recipe is a small JSON file, and a pull request is the fastest way to get one added: see "Contributing a recipe" in CONTRIBUTING.md.
+        If you would rather request it, the details below are what a recipe needs.
+  - type: input
+    id: model-name
+    attributes:
+      label: Model name
+      placeholder: "Stable Diffusion XL Base 1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: components
+    attributes:
+      label: Hugging Face links for each component
+      description: |
+        One link per file the model needs, with its role: checkpoint (a single all-in-one file), diffusion_model, llm (text encoder) or vae.
+        Link to the exact file where you can. `.gguf` and `.safetensors` files are preferred.
+      placeholder: |
+        checkpoint: https://huggingface.co/<owner>/<repo>/blob/main/<file>.safetensors
+    validations:
+      required: true
+  - type: textarea
+    id: license
+    attributes:
+      label: License
+      description: The license of each component as stated on its Hugging Face page, including restrictions such as non-commercial use. List them separately if they differ.
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Recommended settings from the model card
+      description: Steps, CFG, sampler, width and height, and any custom sigma schedule, as recommended by the model authors.
+      placeholder: |
+        steps: 30
+        cfg: 7.0
+        sampler: euler
+        width x height: 1024 x 1024
+    validations:
+      required: true
+  - type: input
+    id: settings-source
+    attributes:
+      label: Link to the source of those settings
+      description: The model card or other primary source.
+      placeholder: "https://huggingface.co/<owner>/<repo>#usage"
+    validations:
+      required: true
+  - type: input
+    id: memory
+    attributes:
+      label: Memory needed, if known
+      description: The smallest amount of system RAM you know the model runs on, and on which Mac. Leave empty if you have not run it.
+      placeholder: "Runs on an M2 with 16 GB"
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: For example whether the model already runs in stable-diffusion.cpp.
+    validations:
+      required: false

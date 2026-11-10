@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in Kiln does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Do not use this form for security problems; see SECURITY.md instead.
+        Remove any Hugging Face access token from text you paste here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the problem. Screenshots help if it is visual.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Models screen
+        2. Download ...
+        3. Generate with the prompt ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: kiln-version
+    attributes:
+      label: Kiln version or commit
+      description: The version shown in Settings, or the commit hash if you built from source.
+      placeholder: "0.1.0 or a1b2c3d"
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      placeholder: "15.5"
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model and memory
+      description: Chip and RAM matter most.
+      placeholder: "MacBook Pro, M3 Pro, 36 GB"
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model or recipe
+      description: The recipe id, or the Hugging Face repository and file for a model downloaded from the Hub list. Write "none" if the problem does not involve a model.
+      placeholder: "sdxl-base-1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Generation settings
+      description: If the problem happens while generating, the size, steps, CFG, sampler and whether an image was attached.
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Engine log or error text
+      description: The error message shown in the app, including any engine log lines it displays. A crash report from Console also goes here.
+      render: text
+    validations:
+      required: false
