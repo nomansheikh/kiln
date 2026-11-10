@@ -25,6 +25,11 @@ targets:
       - path: recipes
         type: folder
         buildPhase: resources
+      # Licence notices have to travel with the binary.
+      - path: LICENSE
+        buildPhase: resources
+      - path: THIRD_PARTY.md
+        buildPhase: resources
     dependencies:
       - package: Kiln
         product: KilnCore
@@ -38,7 +43,8 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: "MIT License"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
-        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_APP_SANDBOX: NO
     postBuildScripts:
       - name: Bundle kiln-engine
@@ -50,4 +56,11 @@ targets:
             "$SRCROOT/scripts/build-engine.sh"
           fi
           cp -f "$engine" "$BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/kiln-engine"
-          codesign --force --sign - "$BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/kiln-engine"
+          # The helper is signed here with the hardened runtime; Xcode then signs the app around it.
+          # Notarization also needs a secure timestamp, which ad hoc signing cannot have.
+          identity="${EXPANDED_CODE_SIGN_IDENTITY:--}"
+          if [ "$identity" = "-" ]; then
+            codesign --force --sign - --options runtime "$BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/kiln-engine"
+          else
+            codesign --force --sign "$identity" --options runtime --timestamp "$BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/kiln-engine"
+          fi

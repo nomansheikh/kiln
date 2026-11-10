@@ -1,4 +1,3 @@
-# NOTE: this workflow has not been run yet. Expect to adjust it after the first run.
 name: CI
 
 on:
