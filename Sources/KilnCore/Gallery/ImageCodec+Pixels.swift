@@ -40,7 +40,7 @@ extension ImageCodec {
         guard let buffer = context.data else { throw ImageCodecError.invalidPixels }
         let rgbx = UnsafeBufferPointer(start: buffer.assumingMemoryBound(to: UInt8.self), count: width * height * 4)
         var rgb = Data(count: width * height * 3)
-        rgb.withUnsafeMutableBytes { destination in
+        rgb.withUnsafeMutableBytes { (destination: UnsafeMutableRawBufferPointer) in
             var out = 0
             for pixel in stride(from: 0, to: rgbx.count, by: 4) {
                 destination[out] = rgbx[pixel]
