@@ -25,6 +25,7 @@ struct GenerationImageSizeMenu: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
+        .focusable(false)
         .fixedSize()
         .help("Image size")
         .accessibilityLabel("Image size")

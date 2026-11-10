@@ -53,8 +53,18 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
     public var width: Int
     public var height: Int
     public var outcome: Outcome
+    /// File name of the image attached to the prompt, inside the attachments folder.
+    public var attachmentFileName: String?
 
-    public init(id: UUID = UUID(), prompt: String, width: Int, height: Int, outcome: Outcome) {
+    public init(
+        id: UUID = UUID(),
+        prompt: String,
+        width: Int,
+        height: Int,
+        outcome: Outcome,
+        attachmentFileName: String? = nil
+    ) {
+        self.attachmentFileName = attachmentFileName
         self.id = id
         self.prompt = prompt
         self.width = width

@@ -39,6 +39,7 @@ struct SidebarRow: View {
             )
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .onHover { hovering = $0 }
     }
 }

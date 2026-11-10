@@ -1,3 +1,4 @@
+import Foundation
 import KilnCore
 
 /// What the Generate screen is editing.
@@ -12,6 +13,9 @@ struct GenerationDraft: Equatable {
     var sampler = "euler"
     var randomSeed = true
     var seed: Int64 = 42
+    /// An image the prompt should rework instead of starting from nothing.
+    var attachment: URL?
+    var editStrength = EditStrength.balanced
 
     /// Applies a recipe's recommended settings, keeping the prompt.
     mutating func apply(_ defaults: ModelRecipe.GenerationDefaults) {

@@ -100,6 +100,42 @@ import Testing
         #expect(store.items().map(\.id) == [old.id])
     }
 
+    @Test func readsAnImageBackAsRawPixelsAtItsOwnSize() throws {
+        let original = image()
+        let saved = try store.save(original, record: record())
+
+        let pixels = try ImageCodec.rgbPixels(of: saved.url, width: 4, height: 2)
+
+        #expect(pixels.count == original.pixels.count)
+        // Colour management may shift a value by a step; anything more is a real error.
+        let worst = zip(pixels, original.pixels).map { abs(Int($0) - Int($1)) }.max() ?? 0
+        #expect(worst <= 2)
+    }
+
+    @Test func scalesAndCropsToTheRequestedSizeWithoutStretching() throws {
+        // 8x2: left half black, right half white. A centred 2x2 crop keeps one column of each.
+        var pixels = Data()
+        for _ in 0..<2 {
+            for x in 0..<8 {
+                pixels.append(contentsOf: Array(repeating: UInt8(x < 4 ? 0 : 255), count: 3))
+            }
+        }
+        let saved = try store.save(GeneratedImage(width: 8, height: 2, channels: 3, pixels: pixels), record: record())
+
+        let cropped = try ImageCodec.rgbPixels(of: saved.url, width: 2, height: 2)
+
+        #expect(cropped.count == 12)
+        #expect(cropped[0] < 40, "left column stays dark")
+        #expect(cropped[3] > 215, "right column stays light")
+    }
+
+    @Test func aFileThatIsNotAnImageCannotBeReadAsPixels() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).png")
+        try Data("not an image".utf8).write(to: file)
+
+        #expect(throws: ImageCodecError.self) { try ImageCodec.rgbPixels(of: file, width: 4, height: 4) }
+    }
+
     @Test func emptyGalleryHasNoItems() {
         #expect(store.items().isEmpty)
     }

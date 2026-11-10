@@ -12,8 +12,17 @@ struct GenerationTurnView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PromptBubble(text: turn.prompt)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            VStack(alignment: .trailing, spacing: 8) {
+                if let attachment = turn.attachment {
+                    Thumbnail(url: attachment, maxPixelSize: 320)
+                        .frame(width: 120, height: 120)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.hairline))
+                        .accessibilityLabel("Attached image")
+                }
+                PromptBubble(text: turn.prompt)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
             reply
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(Motion.arrival(reduced: reduceMotion), value: turn.state)

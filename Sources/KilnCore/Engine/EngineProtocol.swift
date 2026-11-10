@@ -81,10 +81,14 @@ enum EngineMessage {
             var sampler: String
             var sigmas: [Double]?
             var seed: Int64
+            /// File holding the source image as raw RGB at exactly `width` by `height`.
+            var initImage: String?
+            var strength: Double?
 
             enum CodingKeys: String, CodingKey {
-                case prompt, width, height, steps, cfg, sampler, sigmas, seed
+                case prompt, width, height, steps, cfg, sampler, sigmas, seed, strength
                 case negativePrompt = "negative_prompt"
+                case initImage = "init_image"
             }
         }
 
@@ -101,7 +105,8 @@ enum EngineMessage {
         storage: ModelStorage,
         request: GenerationRequest,
         output: URL,
-        preview: URL
+        preview: URL,
+        initImage: URL? = nil
     ) throws -> Data {
         func path(_ role: ModelRecipe.ComponentRole) -> String? {
             recipe.components.first { $0.role == role }.map { storage.url(for: $0).path }
@@ -123,7 +128,9 @@ enum EngineMessage {
                 cfg: request.cfg,
                 sampler: request.sampler,
                 sigmas: request.sigmas,
-                seed: request.seed
+                seed: request.seed,
+                initImage: initImage?.path,
+                strength: initImage == nil ? nil : request.strength
             ),
             output: output.path,
             preview: preview.path

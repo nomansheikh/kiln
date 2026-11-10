@@ -14,6 +14,7 @@ struct SidebarToggle: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .help(isVisible ? "Hide Sidebar" : "Show Sidebar")
     }
 }

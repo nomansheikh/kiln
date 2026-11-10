@@ -13,6 +13,7 @@
 #include <deque>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -191,6 +192,22 @@ void generate(const json& request) {
     if (!sigmas.empty()) {
         gen.sample_params.custom_sigmas       = sigmas.data();
         gen.sample_params.custom_sigmas_count = static_cast<int>(sigmas.size());
+    }
+
+    // Image-to-image: start from the given picture instead of noise.
+    std::vector<uint8_t> init_pixels;
+    const std::string init_path = params.value("init_image", std::string());
+    if (!init_path.empty()) {
+        std::ifstream file(init_path, std::ios::binary);
+        init_pixels.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        if (init_pixels.size() != static_cast<size_t>(gen.width) * gen.height * 3) {
+            emit_error("invalid_request", "The source image does not match the requested size.");
+            return;
+        }
+        gen.init_image = {static_cast<uint32_t>(gen.width), static_cast<uint32_t>(gen.height), 3, init_pixels.data()};
+        if (params.contains("strength") && params.at("strength").is_number()) {
+            gen.strength = params.at("strength").get<float>();
+        }
     }
 
     g_preview_path = request.value("preview", std::string());

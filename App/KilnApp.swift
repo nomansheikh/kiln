@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct KilnApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model = AppModel()
 
     var body: some Scene {
@@ -12,6 +13,12 @@ struct KilnApp: App {
                 .environment(model)
                 .frame(minWidth: 960, minHeight: 620)
                 .tint(Theme.accent)
+                .task {
+                    // A download or a generation keeps the app alive after its window closes.
+                    AppDelegate.hasWorkInProgress = { [model] in
+                        model.generation.phase.isBusy || !model.library.activeDownloads.isEmpty
+                    }
+                }
                 #if DEBUG
                 .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("--light") ? .light : nil)
                 .task {
@@ -36,8 +43,8 @@ struct KilnApp: App {
                     .keyboardShortcut(".", modifiers: .command)
                     .disabled(!model.generation.phase.isBusy)
                 Divider()
-                Button("Unload Model") { model.generation.unloadModel() }
-                    .disabled(model.generation.phase.isBusy)
+                Button("Unload Model from Memory") { model.generation.unloadModel() }
+                    .disabled(model.generation.phase.isBusy || model.generation.loadedRecipeID == nil)
             }
             CommandGroup(after: .sidebar) {
                 ForEach(Array(SidebarItem.allCases.enumerated()), id: \.element) { index, item in

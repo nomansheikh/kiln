@@ -10,6 +10,10 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     public var sampler: String
     public var sigmas: [Double]?
     public var seed: Int64
+    /// An image to start from instead of pure noise.
+    public var sourceImage: URL?
+    /// How far the result may move from the source image: 0 keeps it, 1 ignores it.
+    public var strength: Double?
 
     public init(
         prompt: String,
@@ -20,8 +24,12 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
         cfg: Double,
         sampler: String,
         sigmas: [Double]? = nil,
-        seed: Int64
+        seed: Int64,
+        sourceImage: URL? = nil,
+        strength: Double? = nil
     ) {
+        self.sourceImage = sourceImage
+        self.strength = strength
         self.prompt = prompt
         self.negativePrompt = negativePrompt
         self.width = width
@@ -105,6 +113,7 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case busy
     case unsupportedEngine(String)
     case missingComponents([String])
+    case unreadableSourceImage
     case helperUnavailable(String)
     case modelLoadFailed(detail: String)
     case outOfMemory
@@ -120,6 +129,8 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "This model needs the \"\(engine)\" engine, which this version of Kiln does not include."
         case .missingComponents(let files):
             "This model is missing files: \(files.joined(separator: ", ")). Download it again from Models."
+        case .unreadableSourceImage:
+            "The attached image could not be read. Try a PNG or JPEG file."
         case .helperUnavailable(let reason):
             "The image engine could not be started: \(reason)"
         case .modelLoadFailed(let detail):

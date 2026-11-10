@@ -14,9 +14,12 @@ struct GenerationTurn: Identifiable, Equatable {
     let prompt: String
     let width: Int
     let height: Int
+    /// The image attached to the prompt, if any.
+    let attachment: URL?
     var state: State
 
-    init(id: UUID = UUID(), prompt: String, width: Int, height: Int, state: State = .running) {
+    init(id: UUID = UUID(), prompt: String, width: Int, height: Int, attachment: URL? = nil, state: State = .running) {
+        self.attachment = attachment
         self.id = id
         self.prompt = prompt
         self.width = width

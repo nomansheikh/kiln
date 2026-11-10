@@ -12,6 +12,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         let id: UUID
         let continuation: AsyncThrowingStream<GenerationEvent, Error>.Continuation
         let previewFile: URL
+        let initFile: URL?
         var cancelRequested = false
     }
 
@@ -78,12 +79,13 @@ public actor StableDiffusionCppEngine: InferenceEngine {
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).raw")
             let previewFile = scratchDirectory.appendingPathComponent("\(id.uuidString).preview")
+            let initFile = try prepareSourceImage(for: request, id: id)
             let command = try EngineMessage.generateCommand(
-                recipe: recipe, storage: storage, request: request, output: output, preview: previewFile
+                recipe: recipe, storage: storage, request: request, output: output, preview: previewFile, initImage: initFile
             )
 
             try launchHelperIfNeeded()
-            job = Job(id: id, continuation: continuation, previewFile: previewFile)
+            job = Job(id: id, continuation: continuation, previewFile: previewFile, initFile: initFile)
             recentLog.removeAll()
             try input?.write(contentsOf: command)
         } catch {
@@ -95,6 +97,18 @@ public actor StableDiffusionCppEngine: InferenceEngine {
                 continuation.finish(throwing: error)
             }
         }
+    }
+
+    /// Writes the request's source image as raw pixels at the output size, where the helper reads it.
+    private func prepareSourceImage(for request: GenerationRequest, id: UUID) throws -> URL? {
+        guard let source = request.sourceImage else { return nil }
+        let file = scratchDirectory.appendingPathComponent("\(id.uuidString).init")
+        do {
+            try ImageCodec.rgbPixels(of: source, width: request.width, height: request.height).write(to: file)
+        } catch {
+            throw EngineError.unreadableSourceImage
+        }
+        return file
     }
 
     private func launchHelperIfNeeded() throws {
@@ -226,6 +240,9 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         guard let job else { return }
         self.job = nil
         try? FileManager.default.removeItem(at: job.previewFile)
+        if let initFile = job.initFile {
+            try? FileManager.default.removeItem(at: initFile)
+        }
         if idleStillExpected {
             pendingIdleEvents += 1
         }

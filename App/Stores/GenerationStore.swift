@@ -22,17 +22,27 @@ final class GenerationStore {
     private(set) var phase: GenerationPhase = .idle
     /// A rough look at the image being generated, when the model can provide one.
     private(set) var preview: GeneratedImage?
+    /// The model currently held in memory by the engine, if any.
+    private(set) var loadedRecipeID: String?
 
     private let library: ModelLibrary
     private let gallery: GalleryLibrary
     private let chats: ChatLibrary
+    private let attachments: AttachmentLibrary
     private let engine: any InferenceEngine
     private var task: Task<Void, Never>?
 
-    init(library: ModelLibrary, gallery: GalleryLibrary, chats: ChatLibrary, engine: any InferenceEngine) {
+    init(
+        library: ModelLibrary,
+        gallery: GalleryLibrary,
+        chats: ChatLibrary,
+        attachments: AttachmentLibrary,
+        engine: any InferenceEngine
+    ) {
         self.library = library
         self.gallery = gallery
         self.chats = chats
+        self.attachments = attachments
         self.engine = engine
         selectDefaultRecipeIfNeeded()
     }
@@ -85,11 +95,16 @@ final class GenerationStore {
             sampler: draft.sampler,
             // The recipe's sigma schedule only fits its own step count.
             sigmas: draft.steps == recipe.defaults.steps ? recipe.defaults.sigmas : nil,
-            seed: draft.seed
+            seed: draft.seed,
+            sourceImage: draft.attachment,
+            strength: draft.attachment == nil ? nil : draft.editStrength.rawValue
         )
-        let turn = GenerationTurn(prompt: request.prompt, width: request.width, height: request.height)
+        let turn = GenerationTurn(
+            prompt: request.prompt, width: request.width, height: request.height, attachment: draft.attachment
+        )
         turns.append(turn)
         draft.prompt = ""
+        draft.attachment = nil
         phase = .starting
         saveChat()
 
@@ -103,15 +118,29 @@ final class GenerationStore {
     func regenerate(_ turn: GenerationTurn) {
         guard !phase.isBusy else { return }
         draft.prompt = turn.prompt
+        draft.attachment = turn.attachment
         generate()
+    }
+
+    // MARK: - Attaching an image
+
+    /// Attaches an image for the next prompt to rework.
+    func attach(_ file: URL) throws {
+        draft.attachment = try attachments.add(file)
+    }
+
+    func removeAttachment() {
+        draft.attachment = nil
     }
 
     func cancel() {
         task?.cancel()
     }
 
-    /// Frees the memory held by the loaded model.
+    /// Frees the memory held by the loaded model. It loads again on the next prompt.
     func unloadModel() {
+        guard !phase.isBusy else { return }
+        loadedRecipeID = nil
         Task { await engine.shutdown() }
     }
 
@@ -123,6 +152,8 @@ final class GenerationStore {
                 case .loadingModel:
                     phase = .loadingModel
                 case .progress(let progress):
+                    // Progress only arrives once the model is in memory.
+                    loadedRecipeID = recipe.id
                     phase = .running(progress)
                 case .preview(let image):
                     preview = image
@@ -140,6 +171,8 @@ final class GenerationStore {
         } catch is CancellationError {
             return .cancelled
         } catch {
+            // A failed run may have taken the helper down with it.
+            loadedRecipeID = nil
             return .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         }
     }
@@ -171,13 +204,14 @@ final class GenerationStore {
         chatID = nil
         turns = []
         draft.prompt = ""
+        draft.attachment = nil
     }
 
     /// Shows a saved chat. Does nothing while an image is generating.
     func open(_ chat: Chat) {
         guard !phase.isBusy, chat.id != chatID else { return }
         chatID = chat.id
-        turns = chat.turns.map { GenerationTurn($0, images: gallery.items) }
+        turns = chat.turns.map { GenerationTurn($0, images: gallery.items, attachments: attachments) }
     }
 
     /// Loads a past image's settings into the draft.

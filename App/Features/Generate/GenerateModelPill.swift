@@ -25,14 +25,21 @@ struct GenerateModelPill: View {
                         }
                     }
                 }
+                Divider()
+                Button("Unload from Memory", systemImage: "memorychip") {
+                    model.generation.unloadModel()
+                }
+                .disabled(model.generation.loadedRecipeID == nil || model.generation.phase.isBusy)
             } label: {
                 label(model.generation.selectedRecipe?.name ?? "No model")
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
+        .focusable(false)
+            .focusable(false)
             .fixedSize()
-            .help("Model")
+            .help(model.generation.loadedRecipeID == nil ? "Model" : "Model (loaded in memory)")
         }
     }
 
@@ -40,6 +47,15 @@ struct GenerateModelPill: View {
         HStack(spacing: 6) {
             Image(systemName: "cube")
                 .foregroundStyle(.secondary)
+                .overlay(alignment: .topTrailing) {
+                    // A green dot while the model is held in memory.
+                    if model.generation.loadedRecipeID != nil {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 6, height: 6)
+                            .offset(x: 3, y: -2)
+                    }
+                }
             Text(verbatim: name)
                 .lineLimit(1)
                 .truncationMode(.middle)

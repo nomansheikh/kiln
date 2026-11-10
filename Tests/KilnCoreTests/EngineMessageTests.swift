@@ -58,6 +58,25 @@ import Testing
         #expect(params["steps"] as? Int == 2)
         #expect(params["sigmas"] as? [Double] == [1, 0.5, 0])
         #expect(params["seed"] as? Int == 42)
+        #expect(params["init_image"] == nil)
+        #expect(params["strength"] == nil)
+    }
+
+    @Test func generateCommandCarriesTheSourceImageAndStrength() throws {
+        let recipe = makeRecipe()
+        var request = GenerationRequest(prompt: "make it snow", defaults: recipe.defaults, seed: 1)
+        request.strength = 0.6
+
+        let data = try EngineMessage.generateCommand(
+            recipe: recipe, storage: ModelStorage(root: URL(fileURLWithPath: "/models")), request: request,
+            output: URL(fileURLWithPath: "/tmp/out.raw"), preview: URL(fileURLWithPath: "/tmp/out.preview"),
+            initImage: URL(fileURLWithPath: "/tmp/source.init")
+        )
+
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let params = try #require(json["params"] as? [String: Any])
+        #expect(params["init_image"] as? String == "/tmp/source.init")
+        #expect(params["strength"] as? Double == 0.6)
     }
 
     @Test func recognisesOutOfMemoryLogs() {

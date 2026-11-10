@@ -1,18 +1,34 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// The prompt field with its size, settings and send controls.
-/// Return sends the prompt; Option-Return adds a line.
+/// The prompt field with its attachment, size, settings and send controls.
+/// Return sends the prompt; Option-Return adds a line. An image can be
+/// attached with the plus button or by dropping a file on the composer.
 struct PromptComposer: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsAdvanced = false
+    @State private var isPickingImage = false
+    @State private var isDropTarget = false
+    @State private var attachError: String?
     @FocusState private var promptFocused: Bool
 
     var body: some View {
         @Bindable var generation = model.generation
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        let attachment = generation.draft.attachment
 
-        VStack(alignment: .leading, spacing: 4) {
-            TextField("Describe an image", text: $generation.draft.prompt, axis: .vertical)
+        VStack(alignment: .leading, spacing: 6) {
+            if let attachment {
+                ComposerAttachment(url: attachment, strength: $generation.draft.editStrength) {
+                    generation.removeAttachment()
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.92, anchor: .topLeading)))
+            }
+
+            TextField(attachment == nil ? "Describe an image" : "Describe how to change it", text: $generation.draft.prompt, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
                 .lineLimit(1...8)
@@ -22,6 +38,7 @@ struct PromptComposer: View {
                 .padding(.top, 6)
 
             HStack(spacing: 6) {
+                attachButton
                 GenerationImageSizeMenu(draft: $generation.draft)
                 advancedButton
                 Spacer(minLength: 8)
@@ -31,12 +48,28 @@ struct PromptComposer: View {
         }
         .padding(12)
         .background(Theme.surface, in: shape)
-        .overlay(shape.strokeBorder(Theme.hairline))
+        .overlay(shape.strokeBorder(isDropTarget ? Theme.accent : Theme.hairline, lineWidth: isDropTarget ? 2 : 1))
         .shadow(color: .black.opacity(0.07), radius: 18, y: 6)
         .contentShape(shape)
         .onTapGesture { promptFocused = true }
         .onAppear { promptFocused = true }
+        .animation(Motion.layout(reduced: reduceMotion), value: attachment)
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let file = urls.first else { return false }
+            attach(file)
+            return true
+        } isTargeted: { isDropTarget = $0 }
+        .fileImporter(isPresented: $isPickingImage, allowedContentTypes: [.image]) { result in
+            if case .success(let file) = result { attach(file) }
+        }
+        .alert("Could Not Attach Image", isPresented: Binding(isPresenting: $attachError)) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(attachError ?? "")
+        }
     }
+
+    // MARK: - Actions
 
     /// Sends the prompt, or stops the image being generated.
     private func send() {
@@ -49,6 +82,32 @@ struct PromptComposer: View {
         promptFocused = true
     }
 
+    private func attach(_ file: URL) {
+        do {
+            try model.generation.attach(file)
+            promptFocused = true
+        } catch {
+            attachError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    // MARK: - Controls
+
+    private var attachButton: some View {
+        Button { isPickingImage = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .background(Color.primary.opacity(0.06), in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressableButtonStyle())
+        .focusable(false)
+        .help("Attach an image to edit")
+        .accessibilityLabel("Attach image")
+    }
+
     private var advancedButton: some View {
         Button { showsAdvanced.toggle() } label: {
             ComposerChip(
@@ -58,33 +117,12 @@ struct PromptComposer: View {
             )
         }
         .buttonStyle(PressableButtonStyle())
+        .focusable(false)
         .help("Steps, guidance, sampler and seed")
         .accessibilityLabel("Advanced settings")
         .popover(isPresented: $showsAdvanced, arrowEdge: .top) {
             GenerationAdvancedSettings()
                 .environment(model)
         }
-    }
-}
-
-/// The round send button: an arrow, or a stop square while generating.
-struct PromptSendButton: View {
-    @Environment(\.isEnabled) private var isEnabled
-    let isBusy: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: isBusy ? "stop.fill" : "arrow.up")
-                .font(.system(size: isBusy ? 11 : 14, weight: .bold))
-                .contentTransition(.symbolEffect(.replace))
-                .foregroundStyle(Theme.window)
-                .frame(width: 32, height: 32)
-                .background(Color.primary.opacity(isEnabled ? 1 : 0.25), in: Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(PressableButtonStyle(scale: 0.9))
-        .help(isBusy ? "Stop (\u{2318}.)" : "Generate (\u{21A9})")
-        .accessibilityLabel(isBusy ? "Stop" : "Generate")
     }
 }

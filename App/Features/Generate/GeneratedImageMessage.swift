@@ -36,6 +36,9 @@ struct GeneratedImageMessage: View {
                 MessageActionButton(systemImage: "folder", help: "Show in Finder") {
                     model.gallery.revealInFinder(item)
                 }
+                MessageActionButton(systemImage: "pencil", help: "Edit this image") {
+                    try? model.generation.attach(item.url)
+                }
                 MessageActionButton(systemImage: "arrow.clockwise", help: "Generate again", bounces: true) {
                     regenerate()
                 }

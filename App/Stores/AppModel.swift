@@ -40,6 +40,7 @@ final class AppModel {
             library: library,
             gallery: gallery,
             chats: chats,
+            attachments: AttachmentLibrary(directory: AttachmentLibrary.defaultDirectory),
             engine: StableDiffusionCppEngine(
                 helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-engine")
                     ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-engine"),
