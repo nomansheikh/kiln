@@ -11,6 +11,9 @@ final class ModelLibrary {
     let hub: HFClient
     private let recipeStore: RecipeStore
     private let downloads: DownloadManager
+    private let variantSelection: VariantSelection
+    /// Recipes as written, before a variant is merged in.
+    @ObservationIgnored private var sourceRecipes: [String: ModelRecipe] = [:]
 
     private(set) var recipes: [ModelRecipe] = []
     /// Ids of recipes the user added, as opposed to the ones shipped with the app.
@@ -31,6 +34,7 @@ final class ModelLibrary {
         self.recipeStore = recipeStore
         self.hub = hub
         self.downloads = downloads
+        variantSelection = VariantSelection(storage: storage, memory: memory)
         reloadRecipes()
         Task { await observeDownloads() }
     }
@@ -80,10 +84,28 @@ final class ModelLibrary {
 
     func reloadRecipes() {
         let result = recipeStore.loadAll()
-        recipes = result.recipes
+        sourceRecipes = Dictionary(uniqueKeysWithValues: result.recipes.map { ($0.id, $0) })
+        recipes = result.recipes.map(variantSelection.resolve)
         userRecipeIDs = result.userRecipeIDs
         recipeProblems = result.failures
         refreshInstalled()
+    }
+
+    // MARK: - Variants
+
+    /// Every variant of a recipe as a runnable recipe; empty when it has none.
+    func variants(of recipe: ModelRecipe) -> [ModelRecipe] {
+        sourceRecipes[recipe.id]?.resolvedVariants ?? []
+    }
+
+    /// Switches a recipe to another variant. Ignored while it is downloading.
+    func selectVariant(_ variantID: String, for recipe: ModelRecipe) {
+        guard downloadStatuses[recipe.id]?.isActive != true else { return }
+        variantSelection.choose(variantID, for: recipe.id)
+        Task { await downloads.clear(recipe.id) }
+        reloadRecipes()
+        // A different set of files may or may not be on disk.
+        onInstalledChange?()
     }
 
     /// Adds a recipe from a JSON file the user picked.

@@ -100,6 +100,9 @@ struct RecipeCard: View {
 
     private var specs: some View {
         HStack(spacing: 6) {
+            if recipe.hasVariants {
+                RecipeVariantMenu(recipe: recipe)
+            }
             if let size = recipe.totalSizeBytes {
                 Pill(text: size.formatted(.byteCount(style: .file)), systemImage: "internaldrive")
                     .help("Total download size")

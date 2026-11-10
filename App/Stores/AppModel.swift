@@ -26,7 +26,8 @@ final class AppModel {
             recipeStore: RecipeStore(
                 bundledDirectory: Bundle.main.resourceURL?.appendingPathComponent("recipes")
                     ?? support.appendingPathComponent("bundled"),
-                userDirectory: support.appendingPathComponent("recipes", isDirectory: true)
+                userDirectory: support.appendingPathComponent("recipes", isDirectory: true),
+                remoteDirectory: Self.remoteRecipesDirectory
             ),
             hub: hub,
             downloads: DownloadManager(
@@ -56,6 +57,26 @@ final class AppModel {
 
         library.onInstalledChange = { [weak generation] in
             generation?.selectDefaultRecipeIfNeeded()
+        }
+        refreshRecipeCatalogIfDue()
+    }
+
+    // MARK: - Recipe updates
+
+    private static var remoteRecipesDirectory: URL {
+        URL.applicationSupportDirectory.appendingPathComponent("Kiln/recipes-remote", isDirectory: true)
+    }
+
+    /// Fetches newly published recipes at most once a day. Failing, for example
+    /// offline, changes nothing: the bundled and cached recipes keep working.
+    private func refreshRecipeCatalogIfDue() {
+        let key = "recipeCatalogRefreshedAt"
+        let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
+        guard Date().timeIntervalSince(last) > 24 * 60 * 60 else { return }
+        Task {
+            guard (try? await RecipeCatalog(cacheDirectory: Self.remoteRecipesDirectory).refresh()) != nil else { return }
+            UserDefaults.standard.set(Date(), forKey: key)
+            library.reloadRecipes()
         }
     }
 
