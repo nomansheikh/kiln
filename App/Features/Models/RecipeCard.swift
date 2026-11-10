@@ -34,7 +34,7 @@ struct RecipeCard: View {
             }
 
             if recipe.isIncompleteSingleFile {
-                RecipeIncompleteNotice { try? library.removeRecipe(recipe) }
+                RecipeIncompleteNotice(recipeName: recipe.name) { try? library.removeRecipe(recipe) }
             }
 
             if !installed, let status {
