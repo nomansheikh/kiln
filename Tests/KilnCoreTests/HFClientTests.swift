@@ -2,26 +2,6 @@ import Foundation
 import Testing
 @testable import KilnCore
 
-/// Replays canned responses and records the requests it was given.
-final class MockTransport: HTTPTransport, @unchecked Sendable {
-    private let lock = NSLock()
-    private var responses: [(status: Int, body: String)]
-    private(set) var requests: [URLRequest] = []
-
-    init(status: Int = 200, body: String) {
-        responses = [(status, body)]
-    }
-
-    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        let next = lock.withLock {
-            requests.append(request)
-            return responses.count > 1 ? responses.removeFirst() : responses[0]
-        }
-        let response = HTTPURLResponse(url: request.url!, statusCode: next.status, httpVersion: nil, headerFields: nil)!
-        return (Data(next.body.utf8), response)
-    }
-}
-
 @Suite struct HFClientTests {
     // Trimmed from real api/models responses.
     static let searchBody = """
@@ -158,6 +138,35 @@ final class MockTransport: HTTPTransport, @unchecked Sendable {
     ])
     func parsesQuantization(path: String, expected: String) {
         #expect(HFFile(path: path, sizeBytes: nil, sha256: nil).quantization == expected)
+    }
+
+    @Test func aHubFileBecomesAValidPinnedSingleFileRecipe() async throws {
+        let info = try await HFClient(transport: MockTransport(body: Self.infoBody))
+            .modelInfo(repo: "AtomicChat/Qwen-Image-2.1-Turbo-GGUF")
+        let file = try #require(info.weightFiles.first)
+
+        let recipe = ModelRecipe.singleFile(file, in: info)
+
+        try recipe.validate()
+        #expect(recipe.id == "atomicchat-qwen-image-2.1-turbo-gguf-qwen-image-2.1-turbo-q8-0.gguf")
+        #expect(recipe.engine == "sd.cpp")
+        #expect(recipe.components == [
+            .init(role: .checkpoint, repo: "AtomicChat/Qwen-Image-2.1-Turbo-GGUF", file: "Qwen-Image-2.1-Turbo-Q8_0.gguf",
+                  revision: "cbcb9ff83b17e1eeef693479a8d34cea355a0ee4", sizeBytes: 7_591_577_312,
+                  sha256: "8d74ae0be534df394ea2d29f04b77f879318c9e0df20a3e208e6bedbf89b4159"),
+        ])
+        #expect(recipe.defaults.width == 512)
+        #expect(ModelRecipe.singleFile(HFFile(path: "sd_xl_base_1.0.safetensors", sizeBytes: 1, sha256: nil), in: info).defaults.width == 1024)
+    }
+
+    @Test func savedRecipesLoadBackFromTheUserDirectory() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("kiln-tests-\(UUID().uuidString)")
+        let store = RecipeStore(bundledDirectory: root.appendingPathComponent("bundled"), userDirectory: root.appendingPathComponent("user"))
+        let recipe = makeRecipe(id: "from-hub")
+
+        try store.save(recipe)
+
+        #expect(store.loadAll().recipes == [recipe])
     }
 
     @Test func filesWithoutAQuantLabelHaveNone() {

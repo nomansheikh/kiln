@@ -117,8 +117,8 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         self.process = process
         input = stdin.fileHandleForWriting
 
-        let events = Self.lines(from: stdout.fileHandleForReading)
-        let logs = Self.lines(from: stderr.fileHandleForReading)
+        let events = stdout.fileHandleForReading.lines
+        let logs = stderr.fileHandleForReading.lines
         Task.detached { [weak self] in
             for await line in events {
                 if let event = EngineMessage.decodeEvent(line) {
@@ -131,30 +131,6 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         Task.detached { [weak self] in
             for await line in logs {
                 await self?.log(line, from: id)
-            }
-        }
-    }
-
-    /// Lines written to a pipe, delivered as soon as each one is complete.
-    private static func lines(from handle: FileHandle) -> AsyncStream<String> {
-        AsyncStream { continuation in
-            // The handler runs on one serial queue per handle, so the buffer needs no lock.
-            nonisolated(unsafe) var buffer = Data()
-            handle.readabilityHandler = { handle in
-                let chunk = handle.availableData
-                guard !chunk.isEmpty else {
-                    handle.readabilityHandler = nil
-                    if !buffer.isEmpty {
-                        continuation.yield(String(decoding: buffer, as: UTF8.self))
-                    }
-                    continuation.finish()
-                    return
-                }
-                buffer.append(chunk)
-                while let newline = buffer.firstIndex(of: 0x0A) {
-                    continuation.yield(String(decoding: buffer[buffer.startIndex..<newline], as: UTF8.self))
-                    buffer.removeSubrange(buffer.startIndex...newline)
-                }
             }
         }
     }
