@@ -20,6 +20,9 @@ struct GenerateView: View {
             }
             .padding(.top, 14)
             .padding(.leading, 14)
+            // The thread's scroll view takes clicks above its own frame, which swallowed
+            // the ones meant for the model menu whenever a chat had turns.
+            .zIndex(1)
 
             if isEmpty {
                 Spacer(minLength: 24)
