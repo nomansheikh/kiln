@@ -1,0 +1,25 @@
+{
+  "$schema": "./schema.json",
+  "id": "sd-1.5",
+  "name": "Stable Diffusion 1.5",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "checkpoint",
+      "repo": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+      "file": "v1-5-pruned-emaonly.safetensors",
+      "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+      "size_bytes": 4265146304,
+      "sha256": "6ce0161689b3853acaa03779ec93eafe75a02f4ced659bee03f50797806fa2fa"
+    }
+  ],
+  "defaults": {
+    "steps": 20,
+    "cfg": 7.0,
+    "sampler": "euler_a",
+    "width": 512,
+    "height": 512
+  },
+  "license_note": "CreativeML OpenRAIL-M License (use-based restrictions apply).",
+  "min_memory_gb": 8
+}

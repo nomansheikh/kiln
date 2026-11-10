@@ -1,0 +1,26 @@
+{
+  "$schema": "./schema.json",
+  "id": "juggernaut-xl-v9",
+  "name": "Juggernaut XL v9",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "checkpoint",
+      "repo": "RunDiffusion/Juggernaut-XL-v9",
+      "file": "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+      "revision": "cf419233522daa0b9ea36c3aff98fa2cab1fb0fb",
+      "size_bytes": 7105348188,
+      "sha256": "c9e3e68f89b8e38689e1097d4be4573cf308de4e3fd044c64ca697bdb4aa8bca"
+    }
+  ],
+  "defaults": {
+    "steps": 35,
+    "cfg": 5.0,
+    "sampler": "dpm++2m",
+    "width": 832,
+    "height": 1216,
+    "scheduler": "karras"
+  },
+  "license_note": "CreativeML OpenRAIL-M License; the model card adds that it may not be deployed behind paid API services without a separate licence from RunDiffusion.",
+  "min_memory_gb": 16
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "./schema.json",
+  "id": "z-image-turbo",
+  "name": "Z-Image Turbo",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "vae",
+      "repo": "Comfy-Org/z_image_turbo",
+      "file": "split_files/vae/ae.safetensors",
+      "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
+      "size_bytes": 335304388,
+      "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38"
+    }
+  ],
+  "defaults": {
+    "steps": 8,
+    "cfg": 1.0,
+    "sampler": "euler",
+    "width": 1024,
+    "height": 1024
+  },
+  "license_note": "Denoiser (Z-Image-Turbo GGUF), text encoder (Qwen3-4B-Instruct-2507 GGUF) and VAE (FLUX.1-schnell autoencoder, Comfy-Org copy): Apache-2.0.",
+  "variants": [
+    {
+      "id": "q8",
+      "name": "Q8 (best quality)",
+      "min_memory_gb": 24,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+          "file": "Qwen3-4B-Instruct-2507-Q8_0.gguf",
+          "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+          "size_bytes": 4280405600,
+          "sha256": "391c1e410fd9f4cf2de2b510273b56a84c19ce18f4fa3bfb3774031dac4ef068"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "leejet/Z-Image-Turbo-GGUF",
+          "file": "z_image_turbo-Q8_0.gguf",
+          "revision": "c61c0e422dc8b541b7548cf33a4ef8302b0f8085",
+          "size_bytes": 6577440704,
+          "sha256": "df1c5baa86d1398c979495a6072dbcee79444fdb884a2445582ba0769c44e9a1"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "name": "Q4 (smaller)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+          "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+          "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
+          "size_bytes": 2497281120,
+          "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "leejet/Z-Image-Turbo-GGUF",
+          "file": "z_image_turbo-Q4_K.gguf",
+          "revision": "c61c0e422dc8b541b7548cf33a4ef8302b0f8085",
+          "size_bytes": 3864250304,
+          "sha256": "14b375ab4f226bc5378f68f37e899ef3c2242b8541e61e2bc1aff40976086fbd"
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,18 @@
 {
   "version": 1,
   "recipes": [
+    "animagine-xl-4.0.json",
+    "flux.1-dev.json",
+    "flux.1-schnell.json",
+    "flux.2-klein-4b.json",
+    "flux.2-klein-9b.json",
+    "juggernaut-xl-v9.json",
     "qwen-image-2.1-turbo.json",
-    "sdxl-base-1.0.json"
+    "qwen-image-2.1.json",
+    "realvisxl-v5.0.json",
+    "sd-1.5.json",
+    "sdxl-base-1.0.json",
+    "sdxl-turbo.json",
+    "z-image-turbo.json"
   ]
 }

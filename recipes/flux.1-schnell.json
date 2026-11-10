@@ -1,0 +1,72 @@
+{
+  "$schema": "./schema.json",
+  "id": "flux.1-schnell",
+  "name": "FLUX.1 schnell",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "vae",
+      "repo": "Comfy-Org/z_image_turbo",
+      "file": "split_files/vae/ae.safetensors",
+      "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
+      "size_bytes": 335304388,
+      "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38"
+    },
+    {
+      "role": "clip_l",
+      "repo": "comfyanonymous/flux_text_encoders",
+      "file": "clip_l.safetensors",
+      "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+      "size_bytes": 246144152,
+      "sha256": "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd"
+    },
+    {
+      "role": "t5xxl",
+      "repo": "comfyanonymous/flux_text_encoders",
+      "file": "t5xxl_fp16.safetensors",
+      "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+      "size_bytes": 9787841024,
+      "sha256": "6e480b09fae049a72d2a8c5fbccb8d3e92febeb233bbe9dfe7256958a9167635"
+    }
+  ],
+  "defaults": {
+    "steps": 4,
+    "cfg": 1.0,
+    "sampler": "euler",
+    "width": 1024,
+    "height": 1024
+  },
+  "license_note": "Denoiser (GGUF conversion of black-forest-labs/FLUX.1-schnell), VAE, CLIP-L and T5-XXL text encoders: Apache-2.0.",
+  "variants": [
+    {
+      "id": "q8",
+      "name": "Q8 (best quality)",
+      "min_memory_gb": 32,
+      "components": [
+        {
+          "role": "diffusion_model",
+          "repo": "leejet/FLUX.1-schnell-gguf",
+          "file": "flux1-schnell-q8_0.gguf",
+          "revision": "c7f665ddaf9f197ff493f41fc211f5480f5f19ac",
+          "size_bytes": 12801721248,
+          "sha256": "098c424cfa97526d9227da984563ad1509298f7573458ed210cd5ba0220ab635"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "name": "Q4 (smaller)",
+      "min_memory_gb": 24,
+      "components": [
+        {
+          "role": "diffusion_model",
+          "repo": "leejet/FLUX.1-schnell-gguf",
+          "file": "flux1-schnell-q4_k.gguf",
+          "revision": "c7f665ddaf9f197ff493f41fc211f5480f5f19ac",
+          "size_bytes": 6884606880,
+          "sha256": "619697cc4c2bf587416aa1afa98d474a44c80eb4e3a3f64ea8f99ab0ed9adb7a"
+        }
+      ]
+    }
+  ]
+}

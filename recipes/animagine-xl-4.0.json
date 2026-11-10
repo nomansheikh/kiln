@@ -1,0 +1,25 @@
+{
+  "$schema": "./schema.json",
+  "id": "animagine-xl-4.0",
+  "name": "Animagine XL 4.0 Opt",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "checkpoint",
+      "repo": "cagliostrolab/animagine-xl-4.0",
+      "file": "animagine-xl-4.0-opt.safetensors",
+      "revision": "2b7c1b397761bf5bd3cc42e5b39ec99314a75a96",
+      "size_bytes": 6938350040,
+      "sha256": "6327eca98bfb6538dd7a4edce22484a1bbc57a8cff6b11d075d40da1afb847ac"
+    }
+  ],
+  "defaults": {
+    "steps": 28,
+    "cfg": 5.0,
+    "sampler": "euler_a",
+    "width": 1024,
+    "height": 1024
+  },
+  "license_note": "CreativeML Open RAIL++-M License, adopted from SDXL without additional restrictions (use-based restrictions apply).",
+  "min_memory_gb": 16
+}
