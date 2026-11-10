@@ -64,10 +64,9 @@ struct DownloadDetailRow: View {
     @ViewBuilder
     private var controls: some View {
         switch status.state {
-        case .queued:
-            RoundIconButton(systemImage: "xmark", help: "Cancel", action: cancel)
-        case .downloading, .paused:
-            // One button for both states, so its symbol morphs between pause and play.
+        case .queued, .downloading, .paused:
+            // One button for all three, so its symbol morphs between pause and play.
+            // Resuming passes through queued, which must keep the same button for that to happen.
             let isPaused = status.state == .paused
             RoundIconButton(
                 systemImage: isPaused ? "play.fill" : "pause.fill",
