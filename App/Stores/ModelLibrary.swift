@@ -16,6 +16,10 @@ final class ModelLibrary {
     private(set) var recipeProblems: [RecipeStore.LoadFailure] = []
     private(set) var installedIDs: Set<String> = []
     private(set) var downloadStatuses: [String: DownloadStatus] = [:]
+    /// Speed and time left for each download that is transferring.
+    private(set) var downloadSpeeds: [String: DownloadSpeed] = [:]
+    @ObservationIgnored private var rateEstimators: [String: TransferRateEstimator] = [:]
+    @ObservationIgnored private var speedsPublishedAt = Date.distantPast
 
     /// Called after the set of installed models changes.
     @ObservationIgnored var onInstalledChange: (() -> Void)?
@@ -41,6 +45,13 @@ final class ModelLibrary {
             guard let status = downloadStatuses[recipe.id], status.isActive else { return nil }
             return (recipe, status)
         }
+    }
+
+    /// Every recipe with a download to show, including paused, failed and finished ones.
+    var downloadEntries: [(recipe: ModelRecipe, status: DownloadStatus)] {
+        recipes
+            .compactMap { recipe in downloadStatuses[recipe.id].map { (recipe, $0) } }
+            .sorted { $0.1.isActive && !$1.1.isActive }
     }
 
     func isInstalled(_ recipe: ModelRecipe) -> Bool {
@@ -109,9 +120,33 @@ final class ModelLibrary {
                 status.state == .completed && downloadStatuses[id]?.state != .completed
             }
             downloadStatuses = statuses
+            updateSpeeds(from: statuses)
             if finished {
                 refreshInstalled()
             }
+        }
+    }
+
+    private func updateSpeeds(from statuses: [String: DownloadStatus]) {
+        var speeds: [String: DownloadSpeed] = [:]
+        for (id, status) in statuses where status.state == .downloading {
+            var estimator = rateEstimators[id] ?? TransferRateEstimator()
+            estimator.record(bytes: status.receivedBytes)
+            rateEstimators[id] = estimator
+            if let rate = estimator.bytesPerSecond {
+                speeds[id] = DownloadSpeed(
+                    bytesPerSecond: rate,
+                    secondsRemaining: status.totalBytes.flatMap { estimator.secondsRemaining(until: $0) }
+                )
+            }
+        }
+        // A paused or finished transfer starts its estimate afresh next time.
+        rateEstimators = rateEstimators.filter { speeds[$0.key] != nil || statuses[$0.key]?.state == .downloading }
+        // Progress arrives many times a second; a steadier readout is easier to read.
+        let now = Date()
+        if Set(speeds.keys) != Set(downloadSpeeds.keys) || now.timeIntervalSince(speedsPublishedAt) >= 1 {
+            downloadSpeeds = speeds
+            speedsPublishedAt = now
         }
     }
 
@@ -121,4 +156,12 @@ final class ModelLibrary {
         installedIDs = installed
         onInstalledChange?()
     }
+
+    #if DEBUG
+    /// Shows sample downloads for snapshots.
+    func loadPreview(statuses: [String: DownloadStatus], speeds: [String: DownloadSpeed]) {
+        downloadStatuses = statuses
+        downloadSpeeds = speeds
+    }
+    #endif
 }

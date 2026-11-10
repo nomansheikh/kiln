@@ -4,6 +4,8 @@ import SwiftUI
 /// The progress and controls of a recipe download, for whichever state the transfer is in.
 struct RecipeTransferView: View {
     let status: DownloadStatus
+    /// Speed and time left, once they can be estimated.
+    var speed: DownloadSpeed?
     /// Starts, resumes or retries the download.
     let download: () -> Void
     let pause: () -> Void
@@ -18,7 +20,7 @@ struct RecipeTransferView: View {
                 cancelButton
             }
         case .downloading:
-            RecipeTransferRow(value: status.fraction, caption: status.transferCaption) {
+            RecipeTransferRow(value: status.fraction, caption: downloadingCaption) {
                 ModelsIconButton(systemImage: "pause.fill", help: "Pause download", action: pause)
                 cancelButton
             }
@@ -34,6 +36,10 @@ struct RecipeTransferView: View {
         case .completed:
             EmptyView()
         }
+    }
+
+    private var downloadingCaption: String {
+        [status.transferCaption, speed?.summary].compactMap { $0 }.joined(separator: " · ")
     }
 
     private var cancelButton: some View {

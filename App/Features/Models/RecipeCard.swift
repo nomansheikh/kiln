@@ -31,6 +31,7 @@ struct RecipeCard: View {
             if !installed, let status {
                 RecipeTransferView(
                     status: status,
+                    speed: library.downloadSpeeds[recipe.id],
                     download: { library.download(recipe) },
                     pause: { library.pauseDownload(recipe) },
                     cancel: { library.cancelDownload(recipe) },

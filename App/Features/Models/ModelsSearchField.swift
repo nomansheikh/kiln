@@ -1,6 +1,8 @@
+import AppKit
 import SwiftUI
 
-/// The capsule search field in the Models header. Command-F focuses it and Escape clears it.
+/// The capsule search field in the Models header. It is not focused until the
+/// user clicks it or presses Command-F; Escape clears it.
 struct ModelsSearchField: View {
     @Binding var text: String
     @FocusState private var isFocused: Bool
@@ -25,6 +27,14 @@ struct ModelsSearchField: View {
         .overlay(Capsule().strokeBorder(isFocused ? Theme.accent.opacity(0.7) : Theme.hairline))
         .contentShape(Rectangle())
         .onTapGesture { isFocused = true }
+        .task {
+            // Opening the screen hands keyboard focus to its first text field.
+            // Searching should be a choice, so give the focus back.
+            try? await Task.sleep(for: .milliseconds(50))
+            if text.isEmpty {
+                NSApp.keyWindow?.makeFirstResponder(nil)
+            }
+        }
         .background(
             // Command-F jumps to the search field.
             Button("Search") { isFocused = true }

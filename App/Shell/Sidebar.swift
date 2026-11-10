@@ -36,9 +36,9 @@ struct Sidebar: View {
 
             Spacer(minLength: 8)
 
-            if let download = model.library.activeDownloads.first {
-                DownloadSummary(recipe: download.recipe, status: download.status)
-                    .padding(10)
+            if !model.library.downloadEntries.isEmpty {
+                DownloadsButton()
+                    .padding(8)
             }
         }
     }

@@ -16,6 +16,13 @@ public struct DownloadStatus: Sendable, Equatable {
     /// Name of the file being transferred.
     public var currentFile: String?
 
+    public init(state: State, receivedBytes: Int64, totalBytes: Int64?, currentFile: String?) {
+        self.state = state
+        self.receivedBytes = receivedBytes
+        self.totalBytes = totalBytes
+        self.currentFile = currentFile
+    }
+
     public var fraction: Double? {
         guard let totalBytes, totalBytes > 0 else { return nil }
         return min(1, Double(receivedBytes) / Double(totalBytes))

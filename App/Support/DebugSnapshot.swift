@@ -15,6 +15,14 @@ enum DebugSnapshot {
     static func run(model: AppModel, into directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? await Task.sleep(for: .seconds(1.5))
+        if ProcessInfo.processInfo.arguments.contains("--sample-downloads"), let recipe = model.library.recipes.first {
+            let total = recipe.totalSizeBytes ?? 1_000
+            model.library.loadPreview(
+                statuses: [recipe.id: DownloadStatus(state: .downloading, receivedBytes: total * 35 / 100, totalBytes: total,
+                                                     currentFile: recipe.components.first?.file)],
+                speeds: [recipe.id: DownloadSpeed(bytesPerSecond: 12_400_000, secondsRemaining: 487)]
+            )
+        }
         if ProcessInfo.processInfo.arguments.contains("--sample-thread") {
             loadSampleThread(into: model)
         }
