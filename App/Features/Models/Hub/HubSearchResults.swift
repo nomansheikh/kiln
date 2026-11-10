@@ -1,23 +1,26 @@
 import KilnCore
 import SwiftUI
 
-/// Hugging Face search results shown on the Models screen while the user types.
+/// A section of Hugging Face models on the Models screen: the most downloaded
+/// text-to-image models for an empty query, otherwise the matches for it.
+/// It is laid out inside the Models screen's scroll view.
 struct HubSearchResults: View {
     @Environment(AppModel.self) private var model
 
     private let query: String
+    private let title: String
 
     @State private var search = HubSearchModel()
     @State private var attempt = 0
     @State private var downloadError: String?
 
-    init(query: String) {
+    init(query: String, title: String) {
         self.query = query
+        self.title = title
     }
 
     var body: some View {
         content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .task(id: HubSearchKey(query: query, attempt: attempt)) {
                 await search.search(query, using: model.library.hub)
             }
@@ -43,6 +46,8 @@ struct HubSearchResults: View {
             failed(message)
         case .results(let summaries) where summaries.isEmpty:
             ContentUnavailableView.search(text: query)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
         case .results(let summaries):
             results(summaries)
         }
@@ -52,15 +57,17 @@ struct HubSearchResults: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
-            Text("Searching Hugging Face…")
+            Text(query.isEmpty ? "Loading popular models…" : "Searching Hugging Face…")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 40)
     }
 
     private func failed(_ message: String) -> some View {
         ContentUnavailableView {
-            Label("Search failed", systemImage: "exclamationmark.triangle")
+            Label("Hugging Face could not be reached", systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
@@ -71,27 +78,23 @@ struct HubSearchResults: View {
             }
             .buttonStyle(SoftButtonStyle())
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 20)
     }
 
     private func results(_ summaries: [HFModelSummary]) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 14) {
-                ModelsSectionTitle(text: "Hugging Face results", count: summaries.count)
-                ForEach(summaries) { summary in
-                    HubResultCard(
-                        summary: summary,
-                        info: search.infos[summary.id],
-                        isLoading: search.loadingRepos.contains(summary.id),
-                        failure: search.failures[summary.id],
-                        loadFiles: { search.loadInfo(for: summary.id, using: model.library.hub) },
-                        download: download
-                    )
-                }
+        Group {
+            ModelsSectionTitle(text: title, count: summaries.count)
+            ForEach(summaries) { summary in
+                HubResultCard(
+                    summary: summary,
+                    info: search.infos[summary.id],
+                    isLoading: search.loadingRepos.contains(summary.id),
+                    failure: search.failures[summary.id],
+                    loadFiles: { search.loadInfo(for: summary.id, using: model.library.hub) },
+                    download: download
+                )
             }
-            .frame(maxWidth: Theme.contentWidth)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 20)
-            .frame(maxWidth: .infinity)
         }
     }
 

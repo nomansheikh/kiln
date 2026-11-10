@@ -20,7 +20,7 @@ enum DebugSnapshot {
         }
         for item in SidebarItem.allCases {
             model.selection = item
-            try? await Task.sleep(for: .seconds(1.2))
+            try? await Task.sleep(for: .seconds(item == .models ? 4 : 1.2))
             guard let view = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil })?.contentView?.superview,
                   let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
             else { continue }

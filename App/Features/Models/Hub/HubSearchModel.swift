@@ -17,12 +17,15 @@ final class HubSearchModel {
 
     // MARK: - Searching
 
-    /// Searches after a short pause. Cancelling the surrounding task, as happens
-    /// while the user keeps typing, abandons the search without touching `phase`.
+    /// Searches after a short pause; an empty query lists the most downloaded models
+    /// at once. Cancelling the surrounding task, as happens while the user keeps
+    /// typing, abandons the search without touching `phase`.
     func search(_ query: String, using hub: HFClient) async {
         phase = .loading
         do {
-            try await Task.sleep(for: Self.debounce)
+            if !query.isEmpty {
+                try await Task.sleep(for: Self.debounce)
+            }
             let summaries = try await hub.searchModels(query: query)
             guard !Task.isCancelled else { return }
             phase = .results(summaries)

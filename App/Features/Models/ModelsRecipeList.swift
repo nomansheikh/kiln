@@ -1,7 +1,8 @@
 import KilnCore
 import SwiftUI
 
-/// The scrolling list of recipe cards, with any recipe load problems above it.
+/// The recipe cards section, with any recipe load problems above it.
+/// It is laid out inside the Models screen's scroll view.
 struct ModelsRecipeList: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -17,33 +18,27 @@ struct ModelsRecipeList: View {
         let problems = model.library.recipeProblems
         let recipes = visibleRecipes
 
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 14) {
-                if !problems.isEmpty {
-                    RecipeProblemsView(problems: problems)
-                }
-                if recipes.isEmpty {
-                    emptyState
-                } else {
-                    ModelsSectionTitle(
-                        text: showsDownloadedOnly ? "Downloaded" : "Recommended",
-                        count: recipes.count
-                    )
-                    ForEach(recipes) { recipe in
-                        RecipeCard(recipe: recipe)
-                            .transition(Motion.rise(reduced: reduceMotion))
-                    }
+        Group {
+            if !problems.isEmpty {
+                RecipeProblemsView(problems: problems)
+            }
+            if recipes.isEmpty {
+                emptyState
+            } else {
+                ModelsSectionTitle(
+                    text: showsDownloadedOnly ? "Downloaded" : "Recommended",
+                    count: recipes.count
+                )
+                ForEach(recipes) { recipe in
+                    RecipeCard(recipe: recipe)
+                        .transition(Motion.rise(reduced: reduceMotion))
                 }
             }
-            // Animate on state changes only; byte counts tick far too often to animate.
-            .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
-            .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
-            .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
-            .frame(maxWidth: Theme.contentWidth)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 20)
-            .frame(maxWidth: .infinity)
         }
+        // Animate on state changes only; byte counts tick far too often to animate.
+        .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
+        .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
+        .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
     }
 
     @ViewBuilder
