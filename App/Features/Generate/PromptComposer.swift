@@ -52,7 +52,12 @@ struct PromptComposer: View {
         .shadow(color: .black.opacity(0.07), radius: 18, y: 6)
         .contentShape(shape)
         .onTapGesture { promptFocused = true }
-        .onAppear { promptFocused = true }
+        .task {
+            // Typing should work straight away. The short wait lets the window
+            // finish choosing its own first control, which would otherwise win.
+            try? await Task.sleep(for: .milliseconds(150))
+            promptFocused = true
+        }
         .animation(Motion.layout(reduced: reduceMotion), value: attachment)
         .dropDestination(for: URL.self) { urls, _ in
             guard let file = urls.first else { return false }
@@ -123,6 +128,7 @@ struct PromptComposer: View {
         .popover(isPresented: $showsAdvanced, arrowEdge: .top) {
             GenerationAdvancedSettings()
                 .environment(model)
+                .focusRingsWhileNavigating()
         }
     }
 }

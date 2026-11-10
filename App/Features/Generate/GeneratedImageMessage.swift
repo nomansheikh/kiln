@@ -48,6 +48,7 @@ struct GeneratedImageMessage: View {
                 }
                 .popover(isPresented: $showsDetails, arrowEdge: .bottom) {
                     GenerationDetails(record: item.record)
+                        .focusRingsWhileNavigating()
                 }
             }
         }

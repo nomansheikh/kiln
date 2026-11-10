@@ -40,6 +40,7 @@ struct DownloadsButton: View {
         .popover(isPresented: $showsDetails, arrowEdge: .trailing) {
             DownloadsPopover()
                 .environment(model)
+                .focusRingsWhileNavigating()
         }
     }
 }

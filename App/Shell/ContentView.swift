@@ -36,6 +36,7 @@ struct ContentView: View {
         }
         .background(Theme.window)
         .ignoresSafeArea()
+        .focusRingsWhileNavigating()
         .background(WindowChrome())
         .animation(.snappy(duration: 0.25), value: sidebarVisible)
     }
