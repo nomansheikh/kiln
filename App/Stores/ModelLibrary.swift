@@ -13,6 +13,8 @@ final class ModelLibrary {
     private let downloads: DownloadManager
 
     private(set) var recipes: [ModelRecipe] = []
+    /// Ids of recipes the user added, as opposed to the ones shipped with the app.
+    private(set) var userRecipeIDs: Set<String> = []
     private(set) var recipeProblems: [RecipeStore.LoadFailure] = []
     private(set) var installedIDs: Set<String> = []
     private(set) var downloadStatuses: [String: DownloadStatus] = [:]
@@ -35,8 +37,16 @@ final class ModelLibrary {
 
     // MARK: - Reading
 
+    /// Installed models that can generate images. A lone part of a model is left out.
     var installedRecipes: [ModelRecipe] {
-        recipes.filter { installedIDs.contains($0.id) }
+        recipes.filter { installedIDs.contains($0.id) && !$0.isIncompleteSingleFile }
+    }
+
+    /// The recipe shipped with the app that includes files from this Hugging Face repo, if any.
+    func curatedRecipe(forRepo repo: String) -> ModelRecipe? {
+        recipes.first { recipe in
+            !userRecipeIDs.contains(recipe.id) && recipe.components.contains { $0.repo == repo }
+        }
     }
 
     /// Recipes with a download queued or in progress.
@@ -71,6 +81,7 @@ final class ModelLibrary {
     func reloadRecipes() {
         let result = recipeStore.loadAll()
         recipes = result.recipes
+        userRecipeIDs = result.userRecipeIDs
         recipeProblems = result.failures
         refreshInstalled()
     }
@@ -94,6 +105,16 @@ final class ModelLibrary {
         try storage.delete(recipe, keeping: installedRecipes)
         Task { await downloads.clear(recipe.id) }
         refreshInstalled()
+    }
+
+    /// Removes a recipe the user added, with its files unless another recipe uses them.
+    func removeRecipe(_ recipe: ModelRecipe) throws {
+        guard userRecipeIDs.contains(recipe.id) else { return }
+        Task { await downloads.cancel(recipe.id) }
+        // Keep files any other recipe lists, installed or not, so they need not be downloaded again.
+        try storage.delete(recipe, keeping: recipes)
+        try recipeStore.removeUserRecipe(id: recipe.id)
+        reloadRecipes()
     }
 
     // MARK: - Downloads

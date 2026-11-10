@@ -28,6 +28,10 @@ struct RecipeCard: View {
                     .help(note)
             }
 
+            if recipe.isIncompleteSingleFile {
+                RecipeIncompleteNotice { try? library.removeRecipe(recipe) }
+            }
+
             if !installed, let status {
                 RecipeTransferView(
                     status: status,
@@ -59,7 +63,10 @@ struct RecipeCard: View {
                         .font(.headline)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    if installed {
+                    if recipe.isIncompleteSingleFile {
+                        Pill(text: "Part of a model", systemImage: "puzzlepiece.extension", tint: .orange)
+                            .fixedSize()
+                    } else if installed {
                         Pill(text: "Installed", systemImage: "checkmark.circle.fill", tint: .green)
                             .fixedSize()
                     }
@@ -72,7 +79,10 @@ struct RecipeCard: View {
                     .help(recipe.sourceRepos.joined(separator: "\n"))
             }
             Spacer(minLength: 12)
-            if installed {
+            if recipe.isIncompleteSingleFile {
+                // Nothing to use or download: the notice below explains and offers removal.
+                EmptyView()
+            } else if installed {
                 RecipeInstalledActions(
                     recipeName: recipe.name,
                     delete: { try model.library.deleteModel(recipe) },

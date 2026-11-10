@@ -32,6 +32,15 @@ extension ModelRecipe {
     }
 }
 
+extension ModelRecipe {
+    /// True for a one-file recipe whose file does not look like a whole model, for
+    /// example a text encoder downloaded by itself. Such a recipe cannot generate images.
+    public var isIncompleteSingleFile: Bool {
+        guard components.count == 1, let component = components.first, component.role == .checkpoint else { return false }
+        return !HFFile(path: component.file, sizeBytes: component.sizeBytes, sha256: nil).looksLikeStandaloneCheckpoint
+    }
+}
+
 extension RecipeStore {
     /// Writes a recipe into the user directory, replacing one with the same id.
     public func save(_ recipe: ModelRecipe) throws {
@@ -40,5 +49,12 @@ extension RecipeStore {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         try encoder.encode(recipe).write(to: userDirectory.appendingPathComponent("\(recipe.id).json"), options: .atomic)
+    }
+
+    /// Deletes a recipe the user added. Bundled recipes cannot be removed.
+    public func removeUserRecipe(id: String) throws {
+        let file = userDirectory.appendingPathComponent("\(id).json")
+        guard FileManager.default.fileExists(atPath: file.path) else { return }
+        try FileManager.default.removeItem(at: file)
     }
 }

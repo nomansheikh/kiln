@@ -173,7 +173,7 @@ final class GenerationStore {
         } catch {
             // A failed run may have taken the helper down with it.
             loadedRecipeID = nil
-            return .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            return .failed(GenerationFailure.message(for: error, recipe: recipe))
         }
     }
 

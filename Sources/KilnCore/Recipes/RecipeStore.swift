@@ -10,6 +10,8 @@ public struct RecipeStore: Sendable {
     public struct LoadResult: Sendable {
         public var recipes: [ModelRecipe] = []
         public var failures: [LoadFailure] = []
+        /// Ids of the recipes that came from the user's folder rather than the app.
+        public var userRecipeIDs: Set<String> = []
     }
 
     public enum ImportError: Error, Equatable, LocalizedError {
@@ -49,6 +51,9 @@ public struct RecipeStore: Sendable {
                         continue
                     }
                     result.recipes.append(recipe)
+                    if directory == userDirectory {
+                        result.userRecipeIDs.insert(recipe.id)
+                    }
                 } catch {
                     result.failures.append(LoadFailure(file: file, message: Self.describe(error)))
                 }

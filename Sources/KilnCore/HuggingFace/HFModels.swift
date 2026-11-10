@@ -105,6 +105,18 @@ public struct HFFile: Decodable, Sendable, Equatable, Identifiable {
         name.lowercased().hasPrefix("mmproj")
     }
 
+    /// Whether the file is plausibly a whole model in one file, the only kind that runs
+    /// without a recipe. This is a guess from the name: a `.safetensors` file at the top
+    /// of the repo, large enough to hold a model, whose name does not mark it as one
+    /// part (a VAE, text encoder, LoRA and so on). GGUF files are published per part.
+    public var looksLikeStandaloneCheckpoint: Bool {
+        let lowered = path.lowercased()
+        guard lowered.hasSuffix(".safetensors"), !path.contains("/") else { return false }
+        if let sizeBytes, sizeBytes < 1_500_000_000 { return false }
+        let partMarkers = ["vae", "clip", "t5", "encoder", "lora", "mmproj", "unet", "transformer", "controlnet", "adapter", "refiner"]
+        return !partMarkers.contains { lowered.contains($0) }
+    }
+
     /// Quantization label parsed from the file name, e.g. `Q8_0`, `Q4_K_M`, `BF16`.
     public var quantization: String? {
         let stem = name.split(separator: ".").dropLast().joined(separator: ".")

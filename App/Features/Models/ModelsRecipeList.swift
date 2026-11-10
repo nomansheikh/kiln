@@ -17,6 +17,7 @@ struct ModelsRecipeList: View {
     var body: some View {
         let problems = model.library.recipeProblems
         let recipes = visibleRecipes
+        let userIDs = model.library.userRecipeIDs
 
         Group {
             if !problems.isEmpty {
@@ -25,20 +26,26 @@ struct ModelsRecipeList: View {
             if recipes.isEmpty {
                 emptyState
             } else {
-                ModelsSectionTitle(
-                    text: showsDownloadedOnly ? "Downloaded" : "Recommended",
-                    count: recipes.count
-                )
-                ForEach(recipes) { recipe in
-                    RecipeCard(recipe: recipe)
-                        .transition(Motion.rise(reduced: reduceMotion))
-                }
+                section(showsDownloadedOnly ? "Downloaded" : "Recommended", recipes.filter { !userIDs.contains($0.id) })
+                section("Added by you", recipes.filter { userIDs.contains($0.id) })
             }
         }
         // Animate on state changes only; byte counts tick far too often to animate.
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
         .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
+    }
+
+    /// A titled group of recipe cards, or nothing when the group is empty.
+    @ViewBuilder
+    private func section(_ title: String, _ recipes: [ModelRecipe]) -> some View {
+        if !recipes.isEmpty {
+            ModelsSectionTitle(text: title, count: recipes.count)
+            ForEach(recipes) { recipe in
+                RecipeCard(recipe: recipe)
+                    .transition(Motion.rise(reduced: reduceMotion))
+            }
+        }
     }
 
     @ViewBuilder

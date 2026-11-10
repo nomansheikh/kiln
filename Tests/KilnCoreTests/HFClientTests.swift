@@ -169,6 +169,48 @@ import Testing
         #expect(store.loadAll().recipes == [recipe])
     }
 
+    @Test(arguments: [
+        ("sd_xl_base_1.0.safetensors", 6_938_078_334, true),
+        ("v1-5-pruned-emaonly.safetensors", 4_265_146_304, true),
+        ("Qwen3VL-8B-Instruct-Q8_0.gguf", 8_709_519_456, false), // GGUF is published per part
+        ("vae/qwen_image_2.1_vae_bf16.safetensors", 675_509_688, false), // in a subfolder
+        ("text_encoders/qwen3vl_8b_bf16.safetensors", 17_530_000_000, false),
+        ("sdxl_vae.safetensors", 2_000_000_000, false), // named as a part
+        ("sd_xl_offset_example-lora_1.0.safetensors", 49_553_604, false), // too small and a LoRA
+    ])
+    func guessesWhichFilesAreWholeModels(path: String, size: Int64, expected: Bool) {
+        #expect(HFFile(path: path, sizeBytes: size, sha256: nil).looksLikeStandaloneCheckpoint == expected)
+    }
+
+    @Test func aLoneTextEncoderIsAnIncompleteRecipe() async throws {
+        let info = try await HFClient(transport: MockTransport(body: Self.infoBody))
+            .modelInfo(repo: "AtomicChat/Qwen-Image-2.1-Turbo-GGUF")
+        let encoder = ModelRecipe.singleFile(try #require(info.weightFiles.first), in: info)
+        let checkpoint = ModelRecipe.singleFile(HFFile(path: "sd_xl_base_1.0.safetensors", sizeBytes: 6_938_078_334, sha256: nil), in: info)
+
+        #expect(encoder.isIncompleteSingleFile)
+        #expect(!checkpoint.isIncompleteSingleFile)
+        // A multi-part recipe is never judged this way, whatever its files are called.
+        #expect(!makeRecipe(components: [
+            .init(role: .llm, repo: "a/b", file: "enc.gguf"), .init(role: .vae, repo: "a/b", file: "vae.safetensors"),
+        ]).isIncompleteSingleFile)
+    }
+
+    @Test func userRecipesAreTrackedAndCanBeRemoved() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("kiln-tests-\(UUID().uuidString)")
+        let store = RecipeStore(bundledDirectory: root.appendingPathComponent("bundled"), userDirectory: root.appendingPathComponent("user"))
+        try FileManager.default.createDirectory(at: store.bundledDirectory, withIntermediateDirectories: true)
+        try JSONEncoder().encode(makeRecipe(id: "bundled")).write(to: store.bundledDirectory.appendingPathComponent("bundled.json"))
+        try store.save(makeRecipe(id: "mine"))
+
+        #expect(store.loadAll().userRecipeIDs == ["mine"])
+
+        try store.removeUserRecipe(id: "mine")
+        try store.removeUserRecipe(id: "bundled") // only looks in the user folder
+
+        #expect(store.loadAll().recipes.map(\.id) == ["bundled"])
+    }
+
     @Test func filesWithoutAQuantLabelHaveNone() {
         #expect(HFFile(path: "sd_xl_base_1.0.safetensors", sizeBytes: nil, sha256: nil).quantization == nil)
         #expect(HFFile(path: "mmproj-model-F16.gguf", sizeBytes: nil, sha256: nil).isVisionProjector)

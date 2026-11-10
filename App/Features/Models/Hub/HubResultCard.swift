@@ -3,6 +3,7 @@ import SwiftUI
 
 /// One Hugging Face repo in the search results, with its files behind a disclosure row.
 struct HubResultCard: View {
+    @Environment(AppModel.self) private var model
     let summary: HFModelSummary
     let info: HFModelInfo?
     let isLoading: Bool
@@ -25,6 +26,9 @@ struct HubResultCard: View {
         VStack(alignment: .leading, spacing: 12) {
             header
             stats
+            if let recipe = model.library.curatedRecipe(forRepo: summary.id) {
+                HubRecipeSuggestion(recipe: recipe)
+            }
 
             ModelsDisclosureRow(title: "Files", isExpanded: $isExpanded)
             if isExpanded {

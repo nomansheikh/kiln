@@ -50,6 +50,11 @@ struct HubFileRow: View {
                 .fixedSize()
         case .transferring(let status):
             progress(status)
+        case .available where !file.looksLikeStandaloneCheckpoint:
+            // One part of a multi-file model: downloading it alone gives nothing that runs.
+            Pill(text: "Needs a recipe", systemImage: "puzzlepiece.extension")
+                .fixedSize()
+                .help("This file is one part of a model. It only works together with the others, through a recipe.")
         case .available:
             Button(action: download) {
                 Label("Download", systemImage: "arrow.down")
