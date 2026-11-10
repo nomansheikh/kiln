@@ -57,7 +57,6 @@ struct HubResultCard: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
-            ModelsMonogram(name: summary.author.isEmpty ? repoName : summary.author)
             VStack(alignment: .leading, spacing: 3) {
                 Text(repoName)
                     .font(.headline)

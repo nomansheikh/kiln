@@ -21,5 +21,6 @@
     "height": 1024
   },
   "license_note": "CreativeML Open RAIL++-M License.",
-  "min_memory_gb": 16
+  "min_memory_gb": 16,
+  "tested": true
 }

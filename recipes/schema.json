@@ -40,6 +40,10 @@
       "description": "Smallest amount of system RAM, in GB, the recipe is expected to run on. On a Mac with less, the recipe is labelled too large whatever its file sizes. A variant's own value takes precedence.",
       "type": "number"
     },
+    "tested": {
+      "description": "True once someone has run this recipe in Kiln and it generated an image. Leave it out otherwise; the app labels the recipe as untested.",
+      "type": "boolean"
+    },
     "variants": {
       "description": "Alternative sets of files for the same model, usually different quantizations. Each variant's components are merged over the shared \"components\": a file with the same role replaces the shared one. Every variant must add up to a complete model.",
       "type": "array",

@@ -11,6 +11,8 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var licenseNote: String?
     /// Smallest amount of system RAM the recipe is expected to run on.
     public var minMemoryGB: Double?
+    /// True once someone has confirmed the recipe generates images in Kiln.
+    public var tested: Bool?
     /// Alternative sets of files for the same model, usually different quantizations.
     /// See `ModelRecipe+Variants.swift`.
     public var variants: [Variant]?
@@ -38,7 +40,7 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, engine, components, defaults, variants
+        case id, name, engine, components, defaults, variants, tested
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
     }

@@ -35,7 +35,7 @@ RESERVED_NAMES = {"index.json", "schema.json"}
 # ModelRecipe.ComponentRole
 ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
 
-RECIPE_KEYS = {"$schema", "id", "name", "engine", "components", "defaults", "license_note", "min_memory_gb", "variants"}
+RECIPE_KEYS = {"$schema", "id", "name", "engine", "components", "defaults", "license_note", "min_memory_gb", "variants", "tested"}
 COMPONENT_KEYS = {"role", "repo", "file", "revision", "size_bytes", "sha256"}
 DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
@@ -272,6 +272,8 @@ def validate_recipe(recipe, curated=True, file_name=None):
         problems.append("license_note must be a string.")
     if recipe.get("min_memory_gb") is not None and not is_number(recipe["min_memory_gb"]):
         problems.append("min_memory_gb must be a number.")
+    if recipe.get("tested") is not None and not isinstance(recipe["tested"], bool):
+        problems.append("tested must be true or false.")
 
     validate_defaults(recipe.get("defaults"), problems, curated)
 
@@ -503,6 +505,8 @@ def command_new(args):
         recipe["license_note"] = args.license_note
     if args.min_memory_gb is not None:
         recipe["min_memory_gb"] = parse_memory(args.min_memory_gb)
+    if args.tested:
+        recipe["tested"] = True
     if variants:
         recipe["variants"] = [dict(variant, components=[c for c, _ in variant["components"]]) for variant in variants]
 
@@ -761,6 +765,8 @@ def build_parser():
     settings.add_argument("--flow-shift", type=float, help="flow shift, for flow-matching models")
     new.add_argument("--license-note", help="short, accurate summary of the licence of every file")
     new.add_argument("--min-memory-gb", metavar="GB", help="smallest system RAM the recipe is expected to run on")
+    new.add_argument("--tested", action="store_true",
+                     help="you ran this recipe in Kiln and it generated an image")
     new.add_argument("--force", action="store_true", help="replace an existing recipe file")
     directory_option(new)
     new.set_defaults(run=command_new)

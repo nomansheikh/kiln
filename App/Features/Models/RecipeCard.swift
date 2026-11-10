@@ -10,6 +10,11 @@ struct RecipeCard: View {
     @State private var hovering = false
     @State private var showsFiles = false
 
+    /// A curated recipe that has not been confirmed to run. Models the user added are theirs to judge.
+    private var isUntested: Bool {
+        recipe.tested != true && !model.library.userRecipeIDs.contains(recipe.id)
+    }
+
     var body: some View {
         let library = model.library
         let status = library.downloadStatus(for: recipe)
@@ -56,7 +61,6 @@ struct RecipeCard: View {
 
     private func header(installed: Bool, status: DownloadStatus?) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            ModelsMonogram(name: recipe.sourceOwners.first ?? recipe.name)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
                     Text(recipe.name)
@@ -66,7 +70,12 @@ struct RecipeCard: View {
                     if recipe.isIncompleteSingleFile {
                         Pill(text: "Part of a model", systemImage: "puzzlepiece.extension", tint: .orange)
                             .fixedSize()
-                    } else if installed {
+                    } else if isUntested {
+                        Pill(text: "Untested", systemImage: "questionmark.circle")
+                            .fixedSize()
+                            .help("Nobody has confirmed this recipe runs in Kiln yet. Its files and settings come from the model's documentation.")
+                    }
+                    if installed, !recipe.isIncompleteSingleFile {
                         Pill(text: "Installed", systemImage: "checkmark.circle.fill", tint: .green)
                             .fixedSize()
                     }
