@@ -16,27 +16,32 @@ struct AuroraWash: View {
             let from = Theme.accent.resolve(in: environment)
             let to = Self.violet.resolve(in: environment)
             Canvas { context, size in
-                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.primary.opacity(0.05)))
-                let columns = max(2, Int(size.width / Self.spacing))
-                let rows = max(2, Int(size.height / Self.spacing))
-                for row in 0..<rows {
-                    for column in 0..<columns {
-                        let x = Double(column) / Double(columns - 1)
-                        let y = Double(row) / Double(rows - 1)
-                        let level = Self.level(x, y, time)
-                        let angle = Self.angle(x, y, time)
-                        let reach = 2 + 3 * level
-                        let centre = CGPoint(
-                            x: (Double(column) + 0.5) * size.width / Double(columns),
-                            y: (Double(row) + 0.5) * size.height / Double(rows)
-                        )
-                        var stroke = Path()
-                        stroke.move(to: CGPoint(x: centre.x - cos(angle) * reach, y: centre.y - sin(angle) * reach))
-                        stroke.addLine(to: CGPoint(x: centre.x + cos(angle) * reach, y: centre.y + sin(angle) * reach))
-                        let color = Self.mix(from, to, Self.blend(x, y, time)).opacity(0.08 + 0.85 * level)
-                        context.stroke(stroke, with: .color(color), style: StrokeStyle(lineWidth: 1.3, lineCap: .round))
-                    }
-                }
+                Self.draw(in: context, size: size, time: time, from: from, to: to)
+            }
+        }
+    }
+
+    private static func draw(in context: GraphicsContext, size: CGSize, time: Double, from: Color.Resolved, to: Color.Resolved) {
+        context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.primary.opacity(0.05)))
+        let columns = max(2, Int(size.width / spacing))
+        let rows = max(2, Int(size.height / spacing))
+        let style = StrokeStyle(lineWidth: 1.3, lineCap: .round)
+        for row in 0..<rows {
+            for column in 0..<columns {
+                let x = Double(column) / Double(columns - 1)
+                let y = Double(row) / Double(rows - 1)
+                let level = level(x, y, time)
+                let angle = angle(x, y, time)
+                let reach: Double = 2 + 3 * level
+                let centreX: Double = (Double(column) + 0.5) * size.width / Double(columns)
+                let centreY: Double = (Double(row) + 0.5) * size.height / Double(rows)
+                let offsetX: Double = cos(angle) * reach
+                let offsetY: Double = sin(angle) * reach
+                var stroke = Path()
+                stroke.move(to: CGPoint(x: centreX - offsetX, y: centreY - offsetY))
+                stroke.addLine(to: CGPoint(x: centreX + offsetX, y: centreY + offsetY))
+                let color: Color = mix(from, to, blend(x, y, time)).opacity(0.08 + 0.85 * level)
+                context.stroke(stroke, with: .color(color), style: style)
             }
         }
     }
