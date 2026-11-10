@@ -11,6 +11,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
     private struct Job {
         let id: UUID
         let continuation: AsyncThrowingStream<GenerationEvent, Error>.Continuation
+        let previewFile: URL
         var cancelRequested = false
     }
 
@@ -76,10 +77,13 @@ public actor StableDiffusionCppEngine: InferenceEngine {
 
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).raw")
-            let command = try EngineMessage.generateCommand(recipe: recipe, storage: storage, request: request, output: output)
+            let previewFile = scratchDirectory.appendingPathComponent("\(id.uuidString).preview")
+            let command = try EngineMessage.generateCommand(
+                recipe: recipe, storage: storage, request: request, output: output, preview: previewFile
+            )
 
             try launchHelperIfNeeded()
-            job = Job(id: id, continuation: continuation)
+            job = Job(id: id, continuation: continuation, previewFile: previewFile)
             recentLog.removeAll()
             try input?.write(contentsOf: command)
         } catch {
@@ -152,16 +156,18 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         case .progress(let stage, let completed, let total):
             let progress = GenerationProgress(stage: EngineMessage.stage(stage), completed: completed, total: total)
             job.continuation.yield(.progress(progress))
+        case .preview(let path, let width, let height, let channels):
+            // Previews are a nicety: one that cannot be read is skipped.
+            if let image = Self.readPixels(at: path, width: width, height: height, channels: channels) {
+                job.continuation.yield(.preview(image))
+            }
         case .image(let path, let width, let height, let channels):
-            let file = URL(fileURLWithPath: path)
-            defer { try? FileManager.default.removeItem(at: file) }
-            guard width > 0, height > 0, (1...4).contains(channels),
-                  let pixels = try? Data(contentsOf: file), pixels.count == width * height * channels
-            else {
+            defer { try? FileManager.default.removeItem(atPath: path) }
+            guard let image = Self.readPixels(at: path, width: width, height: height, channels: channels) else {
                 finish(throwing: EngineError.invalidOutput)
                 return
             }
-            job.continuation.yield(.finished(GeneratedImage(width: width, height: height, channels: channels, pixels: pixels)))
+            job.continuation.yield(.finished(image))
             finish()
         case .cancelled:
             finish(throwing: CancellationError())
@@ -171,6 +177,13 @@ public actor StableDiffusionCppEngine: InferenceEngine {
             // A job that reaches idle without an image or an error produced nothing.
             finish(throwing: EngineError.generationFailed(detail: ""), idleStillExpected: false)
         }
+    }
+
+    private static func readPixels(at path: String, width: Int, height: Int, channels: Int) -> GeneratedImage? {
+        guard width > 0, height > 0, [1, 3, 4].contains(channels),
+              let pixels = try? Data(contentsOf: URL(fileURLWithPath: path)), pixels.count == width * height * channels
+        else { return nil }
+        return GeneratedImage(width: width, height: height, channels: channels, pixels: pixels)
     }
 
     private func log(_ line: String, from id: UUID) {
@@ -236,6 +249,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
     private func finish(throwing error: Error? = nil, idleStillExpected: Bool = true) {
         guard let job else { return }
         self.job = nil
+        try? FileManager.default.removeItem(at: job.previewFile)
         if idleStillExpected {
             pendingIdleEvents += 1
         }

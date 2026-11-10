@@ -16,17 +16,23 @@ final class GenerationStore {
     var draft = GenerationDraft()
     /// The conversation on screen, oldest first.
     private(set) var turns: [GenerationTurn] = []
+    /// The saved chat the thread belongs to. Nil until the first prompt is sent.
+    private(set) var chatID: UUID?
     /// Progress of the turn that is running, if any.
     private(set) var phase: GenerationPhase = .idle
+    /// A rough look at the image being generated, when the model can provide one.
+    private(set) var preview: GeneratedImage?
 
     private let library: ModelLibrary
     private let gallery: GalleryLibrary
+    private let chats: ChatLibrary
     private let engine: any InferenceEngine
     private var task: Task<Void, Never>?
 
-    init(library: ModelLibrary, gallery: GalleryLibrary, engine: any InferenceEngine) {
+    init(library: ModelLibrary, gallery: GalleryLibrary, chats: ChatLibrary, engine: any InferenceEngine) {
         self.library = library
         self.gallery = gallery
+        self.chats = chats
         self.engine = engine
         selectDefaultRecipeIfNeeded()
     }
@@ -85,6 +91,7 @@ final class GenerationStore {
         turns.append(turn)
         draft.prompt = ""
         phase = .starting
+        saveChat()
 
         task = Task {
             let outcome = await run(request, with: recipe)
@@ -117,6 +124,8 @@ final class GenerationStore {
                     phase = .loadingModel
                 case .progress(let progress):
                     phase = .running(progress)
+                case .preview(let image):
+                    preview = image
                 case .finished(let image):
                     let record = GenerationRecord(
                         recipeID: recipe.id,
@@ -137,23 +146,38 @@ final class GenerationStore {
 
     private func finish(_ id: UUID, as state: GenerationTurn.State) {
         phase = .idle
+        preview = nil
         guard let index = turns.firstIndex(where: { $0.id == id }) else { return }
         turns[index].state = state
+        saveChat()
+    }
+
+    /// Writes the thread to its chat, creating the chat on the first prompt.
+    private func saveChat() {
+        guard let first = turns.first else { return }
+        let id = chatID ?? UUID()
+        chatID = id
+        var chat = chats.chat(id) ?? Chat(id: id, title: Chat.defaultTitle(for: first.prompt))
+        chat.turns = turns.map(\.saved)
+        chat.updatedAt = Date()
+        chats.save(chat)
     }
 
     // MARK: - Thread
 
-    /// Empties the thread and the prompt. Does nothing while an image is generating.
+    /// Starts a new, empty chat. Does nothing while an image is generating.
     func startOver() {
         guard !phase.isBusy else { return }
+        chatID = nil
         turns = []
         draft.prompt = ""
     }
 
-    /// Opens a saved image as a thread of its own.
-    func show(_ item: GalleryItem) {
-        guard !phase.isBusy else { return }
-        turns = [GenerationTurn(item)]
+    /// Shows a saved chat. Does nothing while an image is generating.
+    func open(_ chat: Chat) {
+        guard !phase.isBusy, chat.id != chatID else { return }
+        chatID = chat.id
+        turns = chat.turns.map { GenerationTurn($0, images: gallery.items) }
     }
 
     /// Loads a past image's settings into the draft.
@@ -166,14 +190,17 @@ final class GenerationStore {
 
     /// Removes a deleted image from the thread.
     func forget(_ item: GalleryItem) {
+        guard turns.contains(where: { $0.image?.id == item.id }) else { return }
         turns.removeAll { $0.image?.id == item.id }
+        saveChat()
     }
 
     #if DEBUG
     /// Fills the thread with sample turns for snapshots.
-    func loadPreview(turns: [GenerationTurn], phase: GenerationPhase) {
+    func loadPreview(turns: [GenerationTurn], phase: GenerationPhase, preview: GeneratedImage? = nil) {
         self.turns = turns
         self.phase = phase
+        self.preview = preview
     }
     #endif
 }

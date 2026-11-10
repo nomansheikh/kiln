@@ -7,6 +7,7 @@ enum EngineMessage {
         case loading
         case progress(stage: String, completed: Int, total: Int)
         case image(path: String, width: Int, height: Int, channels: Int)
+        case preview(path: String, width: Int, height: Int, channels: Int)
         case cancelled
         case error(code: String, message: String)
         case idle
@@ -37,11 +38,13 @@ enum EngineMessage {
             return .loading
         case "progress":
             return .progress(stage: raw.stage ?? "", completed: raw.completed ?? 0, total: raw.total ?? 0)
-        case "image":
+        case "image", "preview":
             guard let path = raw.path, let width = raw.width, let height = raw.height, let channels = raw.channels else {
                 return nil
             }
-            return .image(path: path, width: width, height: height, channels: channels)
+            return raw.type == "image"
+                ? .image(path: path, width: width, height: height, channels: channels)
+                : .preview(path: path, width: width, height: height, channels: channels)
         case "cancelled":
             return .cancelled
         case "error":
@@ -89,13 +92,16 @@ enum EngineMessage {
         var model: Model
         var params: Params
         var output: String
+        /// File the helper overwrites with a rough picture after each step.
+        var preview: String
     }
 
     static func generateCommand(
         recipe: ModelRecipe,
         storage: ModelStorage,
         request: GenerationRequest,
-        output: URL
+        output: URL,
+        preview: URL
     ) throws -> Data {
         func path(_ role: ModelRecipe.ComponentRole) -> String? {
             recipe.components.first { $0.role == role }.map { storage.url(for: $0).path }
@@ -119,7 +125,8 @@ enum EngineMessage {
                 sigmas: request.sigmas,
                 seed: request.seed
             ),
-            output: output.path
+            output: output.path,
+            preview: preview.path
         )
         return try line(command)
     }

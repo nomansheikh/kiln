@@ -52,7 +52,13 @@ enum DebugSnapshot {
         turns.append(GenerationTurn(prompt: "A portrait of a red fox, dramatic rim lighting", width: 1024, height: 1024,
                                     state: .failed("This Mac ran out of memory. Try a smaller image size, a smaller quantization, or close other apps.")))
         turns.append(GenerationTurn(prompt: "A rain-soaked city street at night, neon signs reflected in puddles", width: 1536, height: 1024))
-        model.generation.loadPreview(turns: turns, phase: .running(GenerationProgress(stage: .sampling, completed: 3, total: 8)))
+        let roughPixels = Data((0..<768).map { (index: Int) -> UInt8 in
+            let value: Int = (index * 37) % 200 + 30
+            return UInt8(value)
+        })
+        let rough = GeneratedImage(width: 16, height: 16, channels: 3,
+                                   pixels: roughPixels)
+        model.generation.loadPreview(turns: turns, phase: .running(GenerationProgress(stage: .sampling, completed: 3, total: 8)), preview: rough)
     }
 }
 #endif

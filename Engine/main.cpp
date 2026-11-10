@@ -34,6 +34,8 @@ sd_ctx_t* g_ctx = nullptr;
 std::string g_ctx_key;
 std::atomic<bool> g_generating{false};
 std::atomic<bool> g_cancelled{false};
+// Where step previews of the running job are written. Only the worker thread touches it.
+std::string g_preview_path;
 
 std::mutex g_queue_mutex;
 std::condition_variable g_queue_ready;
@@ -76,6 +78,33 @@ void on_progress(const sd_generation_progress_t* progress, void*) {
           {"detail", progress->detail ? progress->detail : ""},
           {"completed", progress->completed},
           {"total", progress->total}});
+}
+
+bool write_pixels(const std::string& path, const sd_image_t& image) {
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file) {
+        return false;
+    }
+    const size_t size = static_cast<size_t>(image.width) * image.height * image.channel;
+    file.write(reinterpret_cast<const char*>(image.data), static_cast<std::streamsize>(size));
+    return file.good();
+}
+
+void on_preview(int step, int frame_count, sd_image_t* frames, bool, void*) {
+    if (g_preview_path.empty() || frame_count != 1 || frames == nullptr || frames[0].data == nullptr) {
+        return;
+    }
+    // Write beside the target and rename, so the app never reads half a frame.
+    const std::string pending = g_preview_path + ".tmp";
+    if (!write_pixels(pending, frames[0]) || rename(pending.c_str(), g_preview_path.c_str()) != 0) {
+        return;
+    }
+    emit({{"type", "preview"},
+          {"path", g_preview_path},
+          {"step", step},
+          {"width", frames[0].width},
+          {"height", frames[0].height},
+          {"channels", frames[0].channel}});
 }
 
 const char* optional_path(const json& model, const char* key, std::string& storage) {
@@ -121,16 +150,6 @@ bool load_model(const json& model) {
     return true;
 }
 
-bool write_pixels(const std::string& path, const sd_image_t& image) {
-    std::ofstream file(path, std::ios::binary | std::ios::trunc);
-    if (!file) {
-        return false;
-    }
-    const size_t size = static_cast<size_t>(image.width) * image.height * image.channel;
-    file.write(reinterpret_cast<const char*>(image.data), static_cast<std::streamsize>(size));
-    return file.good();
-}
-
 void generate(const json& request) {
     const json& params = request.at("params");
 
@@ -174,6 +193,7 @@ void generate(const json& request) {
         gen.sample_params.custom_sigmas_count = static_cast<int>(sigmas.size());
     }
 
+    g_preview_path = request.value("preview", std::string());
     sd_cancel_generation(g_ctx, SD_CANCEL_RESET);
     g_generating = true;
     // A cancel that arrived while the model was loading had no context to act on.
@@ -248,6 +268,8 @@ int main() {
     dup2(STDERR_FILENO, STDOUT_FILENO);
 
     sd_set_log_callback(on_log, nullptr);
+    // A cheap latent-to-RGB projection after every step; models without one simply send no previews.
+    sd_set_preview_callback(on_preview, PREVIEW_PROJ, 1, true, false, nullptr);
     emit({{"type", "ready"}, {"version", sd_version()}, {"commit", sd_commit()}});
 
     std::thread(worker).detach();

@@ -78,6 +78,27 @@ import Testing
         await engine.shutdown()
     }
 
+    @Test func streamsStepPreviewsAndCleansThemUp() async throws {
+        let engine = try engine(onGenerate: """
+        preview=$(printf '%s' "$line" | sed -E 's/.*"preview":"([^"]*)".*/\\1/')
+        printf 'abc' > "$preview"
+        echo "{\\"type\\":\\"preview\\",\\"path\\":\\"$preview\\",\\"width\\":1,\\"height\\":1,\\"channels\\":3,\\"step\\":1}"
+        echo '{"type":"preview","path":"/nonexistent/preview","width":1,"height":1,"channels":3,"step":2}'
+        sleep 0.2
+        \(success)
+        """)
+
+        let events = try await collect(engine.generate(recipe: recipe, request: request))
+
+        // The unreadable second preview is skipped rather than failing the job.
+        #expect(events.filter { if case .preview = $0 { true } else { false } }
+            == [.preview(GeneratedImage(width: 1, height: 1, channels: 3, pixels: Data("abc".utf8)))])
+        #expect(events.last == .finished(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8))))
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("scratch").path)
+        #expect(leftovers.isEmpty)
+        await engine.shutdown()
+    }
+
     @Test func reusesTheHelperForBackToBackGenerations() async throws {
         let engine = try engine(onGenerate: success)
 

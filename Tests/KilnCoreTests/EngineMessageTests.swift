@@ -11,6 +11,8 @@ import Testing
             == .progress(stage: "sampling", completed: 3, total: 8))
         #expect(EngineMessage.decodeEvent(#"{"channels":3,"height":64,"path":"/tmp/a.raw","type":"image","width":32}"#)
             == .image(path: "/tmp/a.raw", width: 32, height: 64, channels: 3))
+        #expect(EngineMessage.decodeEvent(#"{"channels":3,"height":8,"path":"/tmp/a.preview","step":2,"type":"preview","width":8}"#)
+            == .preview(path: "/tmp/a.preview", width: 8, height: 8, channels: 3))
         #expect(EngineMessage.decodeEvent(#"{"code":"load_failed","message":"nope","type":"error"}"#)
             == .error(code: "load_failed", message: "nope"))
         #expect(EngineMessage.decodeEvent(#"{"type":"cancelled"}"#) == .cancelled)
@@ -35,7 +37,8 @@ import Testing
         )
         let request = GenerationRequest(prompt: "a \"quoted\" cat", negativePrompt: "blurry", defaults: recipe.defaults, seed: 42)
 
-        let data = try EngineMessage.generateCommand(recipe: recipe, storage: storage, request: request, output: URL(fileURLWithPath: "/tmp/out.raw"))
+        let data = try EngineMessage.generateCommand(recipe: recipe, storage: storage, request: request,
+                                                       output: URL(fileURLWithPath: "/tmp/out.raw"), preview: URL(fileURLWithPath: "/tmp/out.preview"))
 
         #expect(data.last == 0x0A)
         #expect(data.dropLast().allSatisfy { $0 != 0x0A }, "the command must be a single line")
@@ -44,6 +47,7 @@ import Testing
         let params = try #require(json["params"] as? [String: Any])
         #expect(json["type"] as? String == "generate")
         #expect(json["output"] as? String == "/tmp/out.raw")
+        #expect(json["preview"] as? String == "/tmp/out.preview")
         #expect(model["llm"] as? String == "/models/a/enc/enc.gguf")
         #expect(model["diffusion_model"] as? String == "/models/a/dn/dn.gguf")
         #expect(model["vae"] as? String == "/models/c/vae/vae/v.safetensors")

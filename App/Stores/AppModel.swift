@@ -12,6 +12,7 @@ final class AppModel {
     let library: ModelLibrary
     let generation: GenerationStore
     let gallery: GalleryLibrary
+    let chats: ChatLibrary
     let account: HubAccount
 
     init() {
@@ -34,9 +35,11 @@ final class AppModel {
             )
         )
         let gallery = GalleryLibrary(store: GalleryStore(directory: GalleryStore.defaultDirectory))
+        let chats = ChatLibrary(store: ChatStore(directory: ChatStore.defaultDirectory))
         let generation = GenerationStore(
             library: library,
             gallery: gallery,
+            chats: chats,
             engine: StableDiffusionCppEngine(
                 helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-engine")
                     ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-engine"),
@@ -46,6 +49,7 @@ final class AppModel {
 
         self.library = library
         self.gallery = gallery
+        self.chats = chats
         self.generation = generation
         account = HubAccount(tokenStore: tokenStore, hub: hub)
 
@@ -56,16 +60,24 @@ final class AppModel {
 
     // MARK: - Actions across features
 
-    /// Opens Generate with an empty canvas.
+    /// Opens Generate with a new, empty chat.
     func newImage() {
         generation.startOver()
         selection = .generate
     }
 
-    /// Opens a past image on the Generate canvas.
-    func show(_ item: GalleryItem) {
-        generation.show(item)
+    /// Opens a saved chat on the Generate screen.
+    func open(_ chat: Chat) {
+        generation.open(chat)
         selection = .generate
+    }
+
+    /// Deletes a chat, leaving its images in the Gallery.
+    func delete(_ chat: Chat) {
+        chats.delete(chat.id)
+        if generation.chatID == chat.id {
+            generation.startOver()
+        }
     }
 
     /// Opens Generate with a past image's settings filled in.

@@ -1,3 +1,4 @@
+import KilnCore
 import SwiftUI
 
 /// One exchange: the prompt on the right, the reply on the left.
@@ -6,6 +7,7 @@ struct GenerationTurnView: View {
     let turn: GenerationTurn
     /// Progress of the running generation, used when this turn is the one running.
     let phase: GenerationPhase
+    let preview: GeneratedImage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -13,6 +15,7 @@ struct GenerationTurnView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             reply
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(.smooth(duration: 0.6), value: turn.state)
         }
     }
 
@@ -20,11 +23,13 @@ struct GenerationTurnView: View {
     private var reply: some View {
         switch turn.state {
         case .running:
-            GenerationPlaceholder(phase: phase, aspectRatio: turn.aspectRatio)
+            GenerationPlaceholder(phase: phase, aspectRatio: turn.aspectRatio, preview: preview)
+                .transition(.opacity)
         case .finished(let item):
             GeneratedImageMessage(item: item, aspectRatio: turn.aspectRatio) {
                 model.generation.regenerate(turn)
             }
+            .transition(.opacity)
         case .failed(let message):
             GenerationFailureMessage(message: message) {
                 model.generation.regenerate(turn)

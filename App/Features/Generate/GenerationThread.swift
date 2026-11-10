@@ -12,7 +12,7 @@ struct GenerationThread: View {
             ScrollView {
                 LazyVStack(spacing: 28) {
                     ForEach(generation.turns) { turn in
-                        GenerationTurnView(turn: turn, phase: generation.phase)
+                        GenerationTurnView(turn: turn, phase: generation.phase, preview: generation.preview)
                     }
                     Color.clear.frame(height: 1).id(bottomID)
                 }

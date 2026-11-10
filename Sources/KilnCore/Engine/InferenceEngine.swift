@@ -79,7 +79,7 @@ public struct GenerationProgress: Sendable, Equatable {
 }
 
 /// Raw 8-bit pixels, row by row, `channels` bytes per pixel.
-public struct GeneratedImage: Sendable, Equatable {
+public struct GeneratedImage: Sendable, Hashable {
     public var width: Int
     public var height: Int
     public var channels: Int
@@ -96,6 +96,8 @@ public struct GeneratedImage: Sendable, Equatable {
 public enum GenerationEvent: Sendable, Equatable {
     case loadingModel
     case progress(GenerationProgress)
+    /// A rough, low-resolution look at the image so far.
+    case preview(GeneratedImage)
     case finished(GeneratedImage)
 }
 

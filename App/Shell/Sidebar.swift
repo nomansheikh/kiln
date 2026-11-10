@@ -32,7 +32,7 @@ struct Sidebar: View {
             .padding(.horizontal, 8)
             .padding(.top, 6)
 
-            recents
+            ChatList()
 
             Spacer(minLength: 8)
 
@@ -40,27 +40,6 @@ struct Sidebar: View {
                 DownloadSummary(recipe: download.recipe, status: download.status)
                     .padding(10)
             }
-        }
-    }
-
-    @ViewBuilder private var recents: some View {
-        let items = Array(model.gallery.items.prefix(12))
-        if !items.isEmpty {
-            Text("Recent")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 20)
-                .padding(.top, 22)
-                .padding(.bottom, 6)
-            ScrollView {
-                VStack(spacing: 1) {
-                    ForEach(items) { item in
-                        RecentRow(item: item)
-                    }
-                }
-                .padding(.horizontal, 8)
-            }
-            .scrollIndicators(.never)
         }
     }
 }
