@@ -31,11 +31,13 @@ struct PromptComposer: View {
             TextField(attachment == nil ? "Describe an image" : "Describe how to change it", text: $generation.draft.prompt, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
-                .lineLimit(1...8)
+                // Two lines tall when empty, so there is visible room to write.
+                .lineLimit(2...8)
                 .focused($promptFocused)
                 .onSubmit(send)
                 .padding(.horizontal, 8)
-                .padding(.top, 6)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
             HStack(spacing: 6) {
                 attachButton
