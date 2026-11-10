@@ -126,6 +126,7 @@ struct RecipeCard: View {
                     .padding(.leading, 6)
             }
             Spacer(minLength: 0)
+            RecipeSourceLink(recipe: recipe)
         }
         .lineLimit(1)
     }
