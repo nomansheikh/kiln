@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A recipe is a small JSON file, and a pull request is the fastest way to get one added: see "Contributing a recipe" in CONTRIBUTING.md.
+        A recipe is one small JSON file, and a script writes most of it. A pull request is the fastest way to get one added: see "Contributing a recipe" in CONTRIBUTING.md.
         If you would rather request it, the details below are what a recipe needs.
   - type: input
     id: model-name
@@ -17,46 +17,53 @@ body:
   - type: textarea
     id: components
     attributes:
-      label: Hugging Face links for each component
+      label: Hugging Face links for each file
       description: |
-        One link per file the model needs, with its role: checkpoint (a single all-in-one file), diffusion_model, llm (text encoder) or vae.
+        One link per file the model needs, with its role: checkpoint (a single all-in-one file), diffusion_model, llm (language-model text encoder), vae, clip_l, clip_g or t5xxl.
         Link to the exact file where you can. `.gguf` and `.safetensors` files are preferred.
       placeholder: |
         checkpoint: https://huggingface.co/<owner>/<repo>/blob/main/<file>.safetensors
     validations:
       required: true
   - type: textarea
+    id: variants
+    attributes:
+      label: Quantizations, if the model has several
+      description: |
+        If the model is published in several quantizations (for example Q8 and Q4), list the files of each one. They become variants of one recipe.
+        Say which files are the same for all of them.
+      placeholder: |
+        q8: diffusion_model https://huggingface.co/<owner>/<repo>/blob/main/<file>-Q8_0.gguf
+        q4: diffusion_model https://huggingface.co/<owner>/<repo>/blob/main/<file>-Q4_K.gguf
+        shared: vae https://huggingface.co/<owner>/<repo>/blob/main/<file>.safetensors
+    validations:
+      required: false
+  - type: textarea
     id: license
     attributes:
       label: License
-      description: The license of each component as stated on its Hugging Face page, including restrictions such as non-commercial use. List them separately if they differ.
+      description: The license of each file as stated on its Hugging Face page, including restrictions such as non-commercial use, with a link. List them separately if they differ.
     validations:
       required: true
   - type: textarea
     id: settings
     attributes:
-      label: Recommended settings from the model card
-      description: Steps, CFG, sampler, width and height, and any custom sigma schedule, as recommended by the model authors.
+      label: Recommended settings, with a link for each
+      description: |
+        Steps, CFG, sampler, width and height as recommended by the model authors. Add scheduler, guidance, flow shift or a custom sigma schedule if the model card gives them.
+        Give the model card link (or other primary source) for every setting. Settings without a source cannot be used.
       placeholder: |
-        steps: 30
-        cfg: 7.0
-        sampler: euler
-        width x height: 1024 x 1024
-    validations:
-      required: true
-  - type: input
-    id: settings-source
-    attributes:
-      label: Link to the source of those settings
-      description: The model card or other primary source.
-      placeholder: "https://huggingface.co/<owner>/<repo>#usage"
+        steps: 30 (https://huggingface.co/<owner>/<repo>#usage)
+        cfg: 7.0 (same)
+        sampler: euler (same)
+        width x height: 1024 x 1024 (same)
     validations:
       required: true
   - type: input
     id: memory
     attributes:
       label: Memory needed, if known
-      description: The smallest amount of system RAM you know the model runs on, and on which Mac. Leave empty if you have not run it.
+      description: The smallest amount of system RAM you know the model runs on, and on which Mac. For several quantizations, give it for each. Leave empty if you have not run it.
       placeholder: "Runs on an M2 with 16 GB"
     validations:
       required: false

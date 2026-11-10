@@ -92,10 +92,25 @@ Details, including the full helper protocol, are in [docs/architecture.md](docs/
 
 ## Add a model recipe
 
-A recipe is a small JSON file: the Hugging Face files to download, the role each one plays, and the recommended settings. You can import your own from the Models screen with "Import Recipe", or contribute one to the curated set in `recipes/`.
+A recipe is one JSON file in `recipes/`: the Hugging Face files to download, the role each one plays, and the recommended settings. A script writes it for you, looking up each file's commit, size and SHA-256 without downloading anything:
 
-- Field reference and validation rules: [docs/recipes.md](docs/recipes.md)
+```sh
+python3 scripts/recipe.py new \
+  --id sdxl-base-1.0 \
+  --name "Stable Diffusion XL Base 1.0" \
+  --component checkpoint=stabilityai/stable-diffusion-xl-base-1.0:sd_xl_base_1.0.safetensors \
+  --steps 30 --cfg 7.0 --sampler euler --width 1024 --height 1024 \
+  --license-note "CreativeML Open RAIL++-M License." \
+  --min-memory-gb 16
+
+python3 scripts/recipe.py check   # verifies every file against Hugging Face
+```
+
+You can also import a recipe file from the Models screen with "Import Recipe" without contributing it.
+
 - How to contribute a recipe: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Field reference, variants and validation rules: [docs/recipes.md](docs/recipes.md)
+- Contributing through an AI coding agent: [AGENTS.md](AGENTS.md)
 
 ## Where files are stored
 
@@ -107,7 +122,10 @@ Everything lives under `~/Library/Application Support/Kiln/`:
 | `gallery/*.png` | Generated images. Settings are embedded in two text chunks: `parameters` (readable text) and `kiln` (JSON). |
 | `chats/<uuid>.json` | Saved chats, one file each |
 | `attachments/<uuid>.<ext>` | Copies of images attached to prompts |
+| `recipes-remote/<id>.json` | Curated recipes fetched from this repository, at most once a day |
 | `recipes/<id>.json` | Recipes you imported, and the single-file recipes created when you download one file from the Hugging Face list |
+
+Kiln talks to two hosts: `huggingface.co` to browse and download models, and `raw.githubusercontent.com` to fetch newly published recipes for this project. Nothing about you or your images is sent anywhere.
 
 The Hugging Face access token is optional and is stored in the macOS Keychain, not in these folders. Deleting a chat does not delete its images or attachments.
 

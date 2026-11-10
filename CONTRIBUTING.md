@@ -1,104 +1,86 @@
 # Contributing to Kiln
 
-The most useful contribution is a model recipe: a JSON manifest that makes a model a one-click download with settings that work. This guide covers that first, then code contributions.
+The most useful contribution is a model recipe: one JSON file that makes a model a one-click download with settings that work. This guide covers that first, then code contributions.
+
+If you work through an AI coding agent, point it at [AGENTS.md](AGENTS.md). It holds the same rules in a form written for agents.
 
 ## Contributing a recipe
 
-The full field reference is in [docs/recipes.md](docs/recipes.md). The steps below are the short version.
+A recipe lists every file a model needs on Hugging Face and its recommended settings. A script does the tedious part (commit, size and SHA-256 of each file) and checks the result. It needs only the `python3` that comes with Xcode's command line tools, and it never downloads model files.
 
-### 1. Pick the files
+The full reference is [docs/recipes.md](docs/recipes.md). The path below is the short version.
 
-Find the model on Hugging Face and decide which files it needs. Each file gets one role, and a role can appear only once per recipe:
+### 1. Create the recipe
+
+Find the model on Hugging Face, decide which files it needs, and give each one a role:
 
 | Role | Use it for |
 | --- | --- |
 | `checkpoint` | A single file that carries everything (SD 1.x, SDXL) |
 | `diffusion_model` | A standalone denoiser |
-| `llm` | A language-model text encoder |
+| `llm` | A language model used as the text encoder (Qwen-Image and similar) |
 | `vae` | A standalone VAE |
+| `clip_l`, `clip_g`, `t5xxl` | CLIP and T5 text encoders (Flux and SD3 families) |
 
-Files may come from different repos. Prefer `.gguf` or `.safetensors`.
-
-A single all-in-one checkpoint does not strictly need a hand-written recipe: downloading the file from the Hugging Face list on the Models screen creates a single-file recipe automatically, with generic settings. A curated recipe is still worth contributing when the model card recommends different settings, and it is required for any model split into several files.
-
-### 2. Get the revision, size and SHA-256
-
-Curated recipes must pin every file. Query the Hub API for each repo:
+Then run `new`, writing each file as `ROLE=OWNER/REPO:PATH`:
 
 ```sh
-curl -s "https://huggingface.co/api/models/<owner>/<repo>?blobs=true"
+python3 scripts/recipe.py new \
+  --id sdxl-base-1.0 \
+  --name "Stable Diffusion XL Base 1.0" \
+  --component checkpoint=stabilityai/stable-diffusion-xl-base-1.0:sd_xl_base_1.0.safetensors \
+  --steps 30 --cfg 7.0 --sampler euler --width 1024 --height 1024 \
+  --license-note "CreativeML Open RAIL++-M License." \
+  --min-memory-gb 16
 ```
 
-From the response, take:
+This writes `recipes/sdxl-base-1.0.json` and updates `recipes/index.json`. Things to know:
 
-- `sha`: the commit, used as `revision`
-- for your file in `siblings` (matched by `rfilename`): `size` for `size_bytes` and `lfs.sha256` for `sha256`
+- **Settings come from the model card**, or from the model's page in stable-diffusion.cpp's [docs](https://github.com/leejet/stable-diffusion.cpp/tree/master/docs). The script has no default values for them on purpose.
+- **Files may come from different repos.** Prefer `.gguf` or `.safetensors`. Each role can be used once.
+- **Several quantizations of one model are variants of one recipe**, not separate recipes: add `--variant ID "NAME" min_memory_gb=N ROLE=OWNER/REPO:PATH ...` once per quantization, and keep the files they share in `--component`. See [variants](docs/recipes.md#variants).
+- `python3 scripts/recipe.py new --help` shows every option and two complete examples.
 
-With `jq`, for example:
+A single all-in-one checkpoint does not strictly need a curated recipe: downloading the file from the Hugging Face list on the Models screen creates a single-file recipe automatically, with generic settings. A curated recipe is still worth contributing when the model card recommends different settings, and it is required for any model split into several files.
+
+### 2. Check it
 
 ```sh
-curl -s "https://huggingface.co/api/models/<owner>/<repo>?blobs=true" \
-  | jq '{revision: .sha, files: [.siblings[] | {file: .rfilename, size_bytes: .size, sha256: .lfs.sha256}]}'
+python3 scripts/recipe.py check
 ```
 
-### 3. Write the JSON
+This validates every recipe and verifies each file against Hugging Face at its pinned revision: the file exists, the size matches, the SHA-256 matches. It must end with `OK`. CI runs the same command.
 
-Use an existing recipe as a template, for example [recipes/sdxl-base-1.0.json](recipes/sdxl-base-1.0.json):
-
-```json
-{
-  "id": "sdxl-base-1.0",
-  "name": "Stable Diffusion XL Base 1.0",
-  "engine": "sd.cpp",
-  "components": [
-    {
-      "role": "checkpoint",
-      "repo": "stabilityai/stable-diffusion-xl-base-1.0",
-      "file": "sd_xl_base_1.0.safetensors",
-      "revision": "462165984030d82259a11f4367a4eed129e94a7b",
-      "size_bytes": 6938078334,
-      "sha256": "31e35c80fc4829d14f90153f4c74cd59c90b779f6afe05a74cd6120b893f7e5b"
-    }
-  ],
-  "defaults": {
-    "steps": 30,
-    "cfg": 7.0,
-    "sampler": "euler",
-    "width": 1024,
-    "height": 1024
-  },
-  "license_note": "CreativeML Open RAIL++-M License.",
-  "min_memory_gb": 16
-}
-```
-
-Take `defaults` from the model card, not from memory. Set `engine` to `sd.cpp`.
-
-### 4. Name the file `<id>.json`
-
-Save it as `recipes/<id>.json`. The file name must equal the recipe `id`. Ids use only lowercase letters, digits, dots, dashes and underscores, and cannot start with a dot.
-
-### 5. Run the tests
+### 3. Run the tests
 
 ```sh
 swift test
 ```
 
-`everyCuratedRecipeIsValid` decodes and validates every file in `recipes/` and fails if a file name does not match its id, if `engine` is not `sd.cpp`, or if any component is missing `revision`, `size_bytes` or `sha256`.
+`everyCuratedRecipeIsValid` decodes every file in `recipes/` with the app's own code and fails if a file name does not match its id, if `engine` is not `sd.cpp`, if any file of any variant is missing `revision`, `size_bytes` or `sha256`, or if `index.json` does not list exactly the recipe files.
 
-### 6. Open a pull request
+### 4. Try it in the app, if you can
 
-In the description, link the model card (or other primary source) your settings come from, and say which Mac (chip and memory) you ran the recipe on, if any. If you could not run it, say so.
+Build the app ([README](README.md#build-from-source)), import your file on the Models screen with "Import Recipe", download it and generate an image. This is the only step that downloads weights, and it is optional: if you cannot do it, say so in the pull request.
 
-To try a recipe before opening the PR, import it on the Models screen with "Import Recipe", download it and generate an image.
+### 5. Open a pull request
+
+In the description:
+
+- link the model card (or other primary source) for every setting and for the licence
+- paste the output of `python3 scripts/recipe.py check`
+- say which Mac (chip and memory) you ran the recipe on, or that you did not run it
+
+Once the repository is public, released apps pick up merged recipes from this repository within about a day, without an app release. See [how a merged recipe reaches users](docs/recipes.md#how-a-merged-recipe-reaches-users).
 
 ### What reviewers check
 
-- **Settings come from the model card.** Steps, CFG, sampler, resolution and any custom sigmas match what the model authors recommend, and the PR links the source.
-- **`license_note` is accurate.** It names the actual license of each component and calls out restrictions such as non-commercial use. When components have different licenses, list each one.
-- **`min_memory_gb` is honest.** It is the smallest amount of system RAM the recipe is expected to run on, not the smallest that looks good in a table. If you have not tested at that size, pick a conservative value and say so in the PR.
-- **Files are pinned and correct.** `revision`, `size_bytes` and `sha256` match the Hub API output for the repo and file listed.
+- **Settings come from the model card.** Steps, CFG, sampler, resolution, and any scheduler, guidance, flow shift or custom sigmas match what the model authors recommend, and the PR links the source.
+- **`license_note` is accurate.** It names the actual licence of each component and calls out restrictions such as non-commercial use. When components have different licences, list each one.
+- **`min_memory_gb` is honest.** It is the smallest amount of system RAM the recipe (or the variant) is expected to run on, not the smallest that looks good in a table. If you have not tested at that size, pick a conservative value and say so in the PR.
+- **Files are what they claim to be.** They come from the model authors or a well-known converter, the file name describes the content, and `check` passes.
 - **Roles are right.** Each file is assigned the role the engine needs it in.
+- **Variants are the same model.** They differ only in quantization or precision and share the recipe's settings.
 
 ## Contributing code
 
@@ -115,14 +97,15 @@ Build instructions are in the [README](README.md#build-from-source). The structu
 - **Swift 6 strict concurrency.** The package and the app build in Swift 6 language mode. Do not silence concurrency diagnostics without a comment explaining why the code is safe.
 - **`swift test` must pass.** New behaviour in `KilnCore` needs tests. Network and process boundaries are behind protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`) so they can be tested without the network or real weights. The SwiftUI app has no tests, so keep logic that can be tested in `KilnCore`.
 - Changes to the helper protocol must update `Engine/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
+- Changes to the recipe format must update `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and [docs/recipes.md](docs/recipes.md) together.
 - Do not edit `Vendor/stable-diffusion.cpp`; it is a git submodule.
 
 ### Screenshots for a pull request
 
-If a change affects what the app looks like, attach screenshots. Debug builds can capture them without a model installed. Launch the built app's executable with:
+If a change affects what the app looks like, attach screenshots. Debug builds can capture them without a model installed. Quit any running copy of Kiln, then launch the built app with:
 
 ```sh
-/path/to/Kiln.app/Contents/MacOS/Kiln --snapshot <folder>
+open -n /path/to/Kiln.app --args --snapshot /absolute/path/to/folder
 ```
 
 The app waits for the window to settle, switches to each screen in turn, writes `generate.png`, `models.png`, `gallery.png` and `settings.png` into the folder (creating it if needed), and quits. It draws its own window into the images, so no screen-recording permission is needed. The Models screenshot is taken after a few seconds so the Hugging Face list has time to load; that part needs a network connection.
