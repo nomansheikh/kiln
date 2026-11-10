@@ -99,41 +99,24 @@ public actor StableDiffusionCppEngine: InferenceEngine {
 
     private func launchHelperIfNeeded() throws {
         if let process, process.isRunning { return }
-        guard FileManager.default.isExecutableFile(atPath: helperURL.path) else {
-            throw EngineError.helperUnavailable("kiln-engine is missing from the app.")
-        }
-
-        let process = Process()
-        let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()
-        process.executableURL = helperURL
-        process.standardInput = stdin
-        process.standardOutput = stdout
-        process.standardError = stderr
-        do {
-            try process.run()
-        } catch {
-            throw EngineError.helperUnavailable(error.localizedDescription)
-        }
-
+        let helper = try HelperProcess.launch(helperURL)
         let id = UUID()
         launchID = id
         pendingIdleEvents = 0
-        self.process = process
-        input = stdin.fileHandleForWriting
+        process = helper.process
+        input = helper.input
 
-        let events = stdout.fileHandleForReading.lines
-        let logs = stderr.fileHandleForReading.lines
         Task.detached { [weak self] in
-            for await line in events {
+            for await line in helper.events {
                 if let event = EngineMessage.decodeEvent(line) {
                     await self?.handle(event, from: id)
                 }
             }
-            process.waitUntilExit()
+            helper.process.waitUntilExit()
             await self?.helperExited(id)
         }
         Task.detached { [weak self] in
-            for await line in logs {
+            for await line in helper.logs {
                 await self?.log(line, from: id)
             }
         }
@@ -158,12 +141,12 @@ public actor StableDiffusionCppEngine: InferenceEngine {
             job.continuation.yield(.progress(progress))
         case .preview(let path, let width, let height, let channels):
             // Previews are a nicety: one that cannot be read is skipped.
-            if let image = Self.readPixels(at: path, width: width, height: height, channels: channels) {
+            if let image = GeneratedImage(rawFile: path, width: width, height: height, channels: channels) {
                 job.continuation.yield(.preview(image))
             }
         case .image(let path, let width, let height, let channels):
             defer { try? FileManager.default.removeItem(atPath: path) }
-            guard let image = Self.readPixels(at: path, width: width, height: height, channels: channels) else {
+            guard let image = GeneratedImage(rawFile: path, width: width, height: height, channels: channels) else {
                 finish(throwing: EngineError.invalidOutput)
                 return
             }
@@ -177,13 +160,6 @@ public actor StableDiffusionCppEngine: InferenceEngine {
             // A job that reaches idle without an image or an error produced nothing.
             finish(throwing: EngineError.generationFailed(detail: ""), idleStillExpected: false)
         }
-    }
-
-    private static func readPixels(at path: String, width: Int, height: Int, channels: Int) -> GeneratedImage? {
-        guard width > 0, height > 0, [1, 3, 4].contains(channels),
-              let pixels = try? Data(contentsOf: URL(fileURLWithPath: path)), pixels.count == width * height * channels
-        else { return nil }
-        return GeneratedImage(width: width, height: height, channels: channels, pixels: pixels)
     }
 
     private func log(_ line: String, from id: UUID) {
