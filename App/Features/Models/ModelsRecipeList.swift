@@ -41,8 +41,10 @@ struct ModelsRecipeList: View {
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
         .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
-        .animation(Motion.layout(reduced: reduceMotion), value: recommendedExpanded)
-        .animation(Motion.layout(reduced: reduceMotion), value: addedExpanded)
+        // Collapsing fades the whole group at once. Moving each card separately
+        // made them slide over one another while the list closed up.
+        .animation(.easeOut(duration: 0.18), value: recommendedExpanded)
+        .animation(.easeOut(duration: 0.18), value: addedExpanded)
     }
 
     /// A titled, collapsible group of recipe cards, or nothing when the group is empty.
@@ -51,10 +53,13 @@ struct ModelsRecipeList: View {
         if !recipes.isEmpty {
             ModelsSectionTitle(text: title, count: recipes.count, isExpanded: isExpanded)
             if isExpanded.wrappedValue {
-                ForEach(recipes) { recipe in
-                    RecipeCard(recipe: recipe)
-                        .transition(Motion.rise(reduced: reduceMotion))
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(recipes) { recipe in
+                        RecipeCard(recipe: recipe)
+                            .transition(Motion.rise(reduced: reduceMotion))
+                    }
                 }
+                .transition(.opacity)
             }
         }
     }
