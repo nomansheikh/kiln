@@ -1,0 +1,3 @@
+[submodule "Vendor/stable-diffusion.cpp"]
+	path = Vendor/stable-diffusion.cpp
+	url = https://github.com/leejet/stable-diffusion.cpp
