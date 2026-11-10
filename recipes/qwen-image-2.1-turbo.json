@@ -1,4 +1,5 @@
 {
+  "$schema": "./schema.json",
   "id": "qwen-image-2.1-turbo",
   "name": "Qwen-Image 2.1 Turbo",
   "engine": "sd.cpp",

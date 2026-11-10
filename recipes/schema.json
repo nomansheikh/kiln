@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/nomansheikh/kiln/main/recipes/schema.json",
+  "title": "Kiln model recipe",
+  "description": "One runnable model: every file it needs from Hugging Face and the settings that make it work. This schema describes the curated recipes in recipes/. It is stricter than the app in three ways: every file must be pinned (revision, size_bytes, sha256), engine must be sd.cpp, and unknown fields are rejected (the app ignores them). Reference: docs/recipes.md. Create and check recipes with scripts/recipe.py.",
+  "type": "object",
+  "required": ["id", "name", "engine", "components", "defaults"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "Path to this schema, so editors can validate and autocomplete the file. Use \"./schema.json\". The app ignores it.",
+      "type": "string"
+    },
+    "id": {
+      "description": "Unique identifier and file name: the recipe is saved as recipes/<id>.json. Lowercase letters, digits, dots, dashes and underscores only; it cannot start with a dot.",
+      "type": "string",
+      "pattern": "^[a-z0-9_-][a-z0-9._-]*$"
+    },
+    "name": {
+      "description": "Display name shown in the app, for example \"Stable Diffusion XL Base 1.0\". Cannot be empty or blank.",
+      "type": "string",
+      "pattern": "[^ \\t]"
+    },
+    "engine": {
+      "description": "Inference engine. The only engine Kiln includes is \"sd.cpp\" (stable-diffusion.cpp), and curated recipes must use it.",
+      "type": "string",
+      "const": "sd.cpp"
+    },
+    "components": {
+      "description": "Files every install of the model needs, one per role. With \"variants\", these are the files shared by all variants and the list may be empty; without variants it needs at least one entry.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "defaults": { "$ref": "#/$defs/defaults" },
+    "license_note": {
+      "description": "Short, accurate summary of the licence of every file, including restrictions such as non-commercial use. When components have different licences, name each one.",
+      "type": "string"
+    },
+    "min_memory_gb": {
+      "description": "Smallest amount of system RAM, in GB, the recipe is expected to run on. On a Mac with less, the recipe is labelled too large whatever its file sizes. A variant's own value takes precedence.",
+      "type": "number"
+    },
+    "variants": {
+      "description": "Alternative sets of files for the same model, usually different quantizations. Each variant's components are merged over the shared \"components\": a file with the same role replaces the shared one. Every variant must add up to a complete model.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/variant" }
+    }
+  },
+  "if": {
+    "required": ["variants"],
+    "properties": { "variants": { "minItems": 1 } }
+  },
+  "else": {
+    "properties": { "components": { "minItems": 1 } }
+  },
+  "$defs": {
+    "component": {
+      "description": "One file in a Hugging Face repo.",
+      "type": "object",
+      "required": ["role", "repo", "file", "revision", "size_bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). Each role may appear once in a list.",
+          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
+        },
+        "repo": {
+          "description": "Hugging Face repo id in the form owner/name, for example \"stabilityai/stable-diffusion-xl-base-1.0\".",
+          "type": "string",
+          "pattern": "^(?!\\.{1,2}/)[^/]+/(?!\\.{1,2}$)[^/]+$"
+        },
+        "file": {
+          "description": "Path of the file inside the repo, for example \"vae/model.safetensors\". No leading slash, no backslash, and no empty, \".\" or \"..\" segment.",
+          "type": "string",
+          "pattern": "^(?!\\.{1,2}(/|$))[^/\\\\]+(/(?!\\.{1,2}(/|$))[^/\\\\]+)*$"
+        },
+        "revision": {
+          "description": "Full commit sha of the repo to download from, so the download is reproducible. scripts/recipe.py fills this in. (The app falls back to \"main\" when it is absent, but curated recipes must pin it.)",
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "size_bytes": {
+          "description": "Exact size of the file in bytes. Checked after download and used for the disk-space check, progress and the memory-fit estimate. scripts/recipe.py fills this in.",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "sha256": {
+          "description": "SHA-256 of the file as 64 hexadecimal characters. Checked after download. scripts/recipe.py fills this in from the Hugging Face API.",
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        }
+      }
+    },
+    "defaults": {
+      "description": "Recommended generation settings. Take every value from the model card or from stable-diffusion.cpp's documentation for the model; do not guess.",
+      "type": "object",
+      "required": ["steps", "cfg", "sampler", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "description": "Sampling steps. Greater than zero.",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "cfg": {
+          "description": "Classifier-free guidance scale. Cannot be negative. Distilled models commonly use 1.0.",
+          "type": "number",
+          "minimum": 0
+        },
+        "sampler": {
+          "description": "Sampling method by its stable-diffusion.cpp name. An unknown name fails at generation time.",
+          "type": "string",
+          "minLength": 1,
+          "examples": [
+            "euler", "euler_a", "heun", "dpm2", "dpm++2s_a", "dpm++2m", "dpm++2mv2", "ipndm", "ipndm_v",
+            "lcm", "ddim_trailing", "tcd", "res_multistep", "res_2s", "er_sde", "euler_cfg_pp",
+            "euler_a_cfg_pp", "euler_ge", "dpm++2m_sde", "dpm++2m_sde_bt", "lms"
+          ]
+        },
+        "width": {
+          "description": "Image width in pixels. Greater than zero.",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "description": "Image height in pixels. Greater than zero.",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "sigmas": {
+          "description": "Explicit noise schedule. Must contain exactly steps + 1 values. Used only while the user keeps the recipe's step count.",
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "flash_attention": {
+          "description": "Enables flash attention for the diffusion model when the model is loaded. Treated as false when absent.",
+          "type": "boolean"
+        },
+        "scheduler": {
+          "description": "Noise scheduler by its stable-diffusion.cpp name. When absent, the engine's default for the model and sampler is used. An unknown name fails at generation time.",
+          "type": "string",
+          "examples": [
+            "discrete", "karras", "exponential", "ays", "gits", "sgm_uniform", "simple", "smoothstep",
+            "kl_optimal", "lcm", "bong_tangent", "ltx2", "logit_normal", "flux2", "flux", "beta", "llada_image"
+          ]
+        },
+        "guidance": {
+          "description": "Distilled guidance, used by guidance-distilled models such as Flux. The engine's default when absent.",
+          "type": "number"
+        },
+        "flow_shift": {
+          "description": "Flow shift for flow-matching models. The model's own default when absent.",
+          "type": "number"
+        }
+      }
+    },
+    "variant": {
+      "description": "One way to install the model: the files that differ from the shared components, typically a quantization of the large parts.",
+      "type": "object",
+      "required": ["id", "name", "components"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Identifier of the variant, unique within the recipe, for example \"q8\". Lowercase letters, digits, dots, dashes and underscores only; it cannot start with a dot.",
+          "type": "string",
+          "pattern": "^[a-z0-9_-][a-z0-9._-]*$"
+        },
+        "name": {
+          "description": "Name shown in the app, for example \"Q8 (best quality)\". Cannot be empty or blank.",
+          "type": "string",
+          "pattern": "[^ \\t]"
+        },
+        "components": {
+          "description": "Files for this variant, at least one. A file with the same role as a shared component replaces it; the others are added.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "min_memory_gb": {
+          "description": "Smallest amount of system RAM, in GB, this variant is expected to run on. Falls back to the recipe's min_memory_gb when absent.",
+          "type": "number"
+        }
+      }
+    }
+  }
+}
