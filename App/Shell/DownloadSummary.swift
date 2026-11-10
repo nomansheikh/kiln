@@ -13,7 +13,9 @@ struct DownloadSummary: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle.fill").foregroundStyle(Theme.accent)
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundStyle(Theme.accent)
+                        .symbolEffect(.pulse, isActive: status.state == .downloading)
                     Text(recipe.name).font(.caption.weight(.semibold)).lineLimit(1)
                 }
                 ProgressView(value: status.fraction)
@@ -23,7 +25,7 @@ struct DownloadSummary: View {
             }
             .card(padding: 10, radius: 10)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle(scale: 0.98))
     }
 
     private var caption: String {

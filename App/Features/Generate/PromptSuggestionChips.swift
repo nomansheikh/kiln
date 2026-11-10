@@ -31,7 +31,7 @@ private struct PromptSuggestionChip: View {
                 .overlay(Capsule().strokeBorder(Theme.hairline))
                 .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
         .onHover { hovering = $0 }
         .help(suggestion.prompt)
     }

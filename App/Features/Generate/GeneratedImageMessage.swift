@@ -22,7 +22,7 @@ struct GeneratedImageMessage: View {
                 .accessibilityLabel("Generated image: \(item.record.request.prompt)")
 
             HStack(spacing: 2) {
-                MessageActionButton(systemImage: "doc.on.doc", help: "Copy image") {
+                MessageActionButton(systemImage: "doc.on.doc", help: "Copy image", confirms: true) {
                     model.gallery.copyToPasteboard(item)
                 }
                 MessageActionButton(systemImage: "arrow.down.to.line", help: "Save As…") {
@@ -31,12 +31,12 @@ struct GeneratedImageMessage: View {
                 ShareLink(item: item.url) {
                     MessageActionIcon(systemImage: "square.and.arrow.up")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableButtonStyle())
                 .help("Share")
                 MessageActionButton(systemImage: "folder", help: "Show in Finder") {
                     model.gallery.revealInFinder(item)
                 }
-                MessageActionButton(systemImage: "arrow.clockwise", help: "Generate again") {
+                MessageActionButton(systemImage: "arrow.clockwise", help: "Generate again", bounces: true) {
                     regenerate()
                 }
                 .disabled(model.generation.phase.isBusy)
@@ -48,39 +48,5 @@ struct GeneratedImageMessage: View {
                 }
             }
         }
-    }
-}
-
-/// A small borderless icon button that highlights on hover, for message actions.
-struct MessageActionButton: View {
-    let systemImage: String
-    let help: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            MessageActionIcon(systemImage: systemImage)
-        }
-        .buttonStyle(.plain)
-        .help(help)
-        .accessibilityLabel(help)
-    }
-}
-
-/// The face of a message action: a secondary symbol with a hover highlight.
-struct MessageActionIcon: View {
-    @Environment(\.isEnabled) private var isEnabled
-    let systemImage: String
-    @State private var hovering = false
-
-    var body: some View {
-        Image(systemName: systemImage)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.secondary)
-            .frame(width: 30, height: 28)
-            .background(Color.primary.opacity(hovering && isEnabled ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .contentShape(Rectangle())
-            .opacity(isEnabled ? 1 : 0.4)
-            .onHover { hovering = $0 }
     }
 }

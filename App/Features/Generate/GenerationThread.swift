@@ -3,6 +3,7 @@ import SwiftUI
 /// The scrolling conversation. It follows new turns and progress to the bottom.
 struct GenerationThread: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let bottomID = "thread-bottom"
 
     var body: some View {
@@ -13,9 +14,11 @@ struct GenerationThread: View {
                 LazyVStack(spacing: 28) {
                     ForEach(generation.turns) { turn in
                         GenerationTurnView(turn: turn, phase: generation.phase, preview: generation.preview)
+                            .transition(Motion.rise(reduced: reduceMotion))
                     }
                     Color.clear.frame(height: 1).id(bottomID)
                 }
+                .animation(Motion.layout(reduced: reduceMotion), value: generation.turns.map(\.id))
                 .frame(maxWidth: GenerateLayout.columnWidth)
                 .padding(.horizontal, 24)
                 .padding(.top, 20)

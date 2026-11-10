@@ -4,6 +4,7 @@ import SwiftUI
 /// The sidebar's list of saved chats, with archived ones tucked under a toggle.
 struct ChatList: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsArchived = false
 
     var body: some View {
@@ -17,6 +18,7 @@ struct ChatList: View {
                         sectionTitle("Chats")
                         ForEach(active) { chat in
                             ChatRow(chat: chat)
+                                .transition(Motion.row(reduced: reduceMotion))
                         }
                     }
                     if !archived.isEmpty {
@@ -24,12 +26,15 @@ struct ChatList: View {
                         if showsArchived {
                             ForEach(archived) { chat in
                                 ChatRow(chat: chat)
+                                    .transition(Motion.row(reduced: reduceMotion))
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
+                .animation(Motion.layout(reduced: reduceMotion), value: model.chats.chats.map(\.id))
+                .animation(Motion.layout(reduced: reduceMotion), value: active.count)
             }
             .scrollIndicators(.never)
             .padding(.top, 14)

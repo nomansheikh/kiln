@@ -4,6 +4,7 @@ import SwiftUI
 /// The scrolling list of recipe cards, with any recipe load problems above it.
 struct ModelsRecipeList: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let showsDownloadedOnly: Bool
 
@@ -30,9 +31,14 @@ struct ModelsRecipeList: View {
                     )
                     ForEach(recipes) { recipe in
                         RecipeCard(recipe: recipe)
+                            .transition(Motion.rise(reduced: reduceMotion))
                     }
                 }
             }
+            // Animate on state changes only; byte counts tick far too often to animate.
+            .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
+            .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
+            .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
             .frame(maxWidth: Theme.contentWidth)
             .padding(.horizontal, 24)
             .padding(.vertical, 20)
