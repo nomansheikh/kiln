@@ -4,15 +4,19 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppModel.self) private var model
     @State private var sidebarVisible = true
+    @AppStorage("sidebarWidth") private var sidebarWidth = SidebarResizeHandle.defaultWidth
 
     var body: some View {
         HStack(spacing: 0) {
             if sidebarVisible {
                 Sidebar(isVisible: $sidebarVisible)
-                    .frame(width: 250)
+                    .frame(width: sidebarWidth)
                     .background(Theme.sidebarGradient, in: RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: Theme.panelRadius, style: .continuous).strokeBorder(Theme.hairline))
                     .padding(8)
+                    .overlay(alignment: .trailing) {
+                        SidebarResizeHandle(width: $sidebarWidth)
+                    }
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
             Group {
