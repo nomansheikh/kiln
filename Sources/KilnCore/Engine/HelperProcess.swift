@@ -43,3 +43,17 @@ extension GeneratedImage {
         self.init(width: width, height: height, channels: channels, pixels: pixels)
     }
 }
+
+extension GenerationRequest {
+    /// Writes the source image as raw RGB at the output size, where the helper reads it.
+    /// Returns nil when the request has no source image.
+    func writeSourceImage(to file: URL) throws(EngineError) -> URL? {
+        guard let sourceImage else { return nil }
+        do {
+            try ImageCodec.rgbPixels(of: sourceImage, width: width, height: height).write(to: file)
+        } catch {
+            throw .unreadableSourceImage
+        }
+        return file
+    }
+}

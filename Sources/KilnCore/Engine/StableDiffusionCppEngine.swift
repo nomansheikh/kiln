@@ -79,7 +79,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).raw")
             let previewFile = scratchDirectory.appendingPathComponent("\(id.uuidString).preview")
-            let initFile = try prepareSourceImage(for: request, id: id)
+            let initFile = try request.writeSourceImage(to: scratchDirectory.appendingPathComponent("\(id.uuidString).init"))
             let command = try EngineMessage.generateCommand(
                 recipe: recipe, storage: storage, request: request, output: output, preview: previewFile, initImage: initFile
             )
@@ -97,18 +97,6 @@ public actor StableDiffusionCppEngine: InferenceEngine {
                 continuation.finish(throwing: error)
             }
         }
-    }
-
-    /// Writes the request's source image as raw pixels at the output size, where the helper reads it.
-    private func prepareSourceImage(for request: GenerationRequest, id: UUID) throws -> URL? {
-        guard let source = request.sourceImage else { return nil }
-        let file = scratchDirectory.appendingPathComponent("\(id.uuidString).init")
-        do {
-            try ImageCodec.rgbPixels(of: source, width: request.width, height: request.height).write(to: file)
-        } catch {
-            throw EngineError.unreadableSourceImage
-        }
-        return file
     }
 
     private func launchHelperIfNeeded() throws {
