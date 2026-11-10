@@ -2,7 +2,8 @@ import Foundation
 import KilnCore
 import Observation
 
-/// The Generate screen's state: the draft being edited and the running generation.
+/// The Generate screen's state: the draft being edited and the thread of
+/// prompts and images produced from it.
 @MainActor
 @Observable
 final class GenerationStore {
@@ -13,9 +14,10 @@ final class GenerationStore {
     ]
 
     var draft = GenerationDraft()
+    /// The conversation on screen, oldest first.
+    private(set) var turns: [GenerationTurn] = []
+    /// Progress of the turn that is running, if any.
     private(set) var phase: GenerationPhase = .idle
-    /// The image on the canvas.
-    private(set) var latestImage: GalleryItem?
 
     private let library: ModelLibrary
     private let gallery: GalleryLibrary
@@ -38,6 +40,11 @@ final class GenerationStore {
             && !draft.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// The most recent image in the thread.
+    var latestImage: GalleryItem? {
+        turns.last { $0.image != nil }?.image
+    }
+
     // MARK: - Choosing a model
 
     /// Selects a model and applies its recommended settings.
@@ -56,13 +63,14 @@ final class GenerationStore {
 
     // MARK: - Generating
 
+    /// Sends the draft's prompt: it moves into the thread and the field empties.
     func generate() {
         guard canGenerate, let recipe = selectedRecipe else { return }
         if draft.randomSeed {
             draft.seed = GenerationRequest.randomSeed()
         }
         let request = GenerationRequest(
-            prompt: draft.prompt,
+            prompt: draft.prompt.trimmingCharacters(in: .whitespacesAndNewlines),
             negativePrompt: draft.negativePrompt,
             width: draft.width,
             height: draft.height,
@@ -73,44 +81,26 @@ final class GenerationStore {
             sigmas: draft.steps == recipe.defaults.steps ? recipe.defaults.sigmas : nil,
             seed: draft.seed
         )
-
+        let turn = GenerationTurn(prompt: request.prompt, width: request.width, height: request.height)
+        turns.append(turn)
+        draft.prompt = ""
         phase = .starting
-        let started = Date()
+
         task = Task {
-            do {
-                for try await event in engine.generate(recipe: recipe, request: request) {
-                    switch event {
-                    case .loadingModel:
-                        phase = .loadingModel
-                    case .progress(let progress):
-                        phase = .running(progress)
-                    case .finished(let image):
-                        let record = GenerationRecord(
-                            recipeID: recipe.id,
-                            recipeName: recipe.name,
-                            request: request,
-                            durationSeconds: Date().timeIntervalSince(started)
-                        )
-                        latestImage = try gallery.add(image, record: record)
-                    }
-                }
-                phase = .idle
-            } catch is CancellationError {
-                phase = .idle
-            } catch {
-                phase = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
-            }
+            let outcome = await run(request, with: recipe)
+            finish(turn.id, as: outcome)
         }
+    }
+
+    /// Runs the prompt of an earlier turn again with the current settings.
+    func regenerate(_ turn: GenerationTurn) {
+        guard !phase.isBusy else { return }
+        draft.prompt = turn.prompt
+        generate()
     }
 
     func cancel() {
         task?.cancel()
-    }
-
-    func dismissError() {
-        if case .failed = phase {
-            phase = .idle
-        }
     }
 
     /// Frees the memory held by the loaded model.
@@ -118,18 +108,52 @@ final class GenerationStore {
         Task { await engine.shutdown() }
     }
 
-    // MARK: - Canvas
-
-    /// Clears the canvas and the prompt. Does nothing while an image is generating.
-    func startOver() {
-        guard !phase.isBusy else { return }
-        latestImage = nil
-        draft.prompt = ""
-        dismissError()
+    private func run(_ request: GenerationRequest, with recipe: ModelRecipe) async -> GenerationTurn.State {
+        let started = Date()
+        do {
+            for try await event in engine.generate(recipe: recipe, request: request) {
+                switch event {
+                case .loadingModel:
+                    phase = .loadingModel
+                case .progress(let progress):
+                    phase = .running(progress)
+                case .finished(let image):
+                    let record = GenerationRecord(
+                        recipeID: recipe.id,
+                        recipeName: recipe.name,
+                        request: request,
+                        durationSeconds: Date().timeIntervalSince(started)
+                    )
+                    return .finished(try gallery.add(image, record: record))
+                }
+            }
+            return .failed("The engine finished without producing an image.")
+        } catch is CancellationError {
+            return .cancelled
+        } catch {
+            return .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+        }
     }
 
+    private func finish(_ id: UUID, as state: GenerationTurn.State) {
+        phase = .idle
+        guard let index = turns.firstIndex(where: { $0.id == id }) else { return }
+        turns[index].state = state
+    }
+
+    // MARK: - Thread
+
+    /// Empties the thread and the prompt. Does nothing while an image is generating.
+    func startOver() {
+        guard !phase.isBusy else { return }
+        turns = []
+        draft.prompt = ""
+    }
+
+    /// Opens a saved image as a thread of its own.
     func show(_ item: GalleryItem) {
-        latestImage = item
+        guard !phase.isBusy else { return }
+        turns = [GenerationTurn(item)]
     }
 
     /// Loads a past image's settings into the draft.
@@ -140,10 +164,16 @@ final class GenerationStore {
         draft.apply(item.record.request)
     }
 
-    /// Takes a deleted image off the canvas.
+    /// Removes a deleted image from the thread.
     func forget(_ item: GalleryItem) {
-        if latestImage?.id == item.id {
-            latestImage = nil
-        }
+        turns.removeAll { $0.image?.id == item.id }
     }
+
+    #if DEBUG
+    /// Fills the thread with sample turns for snapshots.
+    func loadPreview(turns: [GenerationTurn], phase: GenerationPhase) {
+        self.turns = turns
+        self.phase = phase
+    }
+    #endif
 }

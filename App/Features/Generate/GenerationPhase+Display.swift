@@ -2,10 +2,6 @@ import KilnCore
 
 /// How a generation phase is described on the Generate screen.
 extension GenerationPhase {
-    var isFailed: Bool {
-        if case .failed = self { true } else { false }
-    }
-
     /// Completed share of the running generation, or `nil` when it cannot be measured.
     var progressFraction: Double? {
         if case .running(let progress) = self { progress.fraction } else { nil }
@@ -14,15 +10,15 @@ extension GenerationPhase {
     /// Headline for the progress placeholder.
     var progressTitle: String {
         switch self {
-        case .idle, .failed: ""
-        case .starting: "Starting…"
-        case .loadingModel: "Loading model…"
+        case .idle: ""
+        case .starting: "Getting ready"
+        case .loadingModel: "Loading model"
         case .running(let progress):
             switch progress.stage {
-            case .preparing: "Preparing"
-            case .encodingPrompt: "Encoding prompt"
-            case .sampling: "Generating image"
-            case .decoding: "Decoding image"
+            case .preparing: "Getting ready"
+            case .encodingPrompt: "Reading your prompt"
+            case .sampling: "Creating image"
+            case .decoding: "Finishing up"
             case .other(let name): name
             }
         }

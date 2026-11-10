@@ -67,6 +67,12 @@ public struct GenerationProgress: Sendable, Equatable {
     /// Zero when the engine does not know the total.
     public var total: Int
 
+    public init(stage: Stage, completed: Int, total: Int) {
+        self.stage = stage
+        self.completed = completed
+        self.total = total
+    }
+
     public var fraction: Double? {
         total > 0 ? min(1, Double(completed) / Double(total)) : nil
     }

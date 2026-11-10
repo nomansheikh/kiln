@@ -1,0 +1,34 @@
+import SwiftUI
+
+/// The scrolling conversation. It follows new turns and progress to the bottom.
+struct GenerationThread: View {
+    @Environment(AppModel.self) private var model
+    private let bottomID = "thread-bottom"
+
+    var body: some View {
+        let generation = model.generation
+
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 28) {
+                    ForEach(generation.turns) { turn in
+                        GenerationTurnView(turn: turn, phase: generation.phase)
+                    }
+                    Color.clear.frame(height: 1).id(bottomID)
+                }
+                .frame(maxWidth: GenerateLayout.columnWidth)
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity)
+            }
+            .clipped()
+            // A visible scroller would shift the column off the composer's edges.
+            .scrollIndicators(.never)
+            .onAppear { proxy.scrollTo(bottomID, anchor: .bottom) }
+            .onChange(of: generation.turns) {
+                withAnimation(.snappy) { proxy.scrollTo(bottomID, anchor: .bottom) }
+            }
+        }
+    }
+}

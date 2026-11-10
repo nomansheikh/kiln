@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The composer's round button that picks the output size from the presets.
+/// The composer's chip that shows the output size and picks another from the presets.
 struct GenerationImageSizeMenu: View {
     @Binding var draft: GenerationDraft
 
@@ -20,13 +20,13 @@ struct GenerationImageSizeMenu: View {
                 }
             }
         } label: {
-            GenerateRoundIcon(systemImage: "aspectratio")
+            ComposerChip(systemImage: "aspectratio", title: current.title)
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Image size: \(current.title)")
+        .help("Image size")
         .accessibilityLabel("Image size")
         .accessibilityValue(current.title)
     }

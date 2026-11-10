@@ -36,17 +36,12 @@ struct GenerationDraft: Equatable {
     }
 }
 
+/// What the running generation is doing.
 enum GenerationPhase: Equatable {
     case idle
     case starting
     case loadingModel
     case running(GenerationProgress)
-    case failed(String)
 
-    var isBusy: Bool {
-        switch self {
-        case .starting, .loadingModel, .running: true
-        case .idle, .failed: false
-        }
-    }
+    var isBusy: Bool { self != .idle }
 }
