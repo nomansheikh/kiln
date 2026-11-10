@@ -12,6 +12,7 @@ struct HubSearchResults: View {
     /// Adds space above the section title when another section comes before it.
     private let isFollowingSection: Bool
 
+    @AppStorage("models.hubExpanded") private var browseExpanded = true
     @State private var search = HubSearchModel()
     @State private var attempt = 0
     @State private var downloadError: String?
@@ -87,9 +88,10 @@ struct HubSearchResults: View {
 
     private func results(_ summaries: [HFModelSummary]) -> some View {
         Group {
-            ModelsSectionTitle(text: title, count: summaries.count)
+            // The browse list can be collapsed; search results are what was asked for, so they stay open.
+            ModelsSectionTitle(text: title, count: summaries.count, isExpanded: isFollowingSection ? $browseExpanded : nil)
                 .padding(.top, isFollowingSection ? 14 : 0)
-            ForEach(summaries) { summary in
+            ForEach(isFollowingSection && !browseExpanded ? [] : summaries) { summary in
                 HubResultCard(
                     summary: summary,
                     info: search.infos[summary.id],

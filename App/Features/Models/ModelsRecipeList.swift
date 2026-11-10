@@ -9,6 +9,9 @@ struct ModelsRecipeList: View {
 
     let showsDownloadedOnly: Bool
 
+    @AppStorage("models.recommendedExpanded") private var recommendedExpanded = true
+    @AppStorage("models.addedExpanded") private var addedExpanded = true
+
     private var visibleRecipes: [ModelRecipe] {
         let library = model.library
         return showsDownloadedOnly ? library.recipes.filter { library.isInstalled($0) } : library.recipes
@@ -26,24 +29,32 @@ struct ModelsRecipeList: View {
             if recipes.isEmpty {
                 emptyState
             } else {
-                section(showsDownloadedOnly ? "Downloaded" : "Recommended", recipes.filter { !userIDs.contains($0.id) })
-                section("Added by you", recipes.filter { userIDs.contains($0.id) })
+                section(
+                    showsDownloadedOnly ? "Downloaded" : "Recommended",
+                    recipes.filter { !userIDs.contains($0.id) },
+                    isExpanded: $recommendedExpanded
+                )
+                section("Added by you", recipes.filter { userIDs.contains($0.id) }, isExpanded: $addedExpanded)
             }
         }
         // Animate on state changes only; byte counts tick far too often to animate.
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
         .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
+        .animation(Motion.layout(reduced: reduceMotion), value: recommendedExpanded)
+        .animation(Motion.layout(reduced: reduceMotion), value: addedExpanded)
     }
 
-    /// A titled group of recipe cards, or nothing when the group is empty.
+    /// A titled, collapsible group of recipe cards, or nothing when the group is empty.
     @ViewBuilder
-    private func section(_ title: String, _ recipes: [ModelRecipe]) -> some View {
+    private func section(_ title: String, _ recipes: [ModelRecipe], isExpanded: Binding<Bool>) -> some View {
         if !recipes.isEmpty {
-            ModelsSectionTitle(text: title, count: recipes.count)
-            ForEach(recipes) { recipe in
-                RecipeCard(recipe: recipe)
-                    .transition(Motion.rise(reduced: reduceMotion))
+            ModelsSectionTitle(text: title, count: recipes.count, isExpanded: isExpanded)
+            if isExpanded.wrappedValue {
+                ForEach(recipes) { recipe in
+                    RecipeCard(recipe: recipe)
+                        .transition(Motion.rise(reduced: reduceMotion))
+                }
             }
         }
     }
