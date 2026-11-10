@@ -1,0 +1,84 @@
+{
+  "$schema": "./schema.json",
+  "id": "qwen-image-2.1-turbo-uncensored",
+  "name": "Qwen-Image 2.1 Turbo Uncensored",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "vae",
+      "repo": "Comfy-Org/Qwen-Image-2.1",
+      "file": "vae/qwen_image_2.1_vae_bf16.safetensors",
+      "revision": "aacf31a6d48e707f352ecba714cee0680da3479b",
+      "size_bytes": 675509688,
+      "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+    }
+  ],
+  "defaults": {
+    "steps": 8,
+    "cfg": 1.0,
+    "sampler": "euler",
+    "width": 1024,
+    "height": 1024,
+    "sigmas": [
+      1.0,
+      0.978453,
+      0.95418,
+      0.926626,
+      0.89508,
+      0.845148,
+      0.704534,
+      0.414568,
+      0.0
+    ],
+    "flash_attention": true
+  },
+  "license_note": "Denoiser and VAE: Qwen Research License (non-commercial; see the base model repo). Text encoder (Qwen3-VL-8B-Instruct with its refusal direction removed): Apache-2.0.",
+  "variants": [
+    {
+      "id": "q8",
+      "name": "Q8 (best quality)",
+      "min_memory_gb": 24,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "AtomicChat/Qwen-Image-2.1-Turbo-Uncensored-GGUF",
+          "file": "Qwen-Image-2.1-Turbo-Uncensored-Q8_0.gguf",
+          "revision": "881a778e306c44920e42536def3e52c3a3ecc7cd",
+          "size_bytes": 8709520096,
+          "sha256": "f8f9f6276b726db5291f4a5343089612cb5fd08aa81e8f0791dc66d2c03d07ca"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
+          "file": "Qwen-Image-2.1-Turbo-Q8_0.gguf",
+          "revision": "cbcb9ff83b17e1eeef693479a8d34cea355a0ee4",
+          "size_bytes": 7591577312,
+          "sha256": "8d74ae0be534df394ea2d29f04b77f879318c9e0df20a3e208e6bedbf89b4159"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "name": "Q4 (smaller)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "AtomicChat/Qwen-Image-2.1-Turbo-Uncensored-GGUF",
+          "file": "Qwen-Image-2.1-Turbo-Uncensored-AD-Q4_K.gguf",
+          "revision": "881a778e306c44920e42536def3e52c3a3ecc7cd",
+          "size_bytes": 5287517120,
+          "sha256": "8123f36d2b3e562deef164dffdae33bdb1d152797ad10bb630827eaa7bce795d"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
+          "file": "Qwen-Image-2.1-Turbo-AD-Q4_K.gguf",
+          "revision": "cbcb9ff83b17e1eeef693479a8d34cea355a0ee4",
+          "size_bytes": 4201694944,
+          "sha256": "4bb73c53cbe284bbd6d69b9fdc59539c531f0389dd2aa567663d777f8130bc59"
+        }
+      ]
+    }
+  ]
+}
