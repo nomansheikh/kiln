@@ -1,0 +1,42 @@
+# NOTE: this workflow has not been run yet. Expect to adjust it after the first run.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Test KilnCore
+        run: swift test
+
+      - name: Install build tools
+        run: |
+          command -v cmake >/dev/null || brew install cmake
+          brew install xcodegen
+
+      - name: Build kiln-engine
+        run: ./scripts/build-engine.sh
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build app
+        run: >
+          xcodebuild
+          -scheme Kiln
+          -configuration Debug
+          -destination 'platform=macOS,arch=arm64'
+          CODE_SIGNING_ALLOWED=NO
+          build
