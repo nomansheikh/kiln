@@ -579,24 +579,25 @@ private struct RecipeCard: View {
         caption: String,
         @ViewBuilder buttons: () -> some View
     ) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
+        // The buttons share a row with the bar so they centre on it; the caption sits below both.
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .center, spacing: 12) {
                 ProgressView(value: value)
                     .progressViewStyle(.linear)
                     .tint(Theme.accent)
-                Text(caption)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .help(caption)
+                    .frame(maxWidth: .infinity)
+                HStack(spacing: 6) {
+                    buttons()
+                }
+                .fixedSize()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 6) {
-                buttons()
-            }
-            .fixedSize()
+            Text(caption)
+                .font(.caption)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(caption)
         }
     }
 
