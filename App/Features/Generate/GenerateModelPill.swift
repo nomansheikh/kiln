@@ -14,15 +14,15 @@ struct GenerateModelPill: View {
             .buttonStyle(.plain)
             .help("Download a model")
         } else {
-            // A Menu of Buttons rather than a Picker so every change goes through selectRecipe(_:).
+            // A Menu of Toggles rather than a Picker so every change goes through selectRecipe(_:),
+            // while the menu still draws its own checkmark beside the current model.
             Menu {
                 ForEach(installed) { recipe in
-                    Button { model.generation.selectRecipe(recipe) } label: {
-                        if recipe.id == model.generation.draft.recipeID {
-                            Label(recipe.name, systemImage: "checkmark")
-                        } else {
-                            Text(verbatim: recipe.name)
-                        }
+                    Toggle(isOn: Binding(
+                        get: { recipe.id == model.generation.draft.recipeID },
+                        set: { _ in model.generation.selectRecipe(recipe) }
+                    )) {
+                        Text(verbatim: recipe.name)
                     }
                 }
                 Divider()
