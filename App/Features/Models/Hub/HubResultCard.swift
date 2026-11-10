@@ -22,24 +22,35 @@ struct HubResultCard: View {
         URL(string: "https://huggingface.co/\(summary.id)")
     }
 
+    /// The one answer shown for this repo: what the user can do with it.
+    private var support: HubRepoSupport {
+        model.library.support(forRepo: summary.id, info: info, failed: failure != nil)
+    }
+
+    private var isUnsupported: Bool {
+        if case .unsupported = support { true } else { false }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
             stats
-            if let recipe = model.library.curatedRecipe(forRepo: summary.id) {
+            if case .recipe(let recipe) = support {
                 HubRecipeSuggestion(recipe: recipe)
             }
+            if isUnsupported {
+                unsupportedNote
+            }
 
-            ModelsDisclosureRow(title: "Files", isExpanded: $isExpanded)
+            ModelsDisclosureRow(title: "All files", isExpanded: $isExpanded)
             if isExpanded {
                 HubFileList(info: info, isLoading: isLoading, failure: failure, retry: loadFiles, download: download)
             }
         }
         .modelsCard(hovering: hovering)
         .onHover { hovering = $0 }
-        .onChange(of: isExpanded) { _, expanded in
-            if expanded { loadFiles() }
-        }
+        // The file list decides what the card offers, so it is fetched as the card appears.
+        .task { loadFiles() }
     }
 
     // MARK: - Sections
@@ -59,21 +70,21 @@ struct HubResultCard: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 12)
-            if let pageURL {
-                Link(destination: pageURL) {
-                    HStack(spacing: 4) {
-                        Text("Open on Hugging Face")
-                        Image(systemName: "arrow.up.right")
-                            .imageScale(.small)
-                    }
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
-                    .fixedSize()
-                }
+            HubRepoAction(support: support, download: download)
+        }
+        .opacity(isUnsupported ? 0.7 : 1)
+    }
+
+    /// Says plainly why there is nothing to download, and where to ask for support.
+    private var unsupportedNote: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("This model comes in several files and Kiln has no recipe for it yet.")
                 .foregroundStyle(.secondary)
-                .help(pageURL.absoluteString)
+            if let requestURL = URL(string: "https://github.com/nomansheikh/kiln/issues/new?template=recipe_request.yml") {
+                Link("Request it", destination: requestURL)
             }
         }
+        .font(.callout)
     }
 
     private var stats: some View {
@@ -87,6 +98,19 @@ struct HubResultCard: View {
                     .help("License")
             }
             Spacer(minLength: 0)
+            if let pageURL {
+                Link(destination: pageURL) {
+                    HStack(spacing: 4) {
+                        Text("Hugging Face")
+                        Image(systemName: "arrow.up.right")
+                            .imageScale(.small)
+                    }
+                    .font(.caption.weight(.medium))
+                    .fixedSize()
+                }
+                .foregroundStyle(.secondary)
+                .help(pageURL.absoluteString)
+            }
         }
         .lineLimit(1)
     }

@@ -45,7 +45,7 @@ struct HubFileList: View {
         } else {
             rows(files, in: info)
         }
-        Text("Downloading a single file only works for all-in-one checkpoints, for example SD 1.5 or SDXL .safetensors. Models split into several parts need a recipe.")
+        Text("Only a file that holds a whole model can be downloaded by itself. Files marked as a part of a model work only through a recipe.")
             .font(.caption)
             .foregroundStyle(.tertiary)
             .fixedSize(horizontal: false, vertical: true)

@@ -182,6 +182,31 @@ import Testing
         #expect(HFFile(path: path, sizeBytes: size, sha256: nil).looksLikeStandaloneCheckpoint == expected)
     }
 
+    @Test func picksTheBestWholeModelFileForThisMac() async throws {
+        let body = """
+        {"id": "owner/sd", "siblings": [
+          {"rfilename": "model-fp32.safetensors", "size": 12000000000},
+          {"rfilename": "model-fp16.safetensors", "size": 6000000000},
+          {"rfilename": "vae/vae.safetensors", "size": 3000000000},
+          {"rfilename": "model-Q8_0.gguf", "size": 5000000000}
+        ]}
+        """
+        let info = try await HFClient(transport: MockTransport(body: body)).modelInfo(repo: "owner/sd")
+
+        // Plenty of memory: the larger, higher-precision file.
+        #expect(info.bestStandaloneCheckpoint(usableBytes: 80e9)?.path == "model-fp32.safetensors")
+        // The big one no longer fits comfortably: fall back to the one that does.
+        #expect(info.bestStandaloneCheckpoint(usableBytes: 10e9)?.path == "model-fp16.safetensors")
+        // Nothing fits: still offer the smallest, so the caller can warn.
+        #expect(info.bestStandaloneCheckpoint(usableBytes: 1e9)?.path == "model-fp16.safetensors")
+    }
+
+    @Test func aRepoOfPartsHasNoWholeModelFile() async throws {
+        let info = try await HFClient(transport: MockTransport(body: Self.infoBody))
+            .modelInfo(repo: "AtomicChat/Qwen-Image-2.1-Turbo-GGUF")
+        #expect(info.bestStandaloneCheckpoint(usableBytes: 80e9) == nil)
+    }
+
     @Test func aLoneTextEncoderIsAnIncompleteRecipe() async throws {
         let info = try await HFClient(transport: MockTransport(body: Self.infoBody))
             .modelInfo(repo: "AtomicChat/Qwen-Image-2.1-Turbo-GGUF")

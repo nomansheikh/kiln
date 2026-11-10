@@ -52,7 +52,7 @@ struct HubFileRow: View {
             progress(status)
         case .available where !file.looksLikeStandaloneCheckpoint:
             // One part of a multi-file model: downloading it alone gives nothing that runs.
-            Pill(text: "Needs a recipe", systemImage: "puzzlepiece.extension")
+            Pill(text: "Part of a model", systemImage: "puzzlepiece.extension")
                 .fixedSize()
                 .help("This file is one part of a model. It only works together with the others, through a recipe.")
         case .available:
