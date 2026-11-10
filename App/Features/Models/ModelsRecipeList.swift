@@ -41,10 +41,10 @@ struct ModelsRecipeList: View {
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
         .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
-        // Collapsing fades the whole group at once. Moving each card separately
-        // made them slide over one another while the list closed up.
-        .animation(.easeOut(duration: 0.18), value: recommendedExpanded)
-        .animation(.easeOut(duration: 0.18), value: addedExpanded)
+        // Collapsing and expanding are instant. Animating them moved the cards
+        // and the sections below at different times inside the lazy list.
+        .transaction(value: recommendedExpanded) { $0.animation = nil }
+        .transaction(value: addedExpanded) { $0.animation = nil }
     }
 
     /// A titled, collapsible group of recipe cards, or nothing when the group is empty.
@@ -59,7 +59,6 @@ struct ModelsRecipeList: View {
                             .transition(Motion.rise(reduced: reduceMotion))
                     }
                 }
-                .transition(.opacity)
             }
         }
     }
