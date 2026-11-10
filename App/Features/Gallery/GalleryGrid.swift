@@ -12,7 +12,7 @@ struct GalleryGrid: View {
     private let columns = [GridItem(.adaptive(minimum: 200, maximum: 300), spacing: 12)]
 
     var body: some View {
-        ScrollView {
+        StableScrollView {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(items) { item in
                     GalleryCell(

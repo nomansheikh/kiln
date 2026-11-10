@@ -7,7 +7,7 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             ScreenHeader(title: "Settings", subtitle: "Accounts, hardware and storage")
             Divider()
-            ScrollView {
+            StableScrollView {
                 VStack(spacing: 18) {
                     HuggingFaceCard()
                     HardwareCard()

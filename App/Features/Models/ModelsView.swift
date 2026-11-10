@@ -24,7 +24,7 @@ struct ModelsView: View {
                 .fill(Theme.hairline)
                 .frame(height: 1)
 
-            ScrollView {
+            StableScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     if !query.isEmpty {
                         HubSearchResults(query: query, title: "Hugging Face results")
