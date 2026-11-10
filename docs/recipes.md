@@ -5,7 +5,7 @@ A recipe is a JSON file that describes one runnable model: every file it needs f
 Kiln loads recipes from two places:
 
 - curated recipes in [`recipes/`](../recipes), bundled into the app
-- recipes you imported, stored in `~/Library/Application Support/Kiln/recipes/`
+- user recipes in `~/Library/Application Support/Kiln/recipes/`: the ones you imported, and the [single-file recipes](#single-file-recipes) Kiln writes when you download one file from the Hugging Face list
 
 ## Top-level fields
 
@@ -55,7 +55,7 @@ Each role may appear at most once per recipe. Any other value is rejected when t
 | `llm` | A language-model text encoder | `llm` | `llm_path` |
 | `vae` | A standalone VAE | `vae` | `vae_path` |
 
-Roles a recipe does not use are left unset. The mapping lives in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
+Roles a recipe does not use are left unset. There is no role for a LoRA, a separate CLIP or T5 text encoder, or a vision projector, so a model that needs one of those cannot be described yet. The mapping lives in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
 
 ## Defaults
 
@@ -71,9 +71,11 @@ Roles a recipe does not use are left unset. The mapping lives in [`EngineProtoco
 
 Notes:
 
-- The sampler name is not checked when the recipe is loaded. An unknown name fails at generation time with an "Unknown sampler" error from the helper. Names accepted by the vendored stable-diffusion.cpp are: `euler`, `euler_a`, `heun`, `dpm2`, `dpm++2s_a`, `dpm++2m`, `dpm++2mv2`, `ipndm`, `ipndm_v`, `lcm`, `ddim_trailing`, `tcd`, `res_multistep`, `res_2s`, `er_sde`, `euler_cfg_pp`, `euler_a_cfg_pp`, `euler_ge`, `dpm++2m_sde`, `dpm++2m_sde_bt`, `lms`.
-- A recipe cannot choose a scheduler. The helper uses stable-diffusion.cpp's default scheduler for the loaded model and sampler. When `sigmas` is present it is passed as the custom sigma schedule.
+- Selecting a model on the Generate screen copies `width`, `height`, `steps`, `cfg` and `sampler` into the composer, where the user can change them. "Reset to recommended" in the advanced settings applies them again.
+- The sampler name is not checked when the recipe is loaded. An unknown name fails at generation time with an "Unknown sampler" error from the helper. Names accepted by the vendored stable-diffusion.cpp are: `euler`, `euler_a`, `heun`, `dpm2`, `dpm++2s_a`, `dpm++2m`, `dpm++2mv2`, `ipndm`, `ipndm_v`, `lcm`, `ddim_trailing`, `tcd`, `res_multistep`, `res_2s`, `er_sde`, `euler_cfg_pp`, `euler_a_cfg_pp`, `euler_ge`, `dpm++2m_sde`, `dpm++2m_sde_bt`, `lms`. The sampler menu in the app's advanced settings offers the first twelve of these (`euler` to `tcd`), plus the recipe's own sampler when it is not one of them.
+- A recipe cannot choose a scheduler. The helper uses stable-diffusion.cpp's default scheduler for the loaded model and sampler. When `sigmas` is present it is passed as the custom sigma schedule, but only while the step count is the recipe's own `steps`. If the user changes the step count, the app leaves `sigmas` out and the default schedule is used.
 - `flash_attention` is a model-load setting, not a per-image one. It comes from the recipe and is sent in the helper's `model` object.
+- A recipe has no fields for a negative prompt, a seed or an image-to-image strength. Those are chosen in the app.
 
 ## Validation rules
 
@@ -82,7 +84,7 @@ A recipe is decoded and then validated. A file that fails either step is not loa
 Recipe:
 
 1. `id` is not empty, contains only lowercase letters `a-z`, digits, `.`, `-` and `_`, and does not start with `.`.
-2. `name` is not empty or whitespace only.
+2. `name` is not empty and does not consist only of spaces and tabs.
 3. `components` has at least one entry.
 4. No two components share a `role`.
 
@@ -103,7 +105,9 @@ Defaults:
 
 Decoding adds the structural checks: every required field must be present with the right type, and `role` must be one of the four values above. Unknown extra fields are ignored.
 
-When recipes are loaded, a recipe whose `id` was already seen is skipped as a duplicate. Bundled recipes are read first, so a bundled recipe wins over an imported one with the same id.
+When recipes are loaded, a recipe whose `id` was already seen is skipped as a duplicate. Bundled recipes are read first, so a bundled recipe wins over a user recipe with the same id. Within a folder, files are read in file-name order.
+
+Files that fail to decode or validate, and skipped duplicates, do not stop the others from loading. The Models screen lists them in a "recipes could not be loaded" card with the file name and the reason.
 
 ### Extra rules for curated recipes
 
@@ -133,11 +137,11 @@ This is [`recipes/qwen-image-2.1-turbo.json`](../recipes/qwen-image-2.1-turbo.js
   "components": [
     {
       "role": "llm",
-      "repo": "AtomicChat/Qwen-Image-2.1-Turbo-Uncensored-GGUF",
-      "file": "Qwen-Image-2.1-Turbo-Uncensored-Q8_0.gguf",
-      "revision": "881a778e306c44920e42536def3e52c3a3ecc7cd",
-      "size_bytes": 8709520096,
-      "sha256": "f8f9f6276b726db5291f4a5343089612cb5fd08aa81e8f0791dc66d2c03d07ca"
+      "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+      "file": "Qwen3VL-8B-Instruct-Q8_0.gguf",
+      "revision": "f982a07559d4a2f6c8744d840bf6fccab30eea96",
+      "size_bytes": 8709519456,
+      "sha256": "0d264b3941185d00a74f75c4245521dae088ff1efc90ab8d1754e83f5844adb0"
     },
     {
       "role": "diffusion_model",
@@ -211,19 +215,48 @@ Worked example with the recipe above, whose files total 16,976,607,096 bytes (ab
 | 24 GB | 19.1 GB | comfortable | 15.8 GB is under 85% of usable (16.2 GB) |
 | 32 GB | 26.3 GB | comfortable | 15.8 GB is under 85% of usable (22.4 GB) |
 
+On the Models screen the result is shown as "Fits your N GB Mac", "Tight fit on N GB" or "Needs more than N GB". A recipe that is too large can still be downloaded; its Download button is shown in the quieter style with a warning tooltip.
+
+Individual files in the Hugging Face list get the same label, computed from that one file's size with steps 3 to 5 (there is no `min_memory_gb` for them).
+
 The estimate is advisory. If the helper runs out of memory during generation, Kiln reports that as an out-of-memory error.
 
 ## Importing a recipe in the app
 
 1. Open the Models screen.
-2. Choose "Import Recipe" and select your `.json` file.
+2. Click "Import Recipe" in the header, next to the search field and the "Downloaded" filter.
+3. Select your `.json` file. The file picker accepts JSON files only.
 
-Kiln decodes and validates the file with the rules above. If it is valid, it is copied to `~/Library/Application Support/Kiln/recipes/<id>.json`, named after the recipe's `id` whatever the original file was called. Importing a recipe with the same id as one you imported earlier replaces it.
+Kiln decodes and validates the file with the rules above. If it is valid, it is copied to `~/Library/Application Support/Kiln/recipes/<id>.json`, named after the recipe's `id` whatever the original file was called, and appears in the recipe list on the Models screen with a Download button. Importing a recipe with the same id as an existing user recipe replaces it.
 
-Import fails when:
+Import fails, with a "Could Not Import Recipe" alert, when:
 
 - the file is not valid JSON, a required field is missing or a value has the wrong type
 - a validation rule is violated
 - the `id` is already used by a built-in recipe
 
 Imported recipes do not need `revision`, `size_bytes` or `sha256`, but leaving them out means the download is taken from `main` and is not verified, there is no disk-space check for that file, and there is no size-based memory estimate.
+
+There is no button to remove a recipe. Deleting a model on the Models screen removes its downloaded files and keeps the recipe in the list. To remove an imported recipe, delete its file from the user recipes folder.
+
+## Single-file recipes
+
+The Models screen also lists Hugging Face repos: the most downloaded text-to-image models, or search results. Opening "Files" on a repo shows its `.safetensors` and `.gguf` files (files whose name starts with `mmproj` are left out). Clicking Download on one of them does not need a hand-written recipe: Kiln builds one with `ModelRecipe.singleFile` in [`ModelRecipe+SingleFile.swift`](../Sources/KilnCore/Recipes/ModelRecipe+SingleFile.swift), saves it to the user recipes folder and starts the download.
+
+The generated recipe has:
+
+| Field | Value |
+| --- | --- |
+| `id` | `<repo id>-<file name>`, lowercased, with every character other than ASCII letters, digits, `.` and `-` replaced by `-`, and leading and trailing `.` and `-` removed |
+| `name` | The file name |
+| `engine` | `sd.cpp` |
+| `components` | One component with the role `checkpoint`, the repo, the file path, and the `revision`, `size_bytes` and `sha256` the Hub API reported |
+| `defaults` | 20 steps, cfg 7.0, sampler `euler`, and 1024 x 1024 when the file name contains `xl`, otherwise 512 x 512 |
+| `license_note` | The repo's licence tag, when it has one |
+| `min_memory_gb` | Not set |
+
+Things to know:
+
+- This only yields a runnable model for all-in-one checkpoints, for example SD 1.5 or SDXL `.safetensors`. The file is always loaded as a `checkpoint`. A denoiser, text encoder or VAE downloaded this way will not run on its own; models split into several files need a hand-written recipe.
+- The defaults are generic, not taken from the model card. Adjust them in the advanced settings, or write a proper recipe.
+- The recipe is an ordinary user recipe. It is validated before it is saved, and downloading the same file again replaces it.

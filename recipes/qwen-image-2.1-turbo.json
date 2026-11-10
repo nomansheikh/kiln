@@ -5,11 +5,11 @@
   "components": [
     {
       "role": "llm",
-      "repo": "AtomicChat/Qwen-Image-2.1-Turbo-Uncensored-GGUF",
-      "file": "Qwen-Image-2.1-Turbo-Uncensored-Q8_0.gguf",
-      "revision": "881a778e306c44920e42536def3e52c3a3ecc7cd",
-      "size_bytes": 8709520096,
-      "sha256": "f8f9f6276b726db5291f4a5343089612cb5fd08aa81e8f0791dc66d2c03d07ca"
+      "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+      "file": "Qwen3VL-8B-Instruct-Q8_0.gguf",
+      "revision": "f982a07559d4a2f6c8744d840bf6fccab30eea96",
+      "size_bytes": 8709519456,
+      "sha256": "0d264b3941185d00a74f75c4245521dae088ff1efc90ab8d1754e83f5844adb0"
     },
     {
       "role": "diffusion_model",

@@ -19,6 +19,8 @@ Find the model on Hugging Face and decide which files it needs. Each file gets o
 
 Files may come from different repos. Prefer `.gguf` or `.safetensors`.
 
+A single all-in-one checkpoint does not strictly need a hand-written recipe: downloading the file from the Hugging Face list on the Models screen creates a single-file recipe automatically, with generic settings. A curated recipe is still worth contributing when the model card recommends different settings, and it is required for any model split into several files.
+
 ### 2. Get the revision, size and SHA-256
 
 Curated recipes must pin every file. Query the Hub API for each repo:
@@ -86,7 +88,9 @@ swift test
 
 ### 6. Open a pull request
 
-In the description, link the model card (or other primary source) your settings come from, and say which Mac you tried the recipe on, if any. If you could not run it, say so.
+In the description, link the model card (or other primary source) your settings come from, and say which Mac (chip and memory) you ran the recipe on, if any. If you could not run it, say so.
+
+To try a recipe before opening the PR, import it on the Models screen with "Import Recipe", download it and generate an image.
 
 ### What reviewers check
 
@@ -98,11 +102,41 @@ In the description, link the model card (or other primary source) your settings 
 
 ## Contributing code
 
-- `swift test` must pass.
-- The package builds in Swift 6 language mode with strict concurrency checking. Do not silence concurrency diagnostics without a comment explaining why the code is safe.
-- Keep `KilnCore` UI-free. It must not import SwiftUI or AppKit; views and app state belong in `App/`.
-- New behavior in `KilnCore` needs tests. Network and process boundaries are behind protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`) so they can be tested without the network or real weights.
-- Changes to the helper protocol must update both `Engine/main.cpp` and `Sources/KilnCore/Engine/EngineProtocol.swift`, and [docs/architecture.md](docs/architecture.md).
+Build instructions are in the [README](README.md#build-from-source). The structure of the code is described in [docs/architecture.md](docs/architecture.md).
+
+### Conventions
+
+- **One primary type per file**, named after the type. A small helper that only that type uses may share the file.
+- **Keep files short.** Aim for about 200 lines; 250 is the hard cap. Split a view or a type before it gets there.
+- **Feature folders.** Each screen lives in its own folder under `App/Features/` (`Generate`, `Models`, `Gallery`, `Settings`). The window, sidebar, chat list and downloads popover are in `App/Shell/`.
+- **One `@Observable` store per feature** in `App/Stores/`, owned by the root `AppModel`. Views read the stores from the environment and call their methods. Actions that touch more than one store belong on `AppModel`.
+- **Shared views and styles go in `App/DesignSystem/`** (`Theme`, `Motion`, button styles, `Pill`, `Thumbnail` and so on). Use them instead of repeating colours, radii or animations in a feature.
+- **`KilnCore` stays free of UI.** It must not import SwiftUI or AppKit; views and app state belong in `App/`.
+- **Swift 6 strict concurrency.** The package and the app build in Swift 6 language mode. Do not silence concurrency diagnostics without a comment explaining why the code is safe.
+- **`swift test` must pass.** New behaviour in `KilnCore` needs tests. Network and process boundaries are behind protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`) so they can be tested without the network or real weights. The SwiftUI app has no tests, so keep logic that can be tested in `KilnCore`.
+- Changes to the helper protocol must update `Engine/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
 - Do not edit `Vendor/stable-diffusion.cpp`; it is a git submodule.
 
-Build instructions are in the [README](README.md#build).
+### Screenshots for a pull request
+
+If a change affects what the app looks like, attach screenshots. Debug builds can capture them without a model installed. Launch the built app's executable with:
+
+```sh
+/path/to/Kiln.app/Contents/MacOS/Kiln --snapshot <folder>
+```
+
+The app waits for the window to settle, switches to each screen in turn, writes `generate.png`, `models.png`, `gallery.png` and `settings.png` into the folder (creating it if needed), and quits. It draws its own window into the images, so no screen-recording permission is needed. The Models screenshot is taken after a few seconds so the Hugging Face list has time to load; that part needs a network connection.
+
+Other debug-only flags, which can be combined with `--snapshot`:
+
+| Flag | Effect |
+| --- | --- |
+| `--light` | Forces the light appearance. Without it the app follows the system setting. Works on its own, without `--snapshot`. |
+| `--sample-thread` | Fills the Generate screen with a finished turn, a failed turn and a running turn with a step preview and an attached image, so every thread state is visible without a model. It writes one sample image to the temporary directory and one copy to the attachments folder. Only applies together with `--snapshot`. |
+| `--sample-downloads` | Shows the first recipe as a download in progress with a sample speed and time left. Only applies together with `--snapshot`. |
+
+None of these exist in release builds. The implementation is in [`App/Support/DebugSnapshot.swift`](App/Support/DebugSnapshot.swift).
+
+### What is not verified
+
+Say in your PR what you actually ran. At the time of writing, generation has only been confirmed on one machine with one recipe, and image-to-image and the step preview have not been confirmed with a real model (see the Status section of the [README](README.md#status)). Reports from other Macs and models are useful contributions in themselves.
