@@ -9,14 +9,17 @@ struct HubSearchResults: View {
 
     private let query: String
     private let title: String
+    /// Adds space above the section title when another section comes before it.
+    private let isFollowingSection: Bool
 
     @State private var search = HubSearchModel()
     @State private var attempt = 0
     @State private var downloadError: String?
 
-    init(query: String, title: String) {
+    init(query: String, title: String, isFollowingSection: Bool = false) {
         self.query = query
         self.title = title
+        self.isFollowingSection = isFollowingSection
     }
 
     var body: some View {
@@ -85,6 +88,7 @@ struct HubSearchResults: View {
     private func results(_ summaries: [HFModelSummary]) -> some View {
         Group {
             ModelsSectionTitle(text: title, count: summaries.count)
+                .padding(.top, isFollowingSection ? 14 : 0)
             ForEach(summaries) { summary in
                 HubResultCard(
                     summary: summary,

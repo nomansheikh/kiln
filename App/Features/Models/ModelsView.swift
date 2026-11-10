@@ -31,8 +31,9 @@ struct ModelsView: View {
                     } else {
                         ModelsRecipeList(showsDownloadedOnly: showsDownloadedOnly)
                         if !showsDownloadedOnly {
-                            HubSearchResults(query: "", title: "Popular on Hugging Face")
-                                .padding(.top, 14)
+                            // No padding here: this view expands to many cards, and a
+                            // modifier on it would be applied to each one.
+                            HubSearchResults(query: "", title: "Popular on Hugging Face", isFollowingSection: true)
                         }
                     }
                 }
