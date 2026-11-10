@@ -11,6 +11,11 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var licenseNote: String?
     /// Smallest amount of system RAM the recipe is expected to run on.
     public var minMemoryGB: Double?
+    /// Alternative sets of files for the same model, usually different quantizations.
+    /// See `ModelRecipe+Variants.swift`.
+    public var variants: [Variant]?
+    /// The variant whose files were merged into `components`. Set by `resolved(_:)`, never stored.
+    public var selectedVariantID: String?
 
     public init(
         id: String,
@@ -19,8 +24,10 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         components: [Component],
         defaults: GenerationDefaults,
         licenseNote: String? = nil,
-        minMemoryGB: Double? = nil
+        minMemoryGB: Double? = nil,
+        variants: [Variant]? = nil
     ) {
+        self.variants = variants
         self.id = id
         self.name = name
         self.engine = engine
@@ -31,7 +38,7 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, engine, components, defaults
+        case id, name, engine, components, defaults, variants
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
     }
@@ -52,8 +59,13 @@ extension ModelRecipe {
         /// A single-file checkpoint that carries everything (SD 1.x, SDXL).
         case checkpoint
         case diffusionModel = "diffusion_model"
+        /// A language model used as the text encoder (Qwen-Image and similar).
         case llm
         case vae
+        /// CLIP and T5 text encoders, used by the Flux and SD3 families.
+        case clipL = "clip_l"
+        case clipG = "clip_g"
+        case t5xxl
     }
 
     public struct Component: Codable, Sendable, Equatable {
@@ -98,6 +110,12 @@ extension ModelRecipe {
         /// Explicit noise schedule. Needs `steps + 1` values when present.
         public var sigmas: [Double]?
         public var flashAttention: Bool?
+        /// Noise scheduler by its stable-diffusion.cpp name. The engine's default when absent.
+        public var scheduler: String?
+        /// Distilled guidance, used by guidance-distilled models such as Flux.
+        public var guidance: Double?
+        /// Flow shift for flow-matching models. The model's own default when absent.
+        public var flowShift: Double?
 
         public init(
             steps: Int,
@@ -106,8 +124,14 @@ extension ModelRecipe {
             width: Int,
             height: Int,
             sigmas: [Double]? = nil,
-            flashAttention: Bool? = nil
+            flashAttention: Bool? = nil,
+            scheduler: String? = nil,
+            guidance: Double? = nil,
+            flowShift: Double? = nil
         ) {
+            self.scheduler = scheduler
+            self.guidance = guidance
+            self.flowShift = flowShift
             self.steps = steps
             self.cfg = cfg
             self.sampler = sampler
@@ -118,8 +142,9 @@ extension ModelRecipe {
         }
 
         enum CodingKeys: String, CodingKey {
-            case steps, cfg, sampler, width, height, sigmas
+            case steps, cfg, sampler, width, height, sigmas, scheduler, guidance
             case flashAttention = "flash_attention"
+            case flowShift = "flow_shift"
         }
     }
 }

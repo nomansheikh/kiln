@@ -10,6 +10,7 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
     case invalidSHA256(file: String)
     case invalidSize(file: String)
     case invalidDefaults(String)
+    case invalidVariant(String)
 
     public var errorDescription: String? {
         switch self {
@@ -31,25 +32,49 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
             "The size for \(file) must be greater than zero."
         case .invalidDefaults(let reason):
             "The default settings are invalid: \(reason)."
+        case .invalidVariant(let id):
+            "The variant \"\(id)\" needs a unique id of lowercase letters, digits, dots, dashes and underscores, and a name."
         }
     }
 }
 
 extension ModelRecipe {
     public func validate() throws(RecipeValidationError) {
-        let idCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789.-_")
-        guard !id.isEmpty, id.unicodeScalars.allSatisfy(idCharacters.contains), !id.hasPrefix(".") else {
-            throw .invalidID(id)
-        }
+        guard Self.isValidSlug(id) else { throw .invalidID(id) }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { throw .emptyName }
-        guard !components.isEmpty else { throw .noComponents }
+        try defaults.validate()
 
+        guard let variants, !variants.isEmpty else {
+            try Self.validate(components)
+            return
+        }
+        // With variants the shared list may be empty, but every variant must
+        // add up to a complete, valid set of files.
+        try Self.validate(components, allowEmpty: true)
+        var seenIDs: Set<String> = []
+        for variant in variants {
+            guard Self.isValidSlug(variant.id), seenIDs.insert(variant.id).inserted,
+                  !variant.name.trimmingCharacters(in: .whitespaces).isEmpty
+            else {
+                throw .invalidVariant(variant.id)
+            }
+            try Self.validate(variant.components)
+            try Self.validate(resolved(variant.id).components)
+        }
+    }
+
+    private static func isValidSlug(_ text: String) -> Bool {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789.-_")
+        return !text.isEmpty && !text.hasPrefix(".") && text.unicodeScalars.allSatisfy(allowed.contains)
+    }
+
+    private static func validate(_ components: [Component], allowEmpty: Bool = false) throws(RecipeValidationError) {
+        guard allowEmpty || !components.isEmpty else { throw .noComponents }
         var seenRoles: Set<ComponentRole> = []
         for component in components {
             guard seenRoles.insert(component.role).inserted else { throw .duplicateRole(component.role) }
             try component.validate()
         }
-        try defaults.validate()
     }
 }
 

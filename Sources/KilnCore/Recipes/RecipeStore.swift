@@ -24,6 +24,9 @@ public struct RecipeStore: Sendable {
         }
     }
 
+    /// Files that live beside the recipes but are not recipes themselves.
+    public static let reservedFileNames: Set<String> = ["index.json", "schema.json"]
+
     public let bundledDirectory: URL
     public let userDirectory: URL
 
@@ -80,7 +83,7 @@ public struct RecipeStore: Sendable {
     private static func recipeFiles(in directory: URL) -> [URL] {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         return files
-            .filter { $0.pathExtension.lowercased() == "json" }
+            .filter { $0.pathExtension.lowercased() == "json" && !reservedFileNames.contains($0.lastPathComponent) }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 

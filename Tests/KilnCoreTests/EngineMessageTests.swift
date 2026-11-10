@@ -60,6 +60,8 @@ import Testing
         #expect(params["seed"] as? Int == 42)
         #expect(params["init_image"] == nil)
         #expect(params["strength"] == nil)
+        #expect(params["scheduler"] == nil)
+        #expect(model["clip_l"] == nil)
     }
 
     @Test func generateCommandCarriesTheSourceImageAndStrength() throws {
@@ -77,6 +79,33 @@ import Testing
         let params = try #require(json["params"] as? [String: Any])
         #expect(params["init_image"] as? String == "/tmp/source.init")
         #expect(params["strength"] as? Double == 0.6)
+    }
+
+    @Test func generateCommandCarriesEncoderPathsAndModelSettings() throws {
+        let recipe = makeRecipe(
+            components: [
+                .init(role: .diffusionModel, repo: "a/b", file: "dn.gguf"),
+                .init(role: .clipL, repo: "a/b", file: "clip_l.safetensors"),
+                .init(role: .clipG, repo: "a/b", file: "clip_g.safetensors"),
+                .init(role: .t5xxl, repo: "a/b", file: "t5.safetensors"),
+            ],
+            defaults: .init(steps: 4, cfg: 1, sampler: "euler", width: 64, height: 64, scheduler: "simple", guidance: 3.5, flowShift: 3)
+        )
+        let data = try EngineMessage.generateCommand(
+            recipe: recipe, storage: ModelStorage(root: URL(fileURLWithPath: "/m")),
+            request: GenerationRequest(prompt: "x", defaults: recipe.defaults, seed: 1),
+            output: URL(fileURLWithPath: "/tmp/o"), preview: URL(fileURLWithPath: "/tmp/p")
+        )
+
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let model = try #require(json["model"] as? [String: Any])
+        let params = try #require(json["params"] as? [String: Any])
+        #expect(model["clip_l"] as? String == "/m/a/b/clip_l.safetensors")
+        #expect(model["clip_g"] as? String == "/m/a/b/clip_g.safetensors")
+        #expect(model["t5xxl"] as? String == "/m/a/b/t5.safetensors")
+        #expect(params["scheduler"] as? String == "simple")
+        #expect(params["guidance"] as? Double == 3.5)
+        #expect(params["flow_shift"] as? Double == 3)
     }
 
     @Test func recognisesOutOfMemoryLogs() {

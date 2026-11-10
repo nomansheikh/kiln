@@ -62,11 +62,16 @@ enum EngineMessage {
             var diffusionModel: String?
             var llm: String?
             var vae: String?
+            var clipL: String?
+            var clipG: String?
+            var t5xxl: String?
             var flashAttention: Bool
 
             enum CodingKeys: String, CodingKey {
-                case checkpoint, llm, vae
+                case checkpoint, llm, vae, t5xxl
                 case diffusionModel = "diffusion_model"
+                case clipL = "clip_l"
+                case clipG = "clip_g"
                 case flashAttention = "flash_attention"
             }
         }
@@ -84,9 +89,13 @@ enum EngineMessage {
             /// File holding the source image as raw RGB at exactly `width` by `height`.
             var initImage: String?
             var strength: Double?
+            var scheduler: String?
+            var guidance: Double?
+            var flowShift: Double?
 
             enum CodingKeys: String, CodingKey {
-                case prompt, width, height, steps, cfg, sampler, sigmas, seed, strength
+                case prompt, width, height, steps, cfg, sampler, sigmas, seed, strength, scheduler, guidance
+                case flowShift = "flow_shift"
                 case negativePrompt = "negative_prompt"
                 case initImage = "init_image"
             }
@@ -117,6 +126,9 @@ enum EngineMessage {
                 diffusionModel: path(.diffusionModel),
                 llm: path(.llm),
                 vae: path(.vae),
+                clipL: path(.clipL),
+                clipG: path(.clipG),
+                t5xxl: path(.t5xxl),
                 flashAttention: recipe.defaults.flashAttention ?? false
             ),
             params: .init(
@@ -130,7 +142,11 @@ enum EngineMessage {
                 sigmas: request.sigmas,
                 seed: request.seed,
                 initImage: initImage?.path,
-                strength: initImage == nil ? nil : request.strength
+                strength: initImage == nil ? nil : request.strength,
+                // These belong to the model, not to one prompt, so they come from the recipe.
+                scheduler: recipe.defaults.scheduler,
+                guidance: recipe.defaults.guidance,
+                flowShift: recipe.defaults.flowShift
             ),
             output: output.path,
             preview: preview.path

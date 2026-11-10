@@ -129,13 +129,16 @@ bool load_model(const json& model) {
         }
     }
 
-    std::string checkpoint, diffusion_model, llm, vae;
+    std::string checkpoint, diffusion_model, llm, vae, clip_l, clip_g, t5xxl;
     sd_ctx_params_t params;
     sd_ctx_params_init(&params);
     params.model_path           = optional_path(model, "checkpoint", checkpoint);
     params.diffusion_model_path = optional_path(model, "diffusion_model", diffusion_model);
     params.llm_path             = optional_path(model, "llm", llm);
     params.vae_path             = optional_path(model, "vae", vae);
+    params.clip_l_path          = optional_path(model, "clip_l", clip_l);
+    params.clip_g_path          = optional_path(model, "clip_g", clip_g);
+    params.t5xxl_path           = optional_path(model, "t5xxl", t5xxl);
     params.diffusion_flash_attn = model.value("flash_attention", false);
 
     sd_ctx_t* ctx = new_sd_ctx(&params);
@@ -188,7 +191,22 @@ void generate(const json& request) {
             return;
         }
     }
-    gen.sample_params.scheduler = sd_get_default_scheduler(g_ctx, gen.sample_params.sample_method);
+    const std::string scheduler = params.value("scheduler", std::string());
+    if (scheduler.empty()) {
+        gen.sample_params.scheduler = sd_get_default_scheduler(g_ctx, gen.sample_params.sample_method);
+    } else {
+        gen.sample_params.scheduler = str_to_scheduler(scheduler.c_str());
+        if (gen.sample_params.scheduler == SCHEDULER_COUNT) {
+            emit_error("invalid_request", "Unknown scheduler \"" + scheduler + "\".");
+            return;
+        }
+    }
+    if (params.contains("guidance") && params.at("guidance").is_number()) {
+        gen.sample_params.guidance.distilled_guidance = params.at("guidance").get<float>();
+    }
+    if (params.contains("flow_shift") && params.at("flow_shift").is_number()) {
+        gen.sample_params.flow_shift = params.at("flow_shift").get<float>();
+    }
     if (!sigmas.empty()) {
         gen.sample_params.custom_sigmas       = sigmas.data();
         gen.sample_params.custom_sigmas_count = static_cast<int>(sigmas.size());

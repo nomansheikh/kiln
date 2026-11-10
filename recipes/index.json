@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "recipes": [
+    "qwen-image-2.1-turbo.json",
+    "sdxl-base-1.0.json"
+  ]
+}

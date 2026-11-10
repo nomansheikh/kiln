@@ -44,8 +44,21 @@ import Testing
         let file = curatedRecipesDirectory.appendingPathComponent("qwen-image-2.1-turbo.json")
         let qwen = try RecipeStore.decode(Data(contentsOf: file))
 
-        #expect(estimator(gb: 16).fit(for: qwen) == .tooLarge)
-        #expect(estimator(gb: 24).fit(for: qwen) == .comfortable)
-        #expect(estimator(gb: 64).fit(for: qwen) == .comfortable)
+        let q8 = qwen.resolved("q8")
+
+        #expect(estimator(gb: 16).fit(for: q8) == .tooLarge)
+        #expect(estimator(gb: 24).fit(for: q8) == .comfortable)
+        #expect(estimator(gb: 64).fit(for: q8) == .comfortable)
+    }
+
+    @Test func picksTheLargestVariantThatFitsComfortably() throws {
+        let file = curatedRecipesDirectory.appendingPathComponent("qwen-image-2.1-turbo.json")
+        let qwen = try RecipeStore.decode(Data(contentsOf: file))
+
+        #expect(estimator(gb: 64).bestVariant(of: qwen)?.selectedVariantID == "q8")
+        #expect(estimator(gb: 16).bestVariant(of: qwen)?.selectedVariantID == "q4")
+        // Nothing fits an 8 GB Mac: still offer the smallest, so the card can say why.
+        #expect(estimator(gb: 8).bestVariant(of: qwen)?.selectedVariantID == "q4")
+        #expect(estimator(gb: 64).bestVariant(of: makeRecipe()) == nil)
     }
 }

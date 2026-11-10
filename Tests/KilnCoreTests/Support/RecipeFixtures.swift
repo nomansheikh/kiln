@@ -19,3 +19,11 @@ func makeRecipe(
 ) -> ModelRecipe {
     ModelRecipe(id: id, name: "Test", engine: "sd.cpp", components: components, defaults: defaults, minMemoryGB: minMemoryGB)
 }
+
+extension ModelRecipe {
+    func with(variants: [Variant]) -> ModelRecipe {
+        var copy = self
+        copy.variants = variants
+        return copy
+    }
+}
