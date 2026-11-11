@@ -1,11 +1,10 @@
-# Builds, signs, notarizes and publishes Kiln when a version tag such as v0.1.0 is pushed.
-# See docs/releasing.md for the secrets this needs. This workflow has not been run yet.
+# Builds, signs, notarizes and publishes Kiln on a GitHub runner. Start it by hand from a
+# version tag such as v0.1.0. Releases are normally cut with scripts/release.sh instead;
+# see docs/releasing.md for when to use this and the secrets it needs. It has not been run yet.
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write

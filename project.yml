@@ -1,6 +1,6 @@
 name: Kiln
 options:
-  bundleIdPrefix: app.kiln
+  bundleIdPrefix: codes.noman
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -35,7 +35,7 @@ targets:
         product: KilnCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.kiln.Kiln
+        PRODUCT_BUNDLE_IDENTIFIER: codes.noman.kiln
         PRODUCT_NAME: Kiln
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Kiln
