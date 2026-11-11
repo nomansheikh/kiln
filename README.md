@@ -13,7 +13,7 @@ Kiln is early. Read this before relying on it.
 - **Implemented but not confirmed with a real model:** image-to-image (attaching an image) and the live step preview. Both are unit-tested at the protocol level only.
 - **Memory-fit label:** a heuristic based on file sizes only. It does not account for the memory a generation needs on top of the weights.
 - **Hugging Face single-file downloads:** downloading one file from a repo gives a runnable model for all-in-one checkpoints (for example SD 1.5 or SDXL `.safetensors`), and for other versions of a model Kiln has a recipe for (for example another GGUF quantization), which borrow that recipe's remaining files and settings untested. Any other model split into several files needs a recipe.
-- **Releases:** there are no signed or notarized builds and no auto-update. A release workflow exists but has not been run yet (see [docs/releasing.md](docs/releasing.md)); until then you build from source.
+- **Releases:** there are no signed or notarized builds and no auto-update. A release script exists but no release has been cut yet (see [docs/releasing.md](docs/releasing.md)); until then you build from source.
 - **Tests:** the core library has unit tests (`swift test`). The SwiftUI app has none.
 - **CI:** a GitHub Actions workflow runs the core tests, builds the engine helper and builds the app on every push.
 - **Not implemented:** video, training, LoRA, instruction-based editing with a vision encoder, pasting images from the clipboard, automatic choice of quantization.
