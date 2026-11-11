@@ -41,6 +41,9 @@ struct HubResultCard: View {
             if isUnsupported {
                 unsupportedNote
             }
+            if case .family(_, _, let base) = support {
+                familyNote(base)
+            }
 
             ModelsDisclosureRow(title: "All files", isExpanded: $isExpanded)
             if isExpanded {
@@ -84,6 +87,14 @@ struct HubResultCard: View {
             }
         }
         .font(.callout)
+    }
+
+    /// Says where the rest of the model comes from, and that nobody tried the pairing.
+    private func familyNote(_ base: ModelRecipe) -> some View {
+        Text("Runs with the other files and settings of Kiln's \(base.name) recipe. This pairing is untested.")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var stats: some View {

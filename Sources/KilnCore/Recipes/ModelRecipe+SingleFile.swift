@@ -7,13 +7,9 @@ extension ModelRecipe {
     /// known about an arbitrary file. Models split into several parts need a
     /// hand-written recipe instead.
     public static func singleFile(_ file: HFFile, in info: HFModelInfo) -> ModelRecipe {
-        let slug = "\(info.id)-\(file.name)".lowercased().map { character -> Character in
-            character.isASCII && (character.isLetter || character.isNumber || character == "." || character == "-")
-                ? character : "-"
-        }
         let side = file.name.lowercased().contains("xl") ? 1024 : 512
         return ModelRecipe(
-            id: String(slug).trimmingCharacters(in: CharacterSet(charactersIn: ".-")),
+            id: generatedID(for: file, in: info),
             name: file.name,
             engine: StableDiffusionCppEngine.engineID,
             components: [
@@ -33,6 +29,15 @@ extension ModelRecipe {
 }
 
 extension ModelRecipe {
+    /// The id of a recipe Kiln writes for a file picked from a Hugging Face repo.
+    static func generatedID(for file: HFFile, in info: HFModelInfo) -> String {
+        let slug = "\(info.id)-\(file.name)".lowercased().map { character -> Character in
+            character.isASCII && (character.isLetter || character.isNumber || character == "." || character == "-")
+                ? character : "-"
+        }
+        return String(slug).trimmingCharacters(in: CharacterSet(charactersIn: ".-"))
+    }
+
     /// True for a one-file recipe whose file does not look like a whole model, for
     /// example a text encoder downloaded by itself. Such a recipe cannot generate images.
     public var isIncompleteSingleFile: Bool {

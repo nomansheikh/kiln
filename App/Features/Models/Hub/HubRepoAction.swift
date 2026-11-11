@@ -22,12 +22,14 @@ struct HubRepoAction: View {
                 .fixedSize()
                 .help("This model comes in several files. Kiln needs a recipe to put them together, and does not have one yet.")
         case .checkpoint(let file, let info):
-            checkpointControl(file, info)
+            fileControl(file, info, help: "Downloads \(file.name), the complete model in one file")
+        case .family(let file, let info, let base):
+            fileControl(file, info, help: "Downloads \(file.name) and the other files it needs from Kiln's \(base.name) recipe")
         }
     }
 
     @ViewBuilder
-    private func checkpointControl(_ file: HFFile, _ info: HFModelInfo) -> some View {
+    private func fileControl(_ file: HFFile, _ info: HFModelInfo, help: String) -> some View {
         let library = model.library
         switch library.availability(of: file, in: info) {
         case .installed:
@@ -56,7 +58,7 @@ struct HubRepoAction: View {
                     Label("Download", systemImage: "arrow.down")
                 }
                 .buttonStyle(AccentButtonStyle())
-                .help("Downloads \(file.name), the complete model in one file")
+                .help(help)
             }
             .fixedSize()
         }
