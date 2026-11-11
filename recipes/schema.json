@@ -41,7 +41,7 @@
       "type": "number"
     },
     "tested": {
-      "description": "True once someone has run this recipe in Kiln and it generated an image. Leave it out otherwise; the app labels the recipe as untested.",
+      "description": "True once someone has run this recipe in Kiln and it generated an image. Leave it out otherwise. The app does not show it.",
       "type": "boolean"
     },
     "base_model": {

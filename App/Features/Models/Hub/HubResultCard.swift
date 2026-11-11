@@ -89,9 +89,9 @@ struct HubResultCard: View {
         .font(.callout)
     }
 
-    /// Says where the rest of the model comes from, and that nobody tried the pairing.
+    /// Says where the rest of the model comes from.
     private func familyNote(_ base: ModelRecipe) -> some View {
-        Text("Runs with the other files and settings of Kiln's \(base.name) recipe. This pairing is untested.")
+        Text("Runs with the other files and settings of Kiln's \(base.name) recipe.")
             .font(.callout)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
