@@ -1,9 +1,11 @@
 // Turns the app icon artwork into every size the asset catalog needs.
 // Usage: swift scripts/make-icon.swift scripts/app-icon.png App/Assets.xcassets/AppIcon.appiconset
 //
-// The artwork is one rounded square on a transparent background, with a soft shadow.
-// It is scaled so the square is 824 px wide and centred on a 1024 px canvas, which is
-// the standard macOS icon shape, whatever margin the artwork came with.
+// The artwork is one rounded square on a transparent background. Its corners and
+// proportions are close to the macOS icon shape but not exact, and macOS puts an
+// icon that does not match the shape on a light backing plate. So the artwork is
+// fitted into the exact shape here: an 824 px rounded square centred on a 1024 px
+// canvas, with the standard shadow. The artwork's own margin and shadow are dropped.
 import AppKit
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -15,27 +17,59 @@ else {
 }
 let output = URL(fileURLWithPath: arguments[1])
 
-/// The box around the fully opaque pixels: the square itself, without its shadow. Top-left origin.
-func opaqueBounds(of image: CGImage) -> CGRect {
-    let width = image.width, height = image.height
-    var pixels = [UInt8](repeating: 0, count: width * height * 4)
+/// The artwork as RGBA bytes, rows from the top.
+let width = source.width, height = source.height
+var pixels = [UInt8](repeating: 0, count: width * height * 4)
+pixels.withUnsafeMutableBytes { buffer in
     let context = CGContext(
-        data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+        data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
         space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     )!
-    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-    var minX = width, minY = height, maxX = -1, maxY = -1
-    for y in 0..<height {
-        for x in 0..<width where pixels[(y * width + x) * 4 + 3] >= 250 {
-            minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
-        }
-    }
-    precondition(maxX >= 0, "the artwork has no opaque pixels")
-    return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
 }
 
-let body = opaqueBounds(of: source)
-let scale = 824 / body.width
+/// The box around the fully opaque pixels: the square itself, without its shadow. Top-left origin.
+var minX = width, minY = height, maxX = -1, maxY = -1
+for y in 0..<height {
+    for x in 0..<width where pixels[(y * width + x) * 4 + 3] >= 250 {
+        minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+    }
+}
+precondition(maxX >= 0, "the artwork has no opaque pixels")
+let body = CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+
+/// The square's own colour near its top edge, to fill the corners the artwork leaves empty.
+let sample = (Int(body.minY + body.height * 0.05) * width + Int(body.midX)) * 4
+let fill = CGColor(
+    srgbRed: CGFloat(pixels[sample]) / 255, green: CGFloat(pixels[sample + 1]) / 255,
+    blue: CGFloat(pixels[sample + 2]) / 255, alpha: 1
+)
+
+func drawIcon(in context: CGContext) {
+    let plate = CGRect(x: 100, y: 100, width: 824, height: 824)
+    let platePath = CGPath(roundedRect: plate, cornerWidth: 186, cornerHeight: 186, transform: nil)
+
+    context.saveGState()
+    context.setShadow(offset: CGSize(width: 0, height: -10), blur: 24, color: CGColor(gray: 0, alpha: 0.35))
+    context.addPath(platePath)
+    context.setFillColor(fill)
+    context.fillPath()
+    context.restoreGState()
+
+    context.addPath(platePath)
+    context.clip()
+    // The square is stretched to cover the plate, a little past its edges so the artwork's
+    // own rim does not show. Core Graphics counts y from the bottom; the box is from the top.
+    let target = plate.insetBy(dx: -8, dy: -8)
+    let scaleX = target.width / body.width, scaleY = target.height / body.height
+    context.interpolationQuality = .high
+    context.draw(source, in: CGRect(
+        x: target.minX - body.minX * scaleX,
+        y: target.minY - (CGFloat(height) - body.maxY) * scaleY,
+        width: CGFloat(width) * scaleX,
+        height: CGFloat(height) * scaleY
+    ))
+}
 
 func png(pixels: Int) -> Data {
     let rep = NSBitmapImageRep(
@@ -43,16 +77,8 @@ func png(pixels: Int) -> Data {
         hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
     )!
     let context = NSGraphicsContext(bitmapImageRep: rep)!.cgContext
-    context.interpolationQuality = .high
     context.scaleBy(x: CGFloat(pixels) / 1024, y: CGFloat(pixels) / 1024)
-    // Core Graphics counts y from the bottom; the bounds were measured from the top.
-    let bodyBottom = CGFloat(source.height) - body.maxY
-    context.draw(source, in: CGRect(
-        x: 512 - (body.midX * scale),
-        y: 512 - ((bodyBottom + body.height / 2) * scale),
-        width: CGFloat(source.width) * scale,
-        height: CGFloat(source.height) * scale
-    ))
+    drawIcon(in: context)
     return rep.representation(using: .png, properties: [:])!
 }
 
@@ -65,4 +91,4 @@ for (points, scale) in [(16, 1), (16, 2), (32, 1), (32, 2), (128, 1), (128, 2), 
 let contents: [String: Any] = ["images": images, "info": ["author": "xcode", "version": 1]]
 try JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys])
     .write(to: output.appendingPathComponent("Contents.json"))
-print("Wrote \(images.count) icon images to \(output.path); the square was \(Int(body.width)) by \(Int(body.height)) px in the artwork")
+print("Wrote \(images.count) icon images to \(output.path)")
