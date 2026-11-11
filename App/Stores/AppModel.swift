@@ -35,7 +35,12 @@ final class AppModel {
                 downloader: FileDownloader { url in HFClient.authorizationHeader(for: url, token: tokenStore.read()) }
             )
         )
-        let gallery = GalleryLibrary(store: GalleryStore(directory: GalleryStore.defaultDirectory))
+        #if DEBUG
+        let galleryDirectory = DebugSnapshot.galleryDirectory ?? GalleryStore.defaultDirectory
+        #else
+        let galleryDirectory = GalleryStore.defaultDirectory
+        #endif
+        let gallery = GalleryLibrary(store: GalleryStore(directory: galleryDirectory))
         let chats = ChatLibrary(store: ChatStore(directory: ChatStore.defaultDirectory))
         let generation = GenerationStore(
             library: library,

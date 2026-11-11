@@ -117,6 +117,7 @@ Other debug-only flags, which can be combined with `--snapshot`:
 | `--light` | Forces the light appearance. Without it the app follows the system setting. Works on its own, without `--snapshot`. |
 | `--sample-thread` | Fills the Generate screen with a finished turn, a failed turn and a running turn with a step preview and an attached image, so every thread state is visible without a model. It writes one sample image to the temporary directory and one copy to the attachments folder. Only applies together with `--snapshot`. |
 | `--sample-downloads` | Shows the first recipe as a download in progress with a sample speed and time left. Only applies together with `--snapshot`. |
+| `--gallery <folder>` | Shows the Kiln images in that folder as the gallery instead of your own, so a screenshot does not publish your generations. Combined with `--sample-thread`, the thread shows the two oldest of them as finished turns instead of the sample states. Works on its own, without `--snapshot`. |
 
 None of these exist in release builds. The implementation is in [`App/Support/DebugSnapshot.swift`](App/Support/DebugSnapshot.swift).
 
