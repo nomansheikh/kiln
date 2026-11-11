@@ -7,9 +7,18 @@ import KilnCore
 @MainActor
 enum DebugSnapshot {
     static var outputDirectory: URL? {
+        directory(after: "--snapshot")
+    }
+
+    /// `--gallery <folder>` shows that folder as the gallery, so screenshots need not show the user's own images.
+    static var galleryDirectory: URL? {
+        directory(after: "--gallery")
+    }
+
+    private static func directory(after flag: String) -> URL? {
         let arguments = ProcessInfo.processInfo.arguments
-        guard let flag = arguments.firstIndex(of: "--snapshot"), arguments.indices.contains(flag + 1) else { return nil }
-        return URL(fileURLWithPath: arguments[flag + 1], isDirectory: true)
+        guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
+        return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
     }
 
     static func run(model: AppModel, into directory: URL) async {
@@ -26,21 +35,33 @@ enum DebugSnapshot {
         if ProcessInfo.processInfo.arguments.contains("--sample-thread") {
             loadSampleThread(into: model)
         }
+        // Every snapshot has the default window size, whatever size the window was left at.
+        let window = NSApp.windows.first { $0.isVisible && $0.contentView != nil }
+        let savedFrame = window?.frame
+        window?.setContentSize(NSSize(width: 1220, height: 780))
+        defer {
+            if let savedFrame { window?.setFrame(savedFrame, display: false) }
+            NSApp.terminate(nil)
+        }
         for item in SidebarItem.allCases {
             model.selection = item
             try? await Task.sleep(for: .seconds(item == .models ? 4 : 1.2))
-            guard let view = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil })?.contentView?.superview,
+            guard let view = window?.contentView?.superview,
                   let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
             else { continue }
             view.cacheDisplay(in: view.bounds, to: bitmap)
             try? bitmap.representation(using: .png, properties: [:])?
                 .write(to: directory.appendingPathComponent("\(item.rawValue).png"))
         }
-        NSApp.terminate(nil)
     }
 
     /// A finished, a failed and a running turn, so every thread state can be seen without a model.
+    /// With `--gallery`, the two oldest images of that folder as finished turns instead.
     private static func loadSampleThread(into model: AppModel) {
+        if galleryDirectory != nil, !model.gallery.items.isEmpty {
+            model.generation.loadPreview(turns: model.gallery.items.suffix(2).reversed().map { GenerationTurn($0) }, phase: .idle)
+            return
+        }
         let side = 256
         var pixels = Data(capacity: side * side * 3)
         for y in 0..<side {

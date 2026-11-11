@@ -262,6 +262,7 @@ The app writes `generate.png`, `models.png`, `gallery.png` and `settings.png` in
 | `--light` | Force the light appearance. Without it the app follows the system setting. |
 | `--sample-thread` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running turn. |
 | `--sample-downloads` | With `--snapshot`: show the first recipe as a download in progress. |
+| `--gallery <folder>` | Show the Kiln images in that folder as the gallery instead of the user's own. With `--sample-thread`, the thread shows two of them as finished turns. |
 
 To capture the light appearance regardless of the system setting, add `--light`.
 

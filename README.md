@@ -2,7 +2,14 @@
 
 Kiln is a native macOS app that browses Hugging Face text-to-image models, downloads them and generates images locally on Apple Silicon with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and Metal. It is written in Swift 6 and SwiftUI, runs on macOS 14 or later, and is MIT licensed.
 
-<!-- demo GIF goes here -->
+![The Generate screen: a prompt and the image made from it](docs/screenshots/generate.png)
+
+<p>
+  <img src="docs/screenshots/gallery.png" alt="The Gallery screen with six generated images" width="49%">
+  <img src="docs/screenshots/models.png" alt="The Models screen listing recipes with their size and memory fit" width="49%">
+</p>
+
+The images in these screenshots were generated in Kiln with the Qwen-Image 2.1 Turbo Uncensored recipe.
 
 ## Status
 
