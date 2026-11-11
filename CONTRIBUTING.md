@@ -124,3 +124,13 @@ None of these exist in release builds. The implementation is in [`App/Support/De
 ### What is not verified
 
 Say in your PR what you actually ran. At the time of writing, generation has only been confirmed on one machine with one recipe, and image-to-image and the step preview have not been confirmed with a real model (see the Status section of the [README](README.md#status)). Reports from other Macs and models are useful contributions in themselves.
+
+## How a pull request gets merged
+
+Changes reach `main` only through a pull request. Before it can be merged:
+
+- the three CI jobs pass: `conventions`, `recipes` and `build` (`build` is skipped, and counts as passing, when only Markdown files or issue templates changed)
+- the maintainer approves it (see [`.github/CODEOWNERS`](.github/CODEOWNERS)); a new push after an approval needs a new approval
+- every review conversation is resolved
+
+Pull requests are squashed into one commit, so the pull request title becomes the commit message: write it as a [conventional commit](AGENTS.md#commits). The first pull request from a new contributor waits for the maintainer to allow CI to run.
