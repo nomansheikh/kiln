@@ -21,6 +21,7 @@
     "height": 1024
   },
   "license_note": "Denoiser: FLUX Non-Commercial License (non-commercial use only; see black-forest-labs/FLUX.2-klein-9B). VAE and text encoder (Qwen3 8B): Apache-2.0.",
+  "base_model": "black-forest-labs/FLUX.2-klein-9B",
   "variants": [
     {
       "id": "q8",

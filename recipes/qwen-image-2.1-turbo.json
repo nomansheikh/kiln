@@ -33,6 +33,7 @@
     "flash_attention": true
   },
   "license_note": "Denoiser and VAE: Qwen Research License (non-commercial; see the base model repo). Text encoder: Apache-2.0.",
+  "base_model": "Qwen/Qwen-Image-2.1-Turbo",
   "variants": [
     {
       "id": "q8",

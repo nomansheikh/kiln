@@ -21,6 +21,7 @@
     "height": 1024
   },
   "license_note": "Denoiser (Z-Image-Turbo GGUF), text encoder (Qwen3-4B-Instruct-2507 GGUF) and VAE (FLUX.1-schnell autoencoder, Comfy-Org copy): Apache-2.0.",
+  "base_model": "Tongyi-MAI/Z-Image-Turbo",
   "variants": [
     {
       "id": "q8",

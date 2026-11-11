@@ -44,6 +44,11 @@
       "description": "True once someone has run this recipe in Kiln and it generated an image. Leave it out otherwise; the app labels the recipe as untested.",
       "type": "boolean"
     },
+    "base_model": {
+      "description": "Hugging Face repo of the original model the diffusion_model file was made from, for example \"black-forest-labs/FLUX.1-dev\" for a GGUF conversion of it. It must be what the file's own repo states in its base_model tag. The app uses it to run files from other repos of the same model with this recipe's other files and settings. Only for recipes with a diffusion_model component.",
+      "type": "string",
+      "pattern": "^[^/]+/[^/]+$"
+    },
     "variants": {
       "description": "Alternative sets of files for the same model, usually different quantizations. Each variant's components are merged over the shared \"components\": a file with the same role replaces the shared one. Every variant must add up to a complete model.",
       "type": "array",

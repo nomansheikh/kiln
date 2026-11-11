@@ -37,6 +37,7 @@
     "height": 1024
   },
   "license_note": "Denoiser (GGUF conversion of black-forest-labs/FLUX.1-schnell), VAE, CLIP-L and T5-XXL text encoders: Apache-2.0.",
+  "base_model": "black-forest-labs/FLUX.1-schnell",
   "variants": [
     {
       "id": "q8",
