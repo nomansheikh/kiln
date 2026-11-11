@@ -1,79 +1,41 @@
-// Draws the Kiln app icon and writes every size the asset catalog needs.
-// Usage: swift scripts/make-icon.swift App/Assets.xcassets/AppIcon.appiconset
+// Turns the app icon artwork into every size the asset catalog needs.
+// Usage: swift scripts/make-icon.swift scripts/app-icon.png App/Assets.xcassets/AppIcon.appiconset
+//
+// The artwork is one rounded square on a transparent background, with a soft shadow.
+// It is scaled so the square is 824 px wide and centred on a 1024 px canvas, which is
+// the standard macOS icon shape, whatever margin the artwork came with.
 import AppKit
 
-let output = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? ".")
-
-func color(_ hex: UInt32, alpha: CGFloat = 1) -> CGColor {
-    CGColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)
+let arguments = Array(CommandLine.arguments.dropFirst())
+guard arguments.count == 2,
+      let source = NSImage(contentsOfFile: arguments[0])?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+else {
+    FileHandle.standardError.write(Data("usage: swift scripts/make-icon.swift <artwork.png> <AppIcon.appiconset>\n".utf8))
+    exit(1)
 }
+let output = URL(fileURLWithPath: arguments[1])
 
-/// An arch standing on the line `baseY`: straight sides topped by a half circle.
-func arch(centerX: CGFloat, baseY: CGFloat, width: CGFloat, height: CGFloat) -> CGPath {
-    let radius = width / 2
-    let path = CGMutablePath()
-    path.move(to: CGPoint(x: centerX - radius, y: baseY))
-    path.addLine(to: CGPoint(x: centerX - radius, y: baseY + height - radius))
-    path.addArc(center: CGPoint(x: centerX, y: baseY + height - radius), radius: radius, startAngle: .pi, endAngle: 0, clockwise: true)
-    path.addLine(to: CGPoint(x: centerX + radius, y: baseY))
-    path.closeSubpath()
-    return path
-}
-
-func drawIcon(in context: CGContext) {
-    let space = CGColorSpace(name: CGColorSpace.sRGB)!
-    // The standard macOS icon shape: an 824 pt rounded square centred on a 1024 pt canvas.
-    let plate = CGRect(x: 100, y: 100, width: 824, height: 824)
-    let platePath = CGPath(roundedRect: plate, cornerWidth: 186, cornerHeight: 186, transform: nil)
-
-    context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -10), blur: 24, color: color(0x000000, alpha: 0.35))
-    context.addPath(platePath)
-    context.setFillColor(color(0x10222B))
-    context.fillPath()
-    context.restoreGState()
-
-    context.saveGState()
-    context.addPath(platePath)
-    context.clip()
-    let background = CGGradient(colorsSpace: space, colors: [color(0x1D4354), color(0x0B1418)] as CFArray, locations: [0, 1])!
-    context.drawLinearGradient(background, start: CGPoint(x: 512, y: 924), end: CGPoint(x: 512, y: 100), options: [])
-
-    // The glow the fire throws onto the floor and wall.
-    let glow = CGGradient(colorsSpace: space, colors: [color(0xFF8A3D, alpha: 0.55), color(0xFF8A3D, alpha: 0)] as CFArray, locations: [0, 1])!
-    context.drawRadialGradient(glow, startCenter: CGPoint(x: 512, y: 300), startRadius: 0, endCenter: CGPoint(x: 512, y: 300), endRadius: 430, options: [])
-
-    // The kiln's brick face.
-    context.addPath(arch(centerX: 512, baseY: 262, width: 468, height: 520))
-    context.setFillColor(color(0x2C4D5C))
-    context.fillPath()
-    context.addPath(arch(centerX: 512, baseY: 262, width: 468, height: 520))
-    context.setStrokeColor(color(0x4F7C8F, alpha: 0.9))
-    context.setLineWidth(10)
-    context.strokePath()
-
-    // The opening, lit from inside.
-    let mouth = arch(centerX: 512, baseY: 262, width: 300, height: 380)
-    context.saveGState()
-    context.addPath(mouth)
-    context.clip()
-    let fire = CGGradient(
-        colorsSpace: space,
-        colors: [color(0xFFF3C4), color(0xFFC04A), color(0xFF6A2A), color(0x8E1F16)] as CFArray,
-        locations: [0, 0.3, 0.65, 1]
+/// The box around the fully opaque pixels: the square itself, without its shadow. Top-left origin.
+func opaqueBounds(of image: CGImage) -> CGRect {
+    let width = image.width, height = image.height
+    var pixels = [UInt8](repeating: 0, count: width * height * 4)
+    let context = CGContext(
+        data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+        space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     )!
-    context.drawRadialGradient(fire, startCenter: CGPoint(x: 512, y: 290), startRadius: 0, endCenter: CGPoint(x: 512, y: 330), endRadius: 360, options: [.drawsAfterEndLocation])
-    context.restoreGState()
-    context.addPath(mouth)
-    context.setStrokeColor(color(0x14262E))
-    context.setLineWidth(14)
-    context.strokePath()
-
-    // The floor line the kiln stands on.
-    context.setFillColor(color(0x14262E))
-    context.fill(CGRect(x: 100, y: 100, width: 824, height: 162))
-    context.restoreGState()
+    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+    var minX = width, minY = height, maxX = -1, maxY = -1
+    for y in 0..<height {
+        for x in 0..<width where pixels[(y * width + x) * 4 + 3] >= 250 {
+            minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+        }
+    }
+    precondition(maxX >= 0, "the artwork has no opaque pixels")
+    return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
 }
+
+let body = opaqueBounds(of: source)
+let scale = 824 / body.width
 
 func png(pixels: Int) -> Data {
     let rep = NSBitmapImageRep(
@@ -81,8 +43,16 @@ func png(pixels: Int) -> Data {
         hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
     )!
     let context = NSGraphicsContext(bitmapImageRep: rep)!.cgContext
+    context.interpolationQuality = .high
     context.scaleBy(x: CGFloat(pixels) / 1024, y: CGFloat(pixels) / 1024)
-    drawIcon(in: context)
+    // Core Graphics counts y from the bottom; the bounds were measured from the top.
+    let bodyBottom = CGFloat(source.height) - body.maxY
+    context.draw(source, in: CGRect(
+        x: 512 - (body.midX * scale),
+        y: 512 - ((bodyBottom + body.height / 2) * scale),
+        width: CGFloat(source.width) * scale,
+        height: CGFloat(source.height) * scale
+    ))
     return rep.representation(using: .png, properties: [:])!
 }
 
@@ -95,4 +65,4 @@ for (points, scale) in [(16, 1), (16, 2), (32, 1), (32, 2), (128, 1), (128, 2), 
 let contents: [String: Any] = ["images": images, "info": ["author": "xcode", "version": 1]]
 try JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys])
     .write(to: output.appendingPathComponent("Contents.json"))
-print("Wrote \(images.count) icon images to \(output.path)")
+print("Wrote \(images.count) icon images to \(output.path); the square was \(Int(body.width)) by \(Int(body.height)) px in the artwork")
