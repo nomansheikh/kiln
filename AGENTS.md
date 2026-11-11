@@ -18,7 +18,7 @@ There are two kinds of contribution:
 | Path | What belongs there |
 | --- | --- |
 | `recipes/` | Curated recipes, one `<id>.json` per model. `index.json` (generated list of recipes) and `schema.json` (JSON Schema) are reserved names, not recipes. |
-| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build the helper), `release.sh`, `package-dmg.sh` and `make-icon.swift` (release tooling). |
+| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build the helper), `release.sh` and `package-dmg.sh` (release tooling). |
 | `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, helper process, wire format), `Gallery/` (PNG files with embedded settings), `Chats/` (saved chats). |
 | `Tests/KilnCoreTests/` | Unit tests for KilnCore, written with Swift Testing. Test doubles and fixtures are in `Support/`. |
 | `App/` | The SwiftUI app. `KilnApp.swift` is the entry point. |
