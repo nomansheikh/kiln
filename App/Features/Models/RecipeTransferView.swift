@@ -15,17 +15,11 @@ struct RecipeTransferView: View {
 
     var body: some View {
         switch status.state {
-        case .queued:
-            RecipeTransferRow(value: 0, caption: "Waiting…") {
-                cancelButton
-            }
-        case .downloading, .paused:
-            // One row for both states, so the button's symbol morphs between pause and play.
+        case .queued, .downloading, .paused:
+            // One row for all three, so the button's symbol morphs between pause and play.
+            // Resuming passes through queued, which must keep the same button for that to happen.
             let isPaused = status.state == .paused
-            RecipeTransferRow(
-                value: status.fraction,
-                caption: isPaused ? "Paused · " + status.transferCaption : downloadingCaption
-            ) {
+            RecipeTransferRow(value: status.state == .queued ? 0 : status.fraction, caption: transferCaption) {
                 ModelsIconButton(
                     systemImage: isPaused ? "play.fill" : "pause.fill",
                     help: isPaused ? "Resume download" : "Pause download",
@@ -42,8 +36,12 @@ struct RecipeTransferView: View {
         }
     }
 
-    private var downloadingCaption: String {
-        [status.transferCaption, speed?.summary].compactMap { $0 }.joined(separator: " · ")
+    private var transferCaption: String {
+        switch status.state {
+        case .queued: "Waiting…"
+        case .paused: "Paused · " + status.transferCaption
+        default: [status.transferCaption, speed?.summary].compactMap { $0 }.joined(separator: " · ")
+        }
     }
 
     private var cancelButton: some View {

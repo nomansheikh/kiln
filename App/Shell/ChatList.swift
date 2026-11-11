@@ -38,6 +38,17 @@ struct ChatList: View {
             }
             .scrollIndicators(.never)
             .padding(.top, 14)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                sectionTitle("Chats")
+                Text("No chats yet. Each image you create starts one here.")
+                    .font(.callout)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 12)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 14)
         }
     }
 

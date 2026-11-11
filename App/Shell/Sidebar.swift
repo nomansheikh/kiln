@@ -15,7 +15,9 @@ struct Sidebar: View {
             .frame(height: 36) // the traffic lights sit in this strip, centred on the toggle
 
             VStack(spacing: 1) {
-                SidebarRow(title: "New image", symbol: "plus.bubble", shortcut: "\u{2318}N", selected: model.selection == .generate) {
+                // A saved chat highlights its own row in the list instead.
+                SidebarRow(title: "New image", symbol: "plus.bubble", shortcut: "\u{2318}N",
+                           selected: model.selection == .generate && model.generation.chatID == nil) {
                     model.newImage()
                 }
                 SidebarRow(title: "Models", symbol: "square.grid.2x2", shortcut: "\u{2318}2", selected: model.selection == .models,
