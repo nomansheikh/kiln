@@ -18,7 +18,7 @@ There are two kinds of contribution:
 | Path | What belongs there |
 | --- | --- |
 | `recipes/` | Curated recipes, one `<id>.json` per model. `index.json` (generated list of recipes) and `schema.json` (JSON Schema) are reserved names, not recipes. |
-| `scripts/` | `recipe.py` (create, check and index recipes), `build-engine.sh` (build the helper), `release.sh`, `package-dmg.sh` and `make-icon.swift` (release tooling). |
+| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build the helper), `release.sh`, `package-dmg.sh` and `make-icon.swift` (release tooling). |
 | `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, helper process, wire format), `Gallery/` (PNG files with embedded settings), `Chats/` (saved chats). |
 | `Tests/KilnCoreTests/` | Unit tests for KilnCore, written with Swift Testing. Test doubles and fixtures are in `Support/`. |
 | `App/` | The SwiftUI app. `KilnApp.swift` is the entry point. |
@@ -57,6 +57,7 @@ xcodegen generate
 swift test
 xcodebuild -scheme Kiln -configuration Debug -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
 python3 scripts/recipe.py check
+./scripts/check-conventions.sh
 ```
 
 | Command | What it does | Cost |
@@ -68,8 +69,15 @@ python3 scripts/recipe.py check
 | `swift test` | Builds KilnCore and runs its unit tests. Needs no engine, no network and no model. | Fast |
 | `xcodebuild ... build` | Builds the app (the line above is the one CI uses). | Slow |
 | `python3 scripts/recipe.py check` | Validates every recipe and verifies every file against the Hugging Face API. Needs network. Downloads nothing. | Fast |
+| `./scripts/check-conventions.sh` | Fails when a Swift file under `App/`, `Sources/` or `Tests/` exceeds 250 lines, or a generated or local file is committed. | Fast |
 
-CI (`.github/workflows/ci.yml`) runs, in order: the recipe check, `swift test`, the engine build, `xcodegen generate`, the `xcodebuild` line.
+CI (`.github/workflows/ci.yml`) runs on every pull request and on every push to `main`, as three jobs:
+
+- `conventions`: `./scripts/check-conventions.sh`.
+- `recipes`: the recipe check. It also runs every Monday, because files on Hugging Face can change or disappear.
+- `build`: `swift test`, the engine build, `xcodegen generate`, the `xcodebuild` line. It is skipped for a pull request that changes only Markdown files or issue templates.
+
+A new push to a pull request cancels the run in progress.
 
 Never commit these. They are in `.gitignore`:
 
