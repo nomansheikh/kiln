@@ -4,10 +4,80 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Mondays, 06:00 UTC: recipes are re-checked against Hugging Face, where files can change or disappear.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request replaces the run in progress. Runs on main are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  conventions:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.changes.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check file length and generated files
+        run: ./scripts/check-conventions.sh
+
+      # The build job is skipped when a pull request changes nothing but documentation.
+      - name: Detect code changes
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+        run: |
+          code=true
+          if [ -n "$PULL_REQUEST" ]; then
+            files=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST/files" --paginate --jq '.[].filename')
+            other=$(echo "$files" | grep -vE '\.md$|^\.github/ISSUE_TEMPLATE/' || true)
+            if [ -n "$files" ] && [ -z "$other" ]; then
+              code=false
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Code changed: $code"
+
+  recipes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The script reads the sampler and scheduler names from the stable-diffusion.cpp source.
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Check recipes
+        run: |
+          status=0
+          python3 scripts/recipe.py check || status=$?
+          # Status 3 means Hugging Face could not be reached, not that a recipe is wrong.
+          if [ "$status" -eq 3 ]; then
+            echo "Hugging Face could not be reached. Trying once more in 60 seconds."
+            sleep 60
+            status=0
+            python3 scripts/recipe.py check || status=$?
+          fi
+          exit "$status"
+
   build:
+    needs: conventions
+    if: needs.conventions.outputs.code == 'true'
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -17,9 +87,6 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
-
-      - name: Check recipes
-        run: python3 scripts/recipe.py check
 
       - name: Test KilnCore
         run: swift test
