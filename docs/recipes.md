@@ -44,6 +44,7 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `defaults` | [defaults](#defaults) object | yes | Recommended generation settings. |
 | `license_note` | string | no | Short, human-readable summary of the model's licence terms. |
 | `min_memory_gb` | number | no | Smallest amount of system RAM the recipe is expected to run on. |
+| `base_model` | string | no | Hugging Face repo of the original model the `diffusion_model` file was made from, for example `black-forest-labs/FLUX.1-dev`. Lets files from other repos of the same model run with this recipe. See [family recipes](#family-recipes). |
 | `variants` | array of [variant](#variants) | no | Alternative sets of files for the same model, usually different quantizations. |
 
 A recipe with an `engine` other than `sd.cpp` still loads, but generating with it fails with an "unsupported engine" error.
@@ -300,6 +301,7 @@ The script requires all of that, and also:
 - `revision` is a full 40-character commit sha, not a branch name
 - the file exists on Hugging Face at that revision, with that size and that SHA-256
 - `sampler` and `scheduler` are names the vendored stable-diffusion.cpp accepts
+- `base_model`, when set, is the model the Hub tags every `diffusion_model` repo of the recipe as made from (or is that repo itself), and the recipe has a `diffusion_model` component
 - there are no unknown fields
 
 ## The recipe script
@@ -330,6 +332,7 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--scheduler NAME`, `--guidance N`, `--flow-shift N` | The optional defaults of the same names. |
 | `--license-note TEXT` | `license_note`. |
 | `--min-memory-gb GB` | Recipe-level `min_memory_gb`. |
+| `--base-model OWNER/REPO` | `base_model`. The script refuses a value the `diffusion_model` repo's own tags do not state. |
 | `--force` | Replace an existing file. Without it the script refuses to overwrite. |
 | `--directory DIR` | Write somewhere other than `recipes/`. |
 
@@ -387,6 +390,8 @@ OK
 | 0 | Everything was verified. |
 | 1 | At least one `FAIL`, an invalid recipe, or an index that does not match. |
 | 3 | No failure, but at least one file could not be checked because of a network error. Run it again. |
+
+A recipe with `base_model` gets one more line per `diffusion_model` repo, `ok` when the Hub tags that repo as quantized, fine-tuned or merged from the base model.
 
 When run without file arguments it also checks that `index.json` lists exactly the recipe files.
 
@@ -523,6 +528,34 @@ Importing is the way to try a recipe before opening a pull request: create it wi
 
 There is no button to remove a recipe. Deleting a model on the Models screen removes its downloaded files and keeps the recipe in the list. To remove an imported recipe, delete its file from the user recipes folder.
 
+## Family recipes
+
+Most split models are published many times over: the same denoiser quantized by different people, or fine-tuned. Kiln does not need a recipe for each of those repos. When a repo in the Hugging Face list is a version of a model that a curated recipe covers, Kiln offers its files for download and completes the model from that recipe.
+
+A repo matches a curated recipe when all of this holds:
+
+- the recipe has `base_model` and a `diffusion_model` component
+- the repo's Hub tags include `base_model:quantized:<base_model>`, `base_model:finetune:<base_model>` or `base_model:merge:<base_model>`. `base_model:adapter:` (a LoRA) does not count.
+- none of the repo's files is already part of a curated recipe (such a repo shows that recipe instead)
+
+Files that look like a denoiser can then be downloaded. That is a guess from the path: a `.gguf` or `.safetensors` file that is not split into shards (`-00001-of-00003`), is not named `ae.safetensors`, and has none of `vae`, `clip`, `t5`, `encoder`, `lora`, `mmproj`, `controlnet`, `adapter` in its path. The card's Download button picks the largest such file that fits comfortably in memory together with the recipe's other files, otherwise the smallest.
+
+Downloading one builds a user recipe with `ModelRecipe.adapted(to:in:)` in [`ModelRecipe+Family.swift`](../Sources/KilnCore/Recipes/ModelRecipe+Family.swift):
+
+| Field | Value |
+| --- | --- |
+| `id`, `name` | As for a [single-file recipe](#single-file-recipes) |
+| `components` | The curated recipe's files in its current variant, with the `diffusion_model` replaced by the chosen file (repo, path, and the `revision`, `size_bytes` and `sha256` the Hub API reported) |
+| `defaults` | The curated recipe's |
+| `license_note` | The repo's licence tag for the chosen file, followed by the curated recipe's note for the rest |
+| `min_memory_gb`, `tested`, `base_model`, `variants` | Not set |
+
+Things to know:
+
+- The pairing is inferred from a tag, not tested. A straight quantization behaves like the original. A fine-tune or merge loads with the same companions but may want other settings, and a file in a format stable-diffusion.cpp cannot read fails to load.
+- Files the curated recipe already downloaded are reused, so usually only the new denoiser is fetched.
+- Only the denoiser can be swapped this way. A different text encoder or VAE still needs a hand-written recipe.
+
 ## Single-file recipes
 
 The Models screen also lists Hugging Face repos: the most downloaded text-to-image models, or search results. Opening "Files" on a repo shows its `.safetensors` and `.gguf` files (files whose name starts with `mmproj` are left out). Clicking Download on one of them does not need a hand-written recipe: Kiln builds one with `ModelRecipe.singleFile` in [`ModelRecipe+SingleFile.swift`](../Sources/KilnCore/Recipes/ModelRecipe+SingleFile.swift), saves it to the user recipes folder and starts the download.
@@ -541,6 +574,6 @@ The generated recipe has:
 
 Things to know:
 
-- This only yields a runnable model for all-in-one checkpoints, for example SD 1.5 or SDXL `.safetensors`. The file is always loaded as a `checkpoint`. A denoiser, text encoder or VAE downloaded this way will not run on its own; models split into several files need a hand-written recipe.
+- This only yields a runnable model for all-in-one checkpoints, for example SD 1.5 or SDXL `.safetensors`. The file is always loaded as a `checkpoint`. A text encoder or VAE downloaded this way will not run on its own, and neither will a denoiser unless its repo matches a [family recipe](#family-recipes); other models split into several files need a hand-written recipe.
 - The defaults are generic, not taken from the model card. Adjust them in the advanced settings, or write a proper recipe.
 - The recipe is an ordinary user recipe. It is validated before it is saved, and downloading the same file again replaces it.

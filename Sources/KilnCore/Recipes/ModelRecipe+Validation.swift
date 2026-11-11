@@ -43,6 +43,7 @@ extension ModelRecipe {
         guard Self.isValidSlug(id) else { throw .invalidID(id) }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { throw .emptyName }
         try defaults.validate()
+        if let baseModel, !Component.isValidRepo(baseModel) { throw .invalidRepo(baseModel) }
 
         guard let variants, !variants.isEmpty else {
             try Self.validate(components)
@@ -79,11 +80,13 @@ extension ModelRecipe {
 }
 
 extension ModelRecipe.Component {
+    static func isValidRepo(_ repo: String) -> Bool {
+        let parts = repo.split(separator: "/", omittingEmptySubsequences: false)
+        return parts.count == 2 && parts.allSatisfy { !$0.isEmpty && $0 != "." && $0 != ".." }
+    }
+
     func validate() throws(RecipeValidationError) {
-        let repoParts = repo.split(separator: "/", omittingEmptySubsequences: false)
-        guard repoParts.count == 2, repoParts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else {
-            throw .invalidRepo(repo)
-        }
+        guard Self.isValidRepo(repo) else { throw .invalidRepo(repo) }
         // Recipes can be imported from anywhere, so the path must stay inside the model folder.
         let pathParts = file.split(separator: "/", omittingEmptySubsequences: false)
         guard !file.isEmpty, !file.contains("\\"),

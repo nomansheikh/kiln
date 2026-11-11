@@ -41,7 +41,7 @@ This writes `recipes/sdxl-base-1.0.json` and updates `recipes/index.json`. Thing
 - **Several quantizations of one model are variants of one recipe**, not separate recipes: add `--variant ID "NAME" min_memory_gb=N ROLE=OWNER/REPO:PATH ...` once per quantization, and keep the files they share in `--component`. See [variants](docs/recipes.md#variants).
 - `python3 scripts/recipe.py new --help` shows every option and two complete examples.
 
-A single all-in-one checkpoint does not strictly need a curated recipe: downloading the file from the Hugging Face list on the Models screen creates a single-file recipe automatically, with generic settings. A curated recipe is still worth contributing when the model card recommends different settings, and it is required for any model split into several files.
+A single all-in-one checkpoint does not strictly need a curated recipe: downloading the file from the Hugging Face list on the Models screen creates a single-file recipe automatically, with generic settings. A curated recipe is still worth contributing when the model card recommends different settings, and it is required for a model split into several files, unless the repo is another version of a model that already has a recipe with `base_model` (see [family recipes](docs/recipes.md#family-recipes)).
 
 ### 2. Check it
 

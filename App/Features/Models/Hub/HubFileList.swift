@@ -45,14 +45,22 @@ struct HubFileList: View {
         } else {
             rows(files, in: info)
         }
-        Text("Only a file that holds a whole model can be downloaded by itself. Files marked as a part of a model work only through a recipe.")
+        Text(footnote(for: info))
             .font(.caption)
             .foregroundStyle(.tertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    private func footnote(for info: HFModelInfo) -> String {
+        if let base = model.library.familyRecipe(for: info) {
+            return "Each download here is one version of the model. Kiln adds the other files and the settings from its \(base.name) recipe."
+        }
+        return "Only a file that holds a whole model can be downloaded by itself. Files marked as a part of a model work only through a recipe."
+    }
+
     private func rows(_ files: [HFFile], in info: HFModelInfo) -> some View {
         let library = model.library
+        let hasFamily = library.familyRecipe(for: info) != nil
         let memory = library.memory
         return VStack(spacing: 0) {
             ForEach(files) { file in
@@ -62,6 +70,7 @@ struct HubFileList: View {
                 HubFileRow(
                     file: file,
                     availability: library.availability(of: file, in: info),
+                    isRunnable: file.looksLikeStandaloneCheckpoint || (hasFamily && file.looksLikeDenoiser),
                     fit: file.sizeBytes.map { memory.fit(forFileOfSize: $0) },
                     memoryGB: Int(memory.physicalMemoryGB.rounded()),
                     download: { download(file, info) }

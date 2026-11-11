@@ -159,6 +159,10 @@ Use variants when one model is published in several quantizations or precisions 
 - All variants share the recipe's settings. A version that needs different steps, sampler or sigmas (a turbo or distilled model) is a separate recipe.
 - The app offers the largest variant that fits comfortably in the Mac's memory and lets the user switch.
 
+### `base_model`
+
+For a recipe with a `diffusion_model` file, pass `--base-model OWNER/REPO` with the original model that file was made from, exactly as the file's repo states it on its Hugging Face page ("Base model"). The app then lets files from other repos of the same model borrow the recipe. Leave it out when the page states no base model, and for a recipe that only swaps another part (a different text encoder, for example). The script rejects a value the repo's tags do not confirm.
+
 ### `min_memory_gb`
 
 - It is the smallest amount of system RAM the recipe, or the variant, is expected to run on.

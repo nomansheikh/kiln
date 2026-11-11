@@ -35,7 +35,7 @@ RESERVED_NAMES = {"index.json", "schema.json"}
 # ModelRecipe.ComponentRole
 ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
 
-RECIPE_KEYS = {"$schema", "id", "name", "engine", "components", "defaults", "license_note", "min_memory_gb", "variants", "tested"}
+RECIPE_KEYS = {"$schema", "id", "name", "engine", "components", "defaults", "license_note", "min_memory_gb", "variants", "tested", "base_model"}
 COMPONENT_KEYS = {"role", "repo", "file", "revision", "size_bytes", "sha256"}
 DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
@@ -58,6 +58,9 @@ FALLBACK_SCHEDULERS = [
 SLUG = re.compile(r"[a-z0-9._-]+\Z")
 SHA256 = re.compile(r"[0-9a-fA-F]{64}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
+REPO = re.compile(r"(?!\.{1,2}/)[^/]+/(?!\.{1,2}\Z)[^/]+\Z")
+# HFModelInfo.baseModels: the ways a repo can be the same model as its base.
+BASE_RELATIONS = ["quantized", "finetune", "merge"]
 
 EXIT_OK, EXIT_FAILED, EXIT_NETWORK = 0, 1, 3
 
@@ -274,6 +277,12 @@ def validate_recipe(recipe, curated=True, file_name=None):
         problems.append("min_memory_gb must be a number.")
     if recipe.get("tested") is not None and not isinstance(recipe["tested"], bool):
         problems.append("tested must be true or false.")
+    base_model = recipe.get("base_model")
+    if base_model is not None:
+        if not isinstance(base_model, str) or not REPO.match(base_model):
+            problems.append("base_model %s is not a Hugging Face repo id (expected owner/name)." % json.dumps(base_model))
+        elif curated and not any(c.get("role") == "diffusion_model" for _, c in installs(recipe) if isinstance(c, dict)):
+            problems.append("base_model needs a diffusion_model component: it names the model that file was made from.")
 
     validate_defaults(recipe.get("defaults"), problems, curated)
 
@@ -507,6 +516,8 @@ def command_new(args):
         recipe["min_memory_gb"] = parse_memory(args.min_memory_gb)
     if args.tested:
         recipe["tested"] = True
+    if args.base_model:
+        recipe["base_model"] = args.base_model
     if variants:
         recipe["variants"] = [dict(variant, components=[c for c, _ in variant["components"]]) for variant in variants]
 
@@ -539,6 +550,13 @@ def command_new(args):
         return report_problems("The recipe was not written:", errors)
 
     problems = validate_recipe(recipe, curated=True, file_name=os.path.basename(path))
+    if not problems and "base_model" in recipe:
+        try:
+            problems = [detail for status, _, detail in verify_base_model(recipe, hub) if status == "FAIL"]
+        except NetworkError as failure:
+            print("error: %s" % failure, file=sys.stderr)
+            print("Nothing was written. This is a network problem, not a problem with the recipe.", file=sys.stderr)
+            return EXIT_NETWORK
     if problems:
         return report_problems("The recipe was not written:", problems)
 
@@ -593,6 +611,29 @@ def verify(component, hub):
     return "ok", "%d bytes" % size
 
 
+def verify_base_model(recipe, hub):
+    """One (status, repo, detail) per denoiser repo: its base_model tags must name recipe["base_model"]."""
+    base = recipe["base_model"]
+    results = []
+    for repo, revision in sorted({(c["repo"], c["revision"]) for _, c in installs(recipe) if c["role"] == "diffusion_model"}):
+        if repo == base:
+            results.append(("ok", repo, "is the base model itself"))
+            continue
+        try:
+            tags = hub.repo(repo, revision).get("tags") or []
+        except NotOnHub as error:
+            results.append(("FAIL", repo, str(error)))
+            continue
+        stated = sorted({tag.split(":", 2)[2] for tag in tags
+                         if any(tag.startswith("base_model:%s:" % relation) for relation in BASE_RELATIONS)})
+        if base in stated:
+            results.append(("ok", repo, "is tagged as made from %s" % base))
+        else:
+            results.append(("FAIL", repo, "base_model is %s, but Hugging Face tags %s as made from %s"
+                            % (base, repo, ", ".join(stated) or "no other model")))
+    return results
+
+
 def command_check(args):
     directory = os.path.abspath(args.directory)
     if args.files:
@@ -637,6 +678,15 @@ def command_check(args):
             counts[status] += 1
             tag = "%s/%s" % (label, component["role"]) if label else component["role"]
             print("  %-4s  %-22s %s:%s  (%s)" % (status, tag, component["repo"], component["file"], detail))
+        if "base_model" in recipe:
+            try:
+                results = verify_base_model(recipe, hub)
+            except NetworkError as error:
+                results = [("SKIP", recipe["base_model"], "network error: %s" % error)]
+            for status, repo, detail in results:
+                # The summary counts files, and this line is not one.
+                counts[status] += status != "ok"
+                print("  %-4s  %-22s %s  (%s)" % (status, "base_model", repo, detail))
 
     index_ok = True
     if not args.files:
@@ -767,6 +817,8 @@ def build_parser():
     new.add_argument("--min-memory-gb", metavar="GB", help="smallest system RAM the recipe is expected to run on")
     new.add_argument("--tested", action="store_true",
                      help="you ran this recipe in Kiln and it generated an image")
+    new.add_argument("--base-model", metavar="OWNER/REPO",
+                     help="repo of the original model the diffusion_model file was made from, as that file's repo states it")
     new.add_argument("--force", action="store_true", help="replace an existing recipe file")
     directory_option(new)
     new.set_defaults(run=command_new)

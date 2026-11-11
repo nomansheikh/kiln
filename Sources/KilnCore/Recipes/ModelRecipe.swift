@@ -13,6 +13,9 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var minMemoryGB: Double?
     /// True once someone has confirmed the recipe generates images in Kiln.
     public var tested: Bool?
+    /// Hugging Face repo of the original model the denoiser was made from. Lets other
+    /// repos of the same model borrow this recipe. See `ModelRecipe+Family.swift`.
+    public var baseModel: String?
     /// Alternative sets of files for the same model, usually different quantizations.
     /// See `ModelRecipe+Variants.swift`.
     public var variants: [Variant]?
@@ -43,6 +46,7 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         case id, name, engine, components, defaults, variants, tested
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
+        case baseModel = "base_model"
     }
 
     /// Total download size, or nil when any component has no declared size.

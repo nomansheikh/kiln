@@ -114,9 +114,11 @@ final class ModelLibrary {
         reloadRecipes()
     }
 
-    /// Turns one file from a Hugging Face repo into a single-file recipe and downloads it.
+    /// Turns one file from a Hugging Face repo into a recipe and downloads it: the file
+    /// in place of a known model's denoiser when the repo is a version of that model,
+    /// otherwise a single-file recipe.
     func downloadFromHub(_ file: HFFile, in info: HFModelInfo) throws {
-        let recipe = ModelRecipe.singleFile(file, in: info)
+        let recipe = familyRecipe(for: info)?.adapted(to: file, in: info) ?? ModelRecipe.singleFile(file, in: info)
         try recipeStore.save(recipe)
         reloadRecipes()
         download(recipe)

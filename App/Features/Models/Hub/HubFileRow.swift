@@ -5,6 +5,9 @@ import SwiftUI
 struct HubFileRow: View {
     let file: HFFile
     let availability: HubFileAvailability
+    /// Whether downloading this file gives a model that runs: a whole model in one
+    /// file, or a denoiser Kiln can complete from one of its recipes.
+    let isRunnable: Bool
     /// How well the file fits this Mac's memory, when its size is known.
     let fit: MemoryFit?
     let memoryGB: Int
@@ -50,7 +53,7 @@ struct HubFileRow: View {
                 .fixedSize()
         case .transferring(let status):
             progress(status)
-        case .available where !file.looksLikeStandaloneCheckpoint:
+        case .available where !isRunnable:
             // One part of a multi-file model: downloading it alone gives nothing that runs.
             Pill(text: "Part of a model", systemImage: "puzzlepiece.extension")
                 .fixedSize()

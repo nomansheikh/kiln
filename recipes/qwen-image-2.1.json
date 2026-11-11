@@ -21,6 +21,7 @@
     "height": 1024
   },
   "license_note": "Denoiser and VAE: Qwen Research License (non-commercial use only; see the Qwen/Qwen-Image-2.1 repo). Text encoder: Apache-2.0.",
+  "base_model": "Qwen/Qwen-Image-2.1",
   "variants": [
     {
       "id": "q8",

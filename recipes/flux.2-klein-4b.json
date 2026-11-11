@@ -21,6 +21,7 @@
     "height": 1024
   },
   "license_note": "Denoiser, VAE and text encoder (Qwen3 4B): Apache-2.0, commercial use allowed.",
+  "base_model": "black-forest-labs/FLUX.2-klein-4B",
   "variants": [
     {
       "id": "q8",

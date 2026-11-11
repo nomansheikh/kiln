@@ -47,7 +47,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 
 | Module | Main types | Responsibility |
 | --- | --- | --- |
-| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a single-file recipe from a Hub file, memory-fit estimate. See [recipes.md](recipes.md). |
+| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
 | `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator` | Download queue, resumable transfers, verification, on-disk layout, speed estimate. |
 | `Engine/` | `InferenceEngine`, `StableDiffusionCppEngine`, `HelperProcess`, `EngineMessage` | Generation API, helper process management, wire format. |
@@ -369,7 +369,7 @@ App/
 
 | Store | Owns |
 | --- | --- |
-| `ModelLibrary` | Recipes and recipe load problems, the set of installed recipes, download statuses and speeds; import, single-file download from the Hub, delete. Wraps `RecipeStore`, `ModelStorage`, `DownloadManager`, `HFClient` and `MemoryFitEstimator`. |
+| `ModelLibrary` | Recipes and recipe load problems, the set of installed recipes, download statuses and speeds; import, download of a file from the Hub, delete. Wraps `RecipeStore`, `ModelStorage`, `DownloadManager`, `HFClient` and `MemoryFitEstimator`. |
 | `GenerationStore` | The draft being edited (`GenerationDraft`), the thread on screen (`GenerationTurn`), the running phase and step preview, and which recipe is loaded in memory. Runs generations through `InferenceEngine`, saves results to the gallery and the thread to its chat. |
 | `GalleryLibrary` | The gallery items; add, delete, copy to the pasteboard, reveal in Finder. Wraps `GalleryStore`. |
 | `ChatLibrary` | The saved chats; save, rename, archive, delete. Wraps `ChatStore`. |
