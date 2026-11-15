@@ -16,6 +16,8 @@ struct SpeechTextEditor: NSViewRepresentable {
     let proxy: SpeechEditorProxy
     /// The height the text needs, for the composer to grow with it.
     @Binding var height: CGFloat
+    /// Whether the field has the keyboard, for the composer's border.
+    @Binding var isFocused: Bool
     let onSubmit: () -> Void
 
     static let font = NSFont.systemFont(ofSize: 15)
@@ -28,7 +30,7 @@ struct SpeechTextEditor: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scroll = NSTextView.scrollableTextView()
+        let scroll = FocusReportingTextView.scrollableTextView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
@@ -36,6 +38,11 @@ struct SpeechTextEditor: NSViewRepresentable {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = Self.lineSpacing
         view.delegate = context.coordinator
+        (view as? FocusReportingTextView)?.onFocusChange = { [coordinator = context.coordinator] focused in
+            // Focus can change during a view update, which must not change state.
+            let parent = coordinator.parent
+            DispatchQueue.main.async { parent.isFocused = focused }
+        }
         view.drawsBackground = false
         view.isRichText = false
         view.allowsUndo = true
@@ -128,5 +135,22 @@ struct SpeechTextEditor: NSViewRepresentable {
                 DispatchQueue.main.async { [parent] in parent.height = needed }
             }
         }
+    }
+}
+
+/// A text view that says when it gets and loses the keyboard.
+final class FocusReportingTextView: NSTextView {
+    var onFocusChange: ((Bool) -> Void)?
+
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        if became { onFocusChange?(true) }
+        return became
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { onFocusChange?(false) }
+        return resigned
     }
 }
