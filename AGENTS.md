@@ -34,7 +34,7 @@ There are two kinds of contribution:
 | `Vendor/stable-diffusion.cpp/` | Git submodule. Read-only. Its `docs/` folder documents each supported model family. |
 | `Vendor/whisper.cpp/` | Git submodule, pinned to a release tag. Read-only. |
 | `Vendor/audio.cpp/` | Git submodule, pinned to a release tag. Read-only. Its `docs/models/` folder documents each model family. |
-| `docs/` | `architecture.md` (modules, helper protocol, download flow), `recipes.md` (recipe reference), `releasing.md`. |
+| `docs/` | `architecture.md` (modules, helper protocol, download flow), `recipes.md` (recipe reference), `releasing.md` (how a release is made), `release-checklist.md` (what to run and click through before one). |
 | `.github/` | CI (`workflows/ci.yml`), release workflow, issue and pull request templates. |
 | `Package.swift` | Swift package: the `KilnCore` library and its tests. |
 | `project.yml` | XcodeGen definition of the app target. `Kiln.xcodeproj` is generated from it. |
@@ -333,6 +333,7 @@ The app writes `generate.png`, `speech.png`, `models.png`, `gallery.png` and `se
 | `--speech-text <text>` | With `--snapshot`: put that text in the Speech screen's field, to show how marks such as `[laughs]` are coloured. |
 | `--sample-working` | With `--snapshot`: show the Speech screen while a clip is being made. A second frame, `speech-later.png`, is saved 0.4 seconds after the first. |
 | `--audio <folder>` | Show the clips in that folder on the Speech screen instead of the user's own. An empty folder shows the screen's greeting. |
+| `--chats <folder>` | Show the chats in that folder in the sidebar instead of the user's own. An empty folder shows none. |
 | `--sample-clips` | Show sample clips on the Speech screen instead of the user's own, with one loaded in the player. The voices shown are those of an installed voice model, if there is one. |
 | `--sample-update` | Show the sidebar's notice of a new version without asking GitHub. |
 | `--sample-speech` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running speech-to-text turn. |
