@@ -42,7 +42,7 @@ struct SpeechClipList: View {
             Button("Delete", role: .destructive) { speech.delete(clip) }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("The audio file is removed from this Mac. This cannot be undone.")
+            Text("The audio file is moved to the Trash.")
         }
     }
 }

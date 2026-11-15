@@ -44,6 +44,7 @@ public struct AudioStore: Sendable {
         encoder.outputFormatting = [.sortedKeys]
         try encoder.encode(Sidecar(record: record, durationSeconds: audio.durationSeconds))
             .write(to: Self.sidecar(of: file), options: .atomic)
+        UserFile.log.notice("Saved a clip: \(file.lastPathComponent, privacy: .public)")
         return AudioItem(url: file, record: record, durationSeconds: audio.durationSeconds)
     }
 
@@ -63,9 +64,10 @@ public struct AudioStore: Sendable {
             .sorted { $0.record.createdAt > $1.record.createdAt }
     }
 
-    public func delete(_ item: AudioItem) throws {
-        try FileManager.default.removeItem(at: item.url)
-        try? FileManager.default.removeItem(at: Self.sidecar(of: item.url))
+    /// Moves a sound and its settings to the Trash, or erases them when asked to.
+    public func delete(_ item: AudioItem, permanently: Bool = false) throws {
+        try UserFile.discard(item.url, permanently: permanently)
+        try? UserFile.discard(Self.sidecar(of: item.url), permanently: permanently)
     }
 
     private static func sidecar(of file: URL) -> URL {

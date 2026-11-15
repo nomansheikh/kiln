@@ -97,7 +97,7 @@ import Testing
 
         #expect(store.items().map(\.record.request.prompt) == ["new", "old"])
 
-        try store.delete(new)
+        try store.delete(new, permanently: true)
         #expect(store.items().map(\.id) == [old.id])
     }
 

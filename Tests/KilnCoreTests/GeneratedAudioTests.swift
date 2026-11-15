@@ -83,7 +83,7 @@ import Testing
         #expect(items[1].record.request.speech?.voice == "alba")
         #expect(old.url.pathExtension == "wav")
 
-        try store.delete(old)
+        try store.delete(old, permanently: true)
         #expect(store.items().map(\.id) == [new.id])
         #expect(try FileManager.default.contentsOfDirectory(atPath: store.directory.path).count == 3)
     }

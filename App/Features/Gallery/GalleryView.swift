@@ -64,7 +64,7 @@ struct GalleryView: View {
             Button("Delete", role: .destructive) { delete(item) }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("The image file is removed from the gallery folder. This cannot be undone.")
+            Text("The image file is moved to the Trash.")
         }
         .alert(
             "The image could not be deleted",

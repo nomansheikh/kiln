@@ -25,6 +25,7 @@ Kiln has three parts:
 |                 class per helper                                |
 |    Audio        GeneratedAudio, AudioStore                      |
 |    Gallery      GalleryStore, ImageCodec, PNGText               |
+|    Files        UserFile                                        |
 |    Chats        ChatStore, Chat                                 |
 +--------|---------------------------^----------------------------+
          | stdin: JSON requests      | stdout: JSON events
@@ -64,6 +65,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 | `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `HelperSession`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format. |
 | `Audio/` | `GeneratedAudio`, `AudioStore`, `AudioItem` | Sound a model made, WAV encoding, saving and listing sounds with their settings. |
 | `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
+| `Files/` | `UserFile` | Deleting something the user made (a clip, a voice, an image) moves it to the Trash, so it can be put back from the Finder. Each move and each saved clip is written to the system log under the subsystem `codes.noman.kiln`, category `files`. |
 | `Chats/` | `Chat`, `ChatTurn`, `ChatStore` | Saved chats as JSON files. |
 
 ### Hugging Face client

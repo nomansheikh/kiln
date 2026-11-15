@@ -44,7 +44,7 @@ import Testing
         #expect(store.voices().map(\.name) == ["Abe", "amy"])
         #expect(store.voices().first?.transcript == "New words")
 
-        try store.delete(amy)
+        try store.delete(amy, permanently: true)
         #expect(store.voices().map(\.id) == [zed.id])
         #expect(try FileManager.default.contentsOfDirectory(atPath: store.directory.path).count == 2)
     }

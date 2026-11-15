@@ -43,7 +43,8 @@ public struct GalleryStore: Sendable {
             .sorted { $0.record.createdAt > $1.record.createdAt }
     }
 
-    public func delete(_ item: GalleryItem) throws {
-        try FileManager.default.removeItem(at: item.url)
+    /// Moves an image to the Trash, or erases it when asked to.
+    public func delete(_ item: GalleryItem, permanently: Bool = false) throws {
+        try UserFile.discard(item.url, permanently: permanently)
     }
 }

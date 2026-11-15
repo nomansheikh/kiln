@@ -81,9 +81,10 @@ public struct VoiceStore: Sendable {
         try write(voice)
     }
 
-    public func delete(_ voice: SavedVoice) throws {
-        try FileManager.default.removeItem(at: recording(of: voice))
-        try? FileManager.default.removeItem(at: sidecar(of: voice))
+    /// Moves a voice's recording and its details to the Trash, or erases them when asked to.
+    public func delete(_ voice: SavedVoice, permanently: Bool = false) throws {
+        try UserFile.discard(recording(of: voice), permanently: permanently)
+        try? UserFile.discard(sidecar(of: voice), permanently: permanently)
     }
 
     private func write(_ voice: SavedVoice) throws {
