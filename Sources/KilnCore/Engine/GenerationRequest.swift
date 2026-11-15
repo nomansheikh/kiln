@@ -76,10 +76,28 @@ public struct SpeechSettings: Codable, Sendable, Equatable {
     /// A recording of the voice to speak in, for a model that can copy one.
     /// It takes the place of `voice`.
     public var reference: VoiceReference?
+    /// The voices of the speakers of a script, by the name each is given in the text.
+    public var cast: [String: CastVoice]?
 
-    public init(voice: String? = nil, instruction: String? = nil, reference: VoiceReference? = nil) {
+    public init(
+        voice: String? = nil, instruction: String? = nil, reference: VoiceReference? = nil,
+        cast: [String: CastVoice]? = nil
+    ) {
         self.voice = voice
         self.instruction = instruction
+        self.reference = reference
+        self.cast = cast
+    }
+}
+
+/// The voice one speaker of a script is read in: one the model knows by name,
+/// or a recording to copy.
+public struct CastVoice: Codable, Sendable, Equatable {
+    public var voice: String?
+    public var reference: VoiceReference?
+
+    public init(voice: String? = nil, reference: VoiceReference? = nil) {
+        self.voice = voice
         self.reference = reference
     }
 }

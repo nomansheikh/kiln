@@ -29,7 +29,7 @@ struct SpeechSavedVoices: View {
                 .padding(.bottom, 2)
         }
         ForEach(speech.voices.voices) { voice in
-            row(name: voice.name, detail: nil, isSelected: speech.savedVoice?.id == voice.id) {
+            row(name: voice.name, detail: voice.design, isSelected: speech.savedVoice?.id == voice.id) {
                 speech.savedVoiceID = voice.id
                 dismiss()
             }
@@ -41,17 +41,25 @@ struct SpeechSavedVoices: View {
                 Button("Delete Voice", role: .destructive) { speech.deleteVoice(voice) }
             }
         }
-        Button {
+        action("Add a voice\u{2026}", systemImage: "plus") {
             dismiss()
             speech.editedVoiceID = nil
             speech.isAddingVoice = true
-        } label: {
+        }
+        action("Design a voice\u{2026}", systemImage: "wand.and.stars") {
+            dismiss()
+            speech.isDesigningVoice = true
+        }
+    }
+
+    private func action(_ title: String, systemImage: String, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
             HStack(spacing: 10) {
-                Image(systemName: "plus")
+                Image(systemName: systemImage)
                     .font(.system(size: 12, weight: .bold))
                     .frame(width: 30, height: 30)
                     .background(Theme.card, in: Circle())
-                Text("Add a voice\u{2026}")
+                Text(title)
                     .font(.callout.weight(.medium))
                 Spacer(minLength: 0)
             }
@@ -72,7 +80,8 @@ struct SpeechSavedVoices: View {
                         .font(.callout.weight(.medium))
                         .lineLimit(1)
                     if let detail {
-                        Text(detail)
+                        Text(verbatim: detail)
+                            .lineLimit(1)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

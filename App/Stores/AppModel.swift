@@ -20,7 +20,11 @@ final class AppModel {
     init() {
         let support = URL.applicationSupportDirectory.appendingPathComponent("Kiln", isDirectory: true)
         let tokenStore = KeychainTokenStore()
+        #if DEBUG
+        let storage = ModelStorage(root: DebugSnapshot.modelsDirectory ?? ModelStorage.defaultRoot)
+        #else
         let storage = ModelStorage(root: ModelStorage.defaultRoot)
+        #endif
         let hub = HFClient(token: { tokenStore.read() })
 
         let library = ModelLibrary(

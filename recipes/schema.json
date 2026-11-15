@@ -95,6 +95,20 @@
           "description": "Whether the model also wants the words spoken in that recording: \"optional\" or \"required\". Needs \"reference\".",
           "enum": ["optional", "required"]
         },
+        "speakers": {
+          "description": "For a model that reads a text with several speakers: how many, and how it wants a turn written. The app rewrites a script such as \"Anna: Hello\" for it. A recording can be given for each speaker when \"reference\" is set.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max", "line"],
+          "properties": {
+            "max": { "description": "The most speakers one text may have.", "type": "integer", "minimum": 2 },
+            "line": {
+              "description": "One speaker's turn as the model reads it, with {n} for the speaker's number from 1 and {text} for the words, for example \"Speaker {n}: {text}\".",
+              "type": "string",
+              "pattern": "(\\{n\\}.*\\{text\\})|(\\{text\\}.*\\{n\\})"
+            }
+          }
+        },
         "tags": {
           "description": "Marks the model understands inside the text, written as they are typed, for example \"[laughter]\". The app offers them in a menu.",
           "type": "array",

@@ -21,6 +21,21 @@ public struct GeneratedAudio: Sendable, Hashable {
         sampleRate > 0 ? Double(frameCount) / Double(sampleRate) : 0
     }
 
+    /// Several sounds one after another, with a pause between them. Nil when
+    /// there are none or they differ in sample rate or channels.
+    public static func joined(_ parts: [GeneratedAudio], gapSeconds: Double = 0.25) -> GeneratedAudio? {
+        guard let first = parts.first,
+              parts.allSatisfy({ $0.sampleRate == first.sampleRate && $0.channels == first.channels })
+        else { return nil }
+        let gap = Data(count: Int(Double(first.sampleRate) * gapSeconds) * first.channels * MemoryLayout<Float32>.size)
+        var samples = Data()
+        for (index, part) in parts.enumerated() {
+            if index > 0 { samples.append(gap) }
+            samples.append(part.samples)
+        }
+        return GeneratedAudio(sampleRate: first.sampleRate, channels: first.channels, samples: samples)
+    }
+
     /// The sound as a 16-bit PCM WAV file, which every player opens.
     public func wavData() throws(AudioCodecError) -> Data {
         guard sampleRate > 0, (1...2).contains(channels), frameCount > 0,

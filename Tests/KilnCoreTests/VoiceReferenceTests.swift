@@ -31,13 +31,13 @@ import Testing
     @Test func aRecordingTakesThePlaceOfANamedVoice() throws {
         let direction = try AudioCppEngine.direction(for: request(transcript: " Hi there. "), recipe: recipe(reference: .optional, text: .optional))
 
-        #expect(direction == .init(voice: nil, reference: recording, options: ["reference_text": "Hi there."]))
+        #expect(direction == .init(voice: nil, reference: recording, text: "Hello.", options: ["reference_text": "Hi there."]))
     }
 
     @Test func aModelThatCannotCopyAVoiceKeepsItsOwn() throws {
         let direction = try AudioCppEngine.direction(for: request(transcript: "Hi"), recipe: recipe(reference: nil))
 
-        #expect(direction == .init(voice: "alba"))
+        #expect(direction == .init(voice: "alba", text: "Hello."))
     }
 
     @Test func theWordsGoOnlyToAModelThatTakesThem() throws {

@@ -13,8 +13,18 @@ final class SpeechStore {
     /// The chosen voice of the user's own, which takes the place of `voice`.
     var savedVoiceID: UUID?
     /// True while the sheet for adding or changing a voice is open, and the voice being changed.
-    var isAddingVoice = false
+    var isAddingVoice = false {
+        didSet { if !isAddingVoice { pendingSpeaker = nil } }
+    }
     var editedVoiceID: UUID?
+    /// True while the sheet for designing a voice is open. See `SpeechStore+Design`.
+    var isDesigningVoice = false {
+        didSet { if !isDesigningVoice { pendingSpeaker = nil } }
+    }
+    /// The voices chosen for the speakers of a script, by speaker name, and the
+    /// speaker a voice being added is for. See `SpeechStore+Speakers`.
+    var cast: [String: CastChoice] = [:]
+    var pendingSpeaker: String?
     /// Code of the language to speak in. Nil lets the model decide.
     var language: String?
     /// A description of the voice or the delivery. Kept across models, and sent
@@ -78,7 +88,7 @@ final class SpeechStore {
     }
 
     var canGenerate: Bool {
-        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction && voiceProblem == nil
+        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction && voiceProblem == nil && speakerProblem == nil
             && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -106,9 +116,12 @@ final class SpeechStore {
     func generate() {
         guard canGenerate, let recipe = selectedRecipe else { return }
         let sent = text
+        // A script's speakers each have a voice; other texts have one voice.
+        let settings = isScript
+            ? scriptSettings
+            : SpeechSettings(voice: sentReference == nil ? voice : nil, instruction: sentInstruction, reference: sentReference)
         let request = GenerationRequest(
-            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: SpeechSettings(voice: sentReference == nil ? voice : nil, instruction: sentInstruction, reference: sentReference),
-            language: language
+            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: settings, language: language
         )
         text = ""
         errorMessage = nil
@@ -117,7 +130,7 @@ final class SpeechStore {
         task = Task {
             let started = Date()
             do {
-                for try await event in engine.generate(recipe: recipe, request: request) {
+                for try await event in engine.speak(recipe: recipe, request: request) {
                     switch event {
                     case .loadingModel: activity = .loadingModel
                     case .progress: activity = .speaking
@@ -193,6 +206,7 @@ final class SpeechStore {
         if let recipe = recipes.first(where: { $0.id == item.record.recipeID }) {
             selectRecipe(recipe)
             restoreVoice(of: item.record.request.speech, for: recipe)
+            restoreCast(of: item.record.request.speech)
             restoreStyle(item.record.request.speech?.instruction, for: recipe)
         }
     }

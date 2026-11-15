@@ -62,6 +62,10 @@ struct SpeechView: View {
             SpeechVoiceEditor()
                 .environment(model)
         }
+        .sheet(isPresented: Bindable(speech).isDesigningVoice) {
+            SpeechVoiceDesigner()
+                .environment(model)
+        }
         .alert("Could Not Generate Speech", isPresented: Binding(isPresenting: Bindable(speech).errorMessage)) {
             Button("OK", role: .cancel) {}
         } message: {

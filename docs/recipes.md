@@ -145,6 +145,7 @@ A recipe for the `audio.cpp` engine has a `speech` object:
 | `tags` | array of strings | no | Marks the model understands inside the text, written as they are typed, such as `[laughter]`. |
 | `reference` | string | no | `optional` when the model can speak in a voice copied from a recording; `required` when it has no voice of its own and cannot speak without one. Leave it out for a model that cannot copy a voice. |
 | `reference_text` | string | no | `optional` or `required`: whether the model also wants the words spoken in that recording. Needs `reference`. |
+| `speakers` | object | no | For a model that reads a whole script in one take: `max`, the most speakers one text may have, and `line`, one speaker's turn as the model reads it. See [Several speakers](#several-speakers). |
 
 Voices come from one of two places. A model with voices inside its file lists them in `speech.voices`. A model that loads each voice from its own file lists those files as components with the role `voice`; each is a voice named after its file, so `embeddings/alba.safetensors` is the voice `alba`. `voice` is the only role that may appear more than once, and no two voice files may share a name.
 
@@ -157,6 +158,23 @@ A recipe with `reference` lets the user speak in a voice of their own. The Speec
 The sheet can write the words itself by running an installed speech-to-text model on exactly the part of the recording that is used.
 
 Set `reference_text` to `required` when the model refuses a recording without its words; the app then says so before sending. A recipe whose `reference` is `required` needs no voices of its own.
+
+A voice can also be designed. "Design a voice…" asks an installed model that can make up a voice (one with `styles`, or with `instruction` set to `required`) to speak a sample from a description, and saves the sample with its words as one of the user's voices. Any model with `reference` can then speak in it.
+
+#### Several speakers
+
+The user can write any text as a script. A line that starts with a short name and a colon (`Anna: Did you hear that?`) begins that speaker's turn, the lines after it belong to the same turn, and text before the first name is spoken by "Speaker 1". A note in brackets after the name says how the turn is said: `Anna (whispering): …`. The names are the user's to choose. A text is a script once it has more than one speaker; the app then colours the names and lists the speakers under the composer's "Speakers" chip, where each is given a voice.
+
+How a script is read depends on the recipe:
+
+- **Without `speakers`**, which is most models, the app reads the script turn by turn, each turn as a request of its own in its speaker's voice, and joins the sound with a quarter of a second between turns. A speaker keeps the voice chosen for them. Otherwise they get the model's voice of the same name, or the model's named voices in turn. A model with no named voices needs a voice of the user's own for every speaker, because it would make up a new one for each line; the app says which speakers are missing one. A turn's note is sent as the instruction for that turn to a model with `instruction`, and added to the chosen words for a model with `styles`.
+- **With `speakers`**, the model reads the whole script in one take:
+
+  ```json
+  "speakers": { "max": 4, "line": "Speaker {n}: {text}" }
+  ```
+
+  Each turn is rewritten with `line`: `{n}` becomes the speaker's number, counted from 1, and `{text}` what they say, one turn per line. So `Anna: Hi.` followed by `Ben: Yo.` reaches VibeVoice as `Speaker 1: Hi.` and `Speaker 2: Yo.`. Take `line` and `max` from the model's page in `Vendor/audio.cpp/docs/`. A text with more speakers than `max` is not sent, and notes are left out. When the recipe also has `reference`, the recordings of the speakers' voices are handed over as WAV files named in audio.cpp's `voice_samples` option, in the order of the speakers' numbers. A model takes recordings for its first speakers only, so the speakers with a voice are numbered before the ones without. `reference_text` is not used.
 
 #### Expression
 
@@ -397,6 +415,7 @@ Speech (these rules are not numbered, so the numbers below stay as they were):
 - `speech.instruction`, when present, is `optional` or `required`.
 - `speech.styles`, when present, has named groups, each with at least one word; no word repeats or contains a comma; and `instruction` is absent.
 - `speech.reference` and `speech.reference_text`, when present, are `optional` or `required`, and `reference_text` is only given with `reference`.
+- `speech.speakers`, when present, has a `max` of at least 2 and a `line` that contains `{n}` and `{text}`.
 - A curated speech recipe has at least one voice, or `speech.reference` set to `required`.
 - `speech.tags`, when present, is not empty, has no repeats, and every tag is one line of at most 40 characters.
 
@@ -461,6 +480,7 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--engine NAME` | `sd.cpp` (the default), `whisper.cpp` or `audio.cpp`. For the last two the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
 | `--instruction optional\|required`, `--style NAME=WORD,WORD`, `--tags TAG ...` | For `audio.cpp`: `speech.instruction`, one group of `speech.styles` (repeat for each group) and `speech.tags`. See [Expression](#expression). |
 | `--reference optional\|required`, `--reference-text optional\|required` | For `audio.cpp`: `speech.reference` and `speech.reference_text`. See [Copying a voice](#copying-a-voice). |
+| `--speakers MAX`, `--speaker-line LINE` | For `audio.cpp`: `speech.speakers`, given together. See [Several speakers](#several-speakers). |
 | `--family NAME`, `--voice NAME`, `--voices NAME ...` | For `audio.cpp`: `speech.family` (required), `speech.voice` and `speech.voices`. Voice files are given as `--component voice=OWNER/REPO:PATH`, once per voice. |
 | `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The defaults, required for an image recipe. There are no built-in values: take them from the model card. |
 | `--sigmas N,N,...` | Custom sigma schedule, `steps + 1` numbers separated by commas or spaces. |

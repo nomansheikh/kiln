@@ -209,6 +209,7 @@ python3 scripts/recipe.py new \
 - The model may already be in the catalogue (`catalog/audio.cpp.json`), which is generated and untested. A curated recipe for the same file replaces that entry in the app, so write one when you have run the model and can vouch for its voices and licence.
 - For a model that can copy a voice from a recording, pass `--reference optional`, or `--reference required` when it has no voice of its own, and `--reference-text` when it takes the words spoken in the recording (`required` if it refuses a recording without them). A recipe with `--reference required` needs no voices.
 - For a model whose voice can be directed, state what it takes: `--instruction optional` (or `required`) for a free description, `--style NAME=WORD,WORD` (repeated) for a fixed list of words, and `--tags` for marks it understands inside the text. Take each from the model's page in `Vendor/audio.cpp/docs/models/` or its source; see "Expression" in [docs/recipes.md](docs/recipes.md).
+- For a model that reads a whole script in one take, each speaker in a voice of their own, pass `--speakers MAX` and `--speaker-line LINE`, the most speakers it reads and how it writes one turn (`"Speaker {n}: {text}"` for VibeVoice), from its page in `Vendor/audio.cpp/docs/`. Such a recipe needs no voices. Leave both out for any other model: the app reads a script for it line by line.
 - For a model that speaks several languages and accepts a language setting, pass `--languages` with the codes from its page in `Vendor/audio.cpp/docs/` or its model card. The same option works for a Whisper recipe.
 - **Every voice has its own licence.** Check the source of each one (for Kyutai's voices, the `kyutai/tts-voices` page) and leave out any voice that is non-commercial or has no stated licence. Name each source in `license_note`.
 - Check the model's licence in `Vendor/audio.cpp/docs/model_licenses.md` and on the original model's page, and repeat any use restrictions the model card states.
@@ -319,9 +320,12 @@ The app writes `generate.png`, `speech.png`, `models.png`, `gallery.png` and `se
 | `--open-downloads` | With `--snapshot`: open the downloads list and save it as `<screen>-popover.png`. |
 | `--model <recipe id>` | With `--snapshot`: select that installed model, so the controls it brings (voice, language) are in the picture. |
 | `--only <screen>` | With `--snapshot`: capture one screen only (`generate`, `speech`, `models`, `gallery` or `settings`). |
-| `--open-voices` | With `--snapshot`: open the Speech screen's voice list and save it as `speech-popover.png`. |
+| `--open-voices` | With `--snapshot`: open the Speech screen's voice list, or its speaker list when the text is a script, and save it as `speech-popover.png`. |
 | `--voices <folder>` | Use the voices in that folder as the user's own voices instead of the real ones. |
+| `--models <folder>` | Use the models in that folder as the downloaded models instead of the real ones. |
 | `--add-voice` | With `--snapshot`: open the Speech screen's sheet for adding a voice and save it as `speech-sheet.png`. |
+| `--design-voice` | With `--snapshot`: open the Speech screen's sheet for designing a voice and save it as `speech-sheet.png`. |
+| `--send` | With `--snapshot` and `--speech-text`: read that text aloud with the selected model before the screens are captured. It runs a generation, so use it only with `--audio`. |
 | `--open-style` | With `--snapshot`: open the Speech screen's style editor, for a selected model that takes a description, and save it as `speech-popover.png`. |
 | `--speech-text <text>` | With `--snapshot`: put that text in the Speech screen's field, to show how marks such as `[laughs]` are coloured. |
 | `--sample-working` | With `--snapshot`: show the Speech screen while a clip is being made. A second frame, `speech-later.png`, is saved 0.4 seconds after the first. |

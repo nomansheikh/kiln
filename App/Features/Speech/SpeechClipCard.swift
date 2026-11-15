@@ -36,6 +36,12 @@ struct SpeechClipCard: View {
                     VoiceAvatar(name: name, size: 22)
                     Text(verbatim: name)
                         .font(.callout.weight(.semibold))
+                } else if let cast = clip.record.request.speech?.cast, !cast.isEmpty {
+                    Image(systemName: "person.2.fill")
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: cast.keys.sorted().joined(separator: ", "))
+                        .font(.callout.weight(.semibold))
+                        .lineLimit(1)
                 } else if let voice = clip.record.request.speech?.voice {
                     VoiceAvatar(name: voice, size: 22)
                     Text(verbatim: GenerationVoiceMenu.title(voice))

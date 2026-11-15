@@ -24,6 +24,7 @@ struct SpeechModelMenu: View {
                         set: { _ in speech.selectRecipe(recipe) }
                     )) {
                         Text(verbatim: recipe.name)
+                        Text(verbatim: Self.abilities(of: recipe))
                     }
                 }
                 Divider()
@@ -40,6 +41,19 @@ struct SpeechModelMenu: View {
             .disabled(speech.isUsingEngine)
             .help("Voice model")
         }
+    }
+
+    /// What a model can do, in a few words, so that one can be picked for the job.
+    static func abilities(of recipe: ModelRecipe) -> String {
+        let speech = recipe.speech
+        var parts: [String] = []
+        if !recipe.voices.isEmpty { parts.append(recipe.voices.count == 1 ? "1 voice" : "\(recipe.voices.count) voices") }
+        if speech?.reference != nil { parts.append("copies a voice") }
+        if speech?.styles != nil || speech?.instruction == .required { parts.append("designs a voice") }
+        if speech?.instruction == .optional { parts.append("takes directions") }
+        if speech?.tags != nil { parts.append("sounds") }
+        parts.append(speech?.speakers != nil ? "reads scripts in one take" : "reads scripts line by line")
+        return parts.joined(separator: " \u{00B7} ")
     }
 
     private func label(_ name: String) -> some View {

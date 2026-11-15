@@ -24,15 +24,19 @@ extension ModelRecipe {
         public var reference: Support?
         /// Whether the model also wants the words spoken in that recording.
         public var referenceText: Support?
+        /// How the model reads a text with several speakers. Absent for a model
+        /// that speaks in one voice at a time.
+        public var speakers: Speakers?
 
         enum CodingKeys: String, CodingKey {
-            case family, voices, voice, instruction, styles, tags, reference
+            case family, voices, voice, instruction, styles, tags, reference, speakers
             case referenceText = "reference_text"
         }
 
         public init(
             family: String, voices: [String]? = nil, voice: String? = nil, instruction: Support? = nil,
-            styles: [StyleGroup]? = nil, tags: [String]? = nil, reference: Support? = nil, referenceText: Support? = nil
+            styles: [StyleGroup]? = nil, tags: [String]? = nil, reference: Support? = nil, referenceText: Support? = nil,
+            speakers: Speakers? = nil
         ) {
             self.family = family
             self.voices = voices
@@ -42,6 +46,7 @@ extension ModelRecipe {
             self.tags = tags
             self.reference = reference
             self.referenceText = referenceText
+            self.speakers = speakers
         }
 
         /// What the model is told for a set of chosen style words: the ones it
@@ -62,6 +67,20 @@ extension ModelRecipe {
         public init(name: String, options: [String]) {
             self.name = name
             self.options = options
+        }
+    }
+
+    /// How a model that speaks in several voices wants its text written.
+    public struct Speakers: Codable, Sendable, Equatable {
+        /// The most speakers one text may have.
+        public var max: Int
+        /// One speaker's turn as the model reads it, where `{n}` is the speaker's
+        /// number from 1 and `{text}` what they say, such as `Speaker {n}: {text}`.
+        public var line: String
+
+        public init(max: Int, line: String) {
+            self.max = max
+            self.line = line
         }
     }
 

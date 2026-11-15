@@ -5,8 +5,20 @@ import SwiftUI
 struct VoiceAvatar: View {
     let name: String
     var size: CGFloat = 30
+    /// A colour to use instead of the name's own.
+    var tint: Double?
 
-    private var hue: Double {
+    private var hue: Double { tint ?? Self.hue(of: name) }
+
+    /// The colour of a script's speaker by their place in it, so that the
+    /// speakers of one text never look alike.
+    static func hue(ofSpeaker index: Int) -> Double {
+        let hues = [0.58, 0.07, 0.78, 0.38, 0.95, 0.48]
+        return hues[index % hues.count]
+    }
+
+    /// The colour a name stands for, as a hue from 0 to 1.
+    static func hue(of name: String) -> Double {
         Double(name.unicodeScalars.reduce(UInt32(11)) { ($0 &* 33) &+ $1.value } % 360) / 360
     }
 
