@@ -134,7 +134,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
         }
         guard let job else { return }
         switch event {
-        case .ready:
+        case .ready, .text:
             break
         case .loading:
             job.continuation.yield(.loadingModel)

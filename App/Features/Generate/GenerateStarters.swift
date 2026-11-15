@@ -14,7 +14,8 @@ struct GenerateStarters: View {
                     .buttonStyle(.link)
             }
             .font(.callout)
-        } else {
+        } else if model.generation.selectedRecipe?.outputKind ?? .image == .image {
+            // The starters are image prompts.
             PromptSuggestionChips { model.generation.draft.prompt = $0.prompt }
         }
     }

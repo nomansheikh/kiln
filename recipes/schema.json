@@ -4,7 +4,7 @@
   "title": "Kiln model recipe",
   "description": "One runnable model: every file it needs from Hugging Face and the settings that make it work. This schema describes the curated recipes in recipes/. It is stricter than the app in three ways: every file must be pinned (revision, size_bytes, sha256), engine must be sd.cpp, and unknown fields are rejected (the app ignores them). Reference: docs/recipes.md. Create and check recipes with scripts/recipe.py.",
   "type": "object",
-  "required": ["id", "name", "engine", "components", "defaults"],
+  "required": ["id", "name", "engine", "components"],
   "additionalProperties": false,
   "properties": {
     "$schema": {
@@ -22,9 +22,8 @@
       "pattern": "[^ \\t]"
     },
     "engine": {
-      "description": "Inference engine. The only engine Kiln includes is \"sd.cpp\" (stable-diffusion.cpp), and curated recipes must use it.",
-      "type": "string",
-      "const": "sd.cpp"
+      "description": "Inference engine. Kiln includes \"sd.cpp\" (stable-diffusion.cpp, makes images) and \"whisper.cpp\" (speech to text), and curated recipes must use one of them.",
+      "enum": ["sd.cpp", "whisper.cpp"]
     },
     "components": {
       "description": "Files every install of the model needs, one per role. With \"variants\", these are the files shared by all variants and the list may be empty; without variants it needs at least one entry.",
@@ -32,8 +31,8 @@
       "items": { "$ref": "#/$defs/component" }
     },
     "output": {
-      "description": "What the model produces: image, audio or text. Image when absent. The app supports all three; curated recipes use the sd.cpp engine, which only makes images.",
-      "enum": ["image"]
+      "description": "What the model produces: image, audio or text. Image when absent. It must match the engine: image for sd.cpp, text for whisper.cpp.",
+      "enum": ["image", "audio", "text"]
     },
     "accepts": {
       "description": "Kinds of file the model takes as an attachment. When absent, an image model takes an image to rework and other models take none. An empty array means the model takes no attachment.",
@@ -72,6 +71,23 @@
   "else": {
     "properties": { "components": { "minItems": 1 } }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "engine": { "const": "whisper.cpp" } }, "required": ["engine"] },
+      "then": {
+        "required": ["output", "accepts"],
+        "properties": {
+          "output": { "const": "text" },
+          "accepts": { "const": ["audio"] },
+          "defaults": false
+        }
+      },
+      "else": {
+        "required": ["defaults"],
+        "properties": { "output": { "const": "image" } }
+      }
+    }
+  ],
   "$defs": {
     "component": {
       "description": "One file in a Hugging Face repo.",
@@ -80,8 +96,8 @@
       "additionalProperties": false,
       "properties": {
         "role": {
-          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). Each role may appear once in a list.",
-          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
+          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). model: the one file of a model whose engine loads nothing else (whisper.cpp). Each role may appear once in a list.",
+          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model"]
         },
         "repo": {
           "description": "Hugging Face repo id in the form owner/name, for example \"stabilityai/stable-diffusion-xl-base-1.0\".",

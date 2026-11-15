@@ -12,6 +12,8 @@ extension GenerationTurn {
             } else {
                 state = .failed("This image is no longer in the Gallery.")
             }
+        case .text(let text):
+            state = .text(text)
         case .failed(let message):
             state = .failed(message)
         case .cancelled:
@@ -20,6 +22,7 @@ extension GenerationTurn {
         self.init(
             id: turn.id,
             prompt: turn.prompt,
+            kind: turn.kind ?? .image,
             width: turn.width,
             height: turn.height,
             attachment: turn.attachmentFileName.map(attachments.url(named:)),
@@ -33,12 +36,14 @@ extension GenerationTurn {
         let outcome: ChatTurn.Outcome
         switch state {
         case .finished(let item): outcome = .image(fileName: item.url.lastPathComponent)
+        case .text(let text): outcome = .text(text)
         case .failed(let message): outcome = .failed(message: message)
         case .running, .cancelled: outcome = .cancelled
         }
         return ChatTurn(
             id: id,
             prompt: prompt,
+            kind: kind,
             width: width,
             height: height,
             outcome: outcome,

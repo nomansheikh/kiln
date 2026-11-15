@@ -1,3 +1,4 @@
+import KilnCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -8,8 +9,14 @@ struct ModelsView: View {
 
     @State private var searchText = ""
     @State private var showsDownloadedOnly = false
+    @AppStorage("models.taskFilter") private var taskFilter = ""
     @State private var isImporting = false
     @State private var importError: String?
+
+    /// The chosen task, when the recipes still include one for it.
+    private var task: ModelTask? {
+        ModelTask(rawValue: taskFilter).flatMap { task in model.library.recipes.contains { $0.task == task } ? task : nil }
+    }
 
     private var query: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -29,8 +36,10 @@ struct ModelsView: View {
                     if !query.isEmpty {
                         HubSearchResults(query: query, title: "Hugging Face results")
                     } else {
-                        ModelsRecipeList(showsDownloadedOnly: showsDownloadedOnly)
-                        if !showsDownloadedOnly {
+                        ModelsTaskFilter(recipes: model.library.recipes, selection: $taskFilter)
+                        ModelsRecipeList(showsDownloadedOnly: showsDownloadedOnly, task: task)
+                        // The Hugging Face list holds image models only.
+                        if !showsDownloadedOnly, task == nil || task == .images {
                             // No padding here: this view expands to many cards, and a
                             // modifier on it would be applied to each one.
                             HubSearchResults(query: "", title: "Popular on Hugging Face", isFollowingSection: true)

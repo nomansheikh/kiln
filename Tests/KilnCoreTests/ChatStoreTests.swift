@@ -33,7 +33,10 @@ import Testing
 
     @Test func aTurnWithoutAnImageSizeLoadsBack() throws {
         var original = chat("Talk", updatedAt: 2_000)
-        original.turns = [ChatTurn(prompt: "", outcome: .cancelled, attachmentFileName: "talk.m4a")]
+        original.turns = [
+            ChatTurn(prompt: "", kind: .text, outcome: .text("Hello there."), attachmentFileName: "talk.m4a"),
+            ChatTurn(prompt: "", kind: .text, outcome: .cancelled, attachmentFileName: "talk.m4a"),
+        ]
 
         try store.save(original)
 
@@ -88,6 +91,9 @@ import Testing
         #expect(Chat.defaultTitle(for: "A red fox") == "A red fox")
         #expect(Chat.defaultTitle(for: "  line one\nline two  ") == "line one line two")
         #expect(Chat.defaultTitle(for: "   ") == "New chat")
+        // A file sent without a prompt names the chat.
+        #expect(Chat.defaultTitle(for: " ", attachmentName: "Weekly sync.m4a") == "Weekly sync.m4a")
+        #expect(Chat.defaultTitle(for: "Names: Kiln", attachmentName: "Weekly sync.m4a") == "Names: Kiln")
 
         let long = "A misty alpine lake at dawn, pine forest reflected in still water, soft golden light"
         let title = Chat.defaultTitle(for: long)

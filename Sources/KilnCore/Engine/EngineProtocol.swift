@@ -8,6 +8,8 @@ enum EngineMessage {
         case progress(stage: String, completed: Int, total: Int)
         case image(path: String, width: Int, height: Int, channels: Int)
         case preview(path: String, width: Int, height: Int, channels: Int)
+        /// A finished transcript, in a UTF-8 file.
+        case text(path: String)
         case cancelled
         case error(code: String, message: String)
         case idle
@@ -45,6 +47,8 @@ enum EngineMessage {
             return raw.type == "image"
                 ? .image(path: path, width: width, height: height, channels: channels)
                 : .preview(path: path, width: width, height: height, channels: channels)
+        case "text":
+            return raw.path.map { .text(path: $0) }
         case "cancelled":
             return .cancelled
         case "error":
@@ -159,7 +163,7 @@ enum EngineMessage {
 
     static let cancelCommand = Data(#"{"type":"cancel"}"#.utf8) + Data([0x0A])
 
-    private static func line(_ value: some Encodable) throws -> Data {
+    static func line(_ value: some Encodable) throws -> Data {
         let encoder = JSONEncoder()
         // Model keys must be stable: the helper reloads the model when they change.
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -172,6 +176,7 @@ enum EngineMessage {
         case "conditioning": .encodingPrompt
         case "sampling": .sampling
         case "vae_decode": .decoding
+        case "transcribing": .transcribing
         default: .other(name)
         }
     }

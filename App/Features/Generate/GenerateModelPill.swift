@@ -17,11 +17,11 @@ struct GenerateModelPill: View {
             // A Menu of Toggles rather than a Picker so every change goes through selectRecipe(_:),
             // while the menu still draws its own checkmark beside the current model.
             Menu {
-                let kinds = MediaKind.allCases.filter { kind in installed.contains { $0.outputKind == kind } }
-                if kinds.count > 1 {
-                    ForEach(kinds, id: \.self) { kind in
-                        Section(kind.title) {
-                            choices(installed.filter { $0.outputKind == kind })
+                let tasks = ModelTask.allCases.filter { task in installed.contains { $0.task == task } }
+                if tasks.count > 1 {
+                    ForEach(tasks, id: \.self) { task in
+                        Section(task.title) {
+                            choices(installed.filter { $0.task == task })
                         }
                     }
                 } else {

@@ -2,6 +2,8 @@
 
 Kiln itself is MIT licensed (see [LICENSE](LICENSE)). The Swift app and the `KilnCore` library use only Apple system frameworks and have no third-party Swift dependencies.
 
+The app bundles two helper programs. `kiln-whisper` is covered in [its own section](#kiln-whisper) at the end.
+
 The `kiln-engine` helper is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/CMakeLists.txt](Engine/CMakeLists.txt): Metal on, examples off, WebP off, WebM off, no CUDA.
 
 Paths are relative to `Vendor/stable-diffusion.cpp/`, a git submodule. This file was last checked against submodule commit `465adf389f252e401257f44efb0ea49da8e4e80b` on 2026-11-11.
@@ -101,3 +103,19 @@ Kiln does not bundle or distribute model weights. Models are downloaded by the u
 - Stable Diffusion XL Base 1.0: CreativeML Open RAIL++-M License.
 
 Each recipe's `license_note` field summarizes the terms, but the model's page on Hugging Face is authoritative.
+
+## kiln-whisper
+
+The `kiln-whisper` helper (speech to text) is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/whisper/CMakeLists.txt](Engine/whisper/CMakeLists.txt): Metal on, examples, tests and server off, no Core ML. It was read from the object files of a build.
+
+Paths are relative to `Vendor/whisper.cpp/`, a git submodule. This section was last checked against submodule commit `d1be6fde11ac6e0407606b4e42fe72d34add8037` (tag `v1.9.5`) on 2026-11-15.
+
+| Component | License | Upstream | License verified from |
+| --- | --- | --- | --- |
+| whisper.cpp (`src/whisper.cpp`, `src/aneforge/`) | MIT, Copyright (c) 2023-2026 The ggml authors | https://github.com/ggml-org/whisper.cpp | `LICENSE` |
+| ggml (`ggml/`, in the whisper.cpp tree), including its CPU, BLAS (Apple Accelerate) and Metal backends | MIT, under the same `LICENSE`; the `ggml/` folder has no licence file of its own | https://github.com/ggml-org/ggml | `LICENSE` |
+| JSON for Modern C++ (`examples/json.hpp`, version 3.11.2). Included only by `Engine/whisper/main.cpp`. | MIT, Copyright 2013-2022 Niels Lohmann | https://github.com/nlohmann/json | SPDX header in the file |
+
+The YaRN RoPE notice listed above for `ggml/src/ggml-cpu/ops.cpp` and `ggml/src/ggml-metal/kernels/rope.metal` applies to this copy of ggml as well. Other files in the tree that carry their own notices (`ggml/src/ggml-cpu/llamafile/`, `ggml/src/ggml-cpu/kleidiai/`) are not compiled into the helper.
+
+Model files are not part of the app. The Whisper recipe downloads them from Hugging Face; their licence is stated in the recipe's `license_note`.

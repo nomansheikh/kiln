@@ -34,6 +34,13 @@ import Testing
         #expect(textOnlyImages.inputKinds.isEmpty)
     }
 
+    @Test func theTaskFollowsWhatTheModelTakesAndMakes() throws {
+        #expect(try decode(output: nil, accepts: nil, defaults: true).task == .images)
+        #expect(try decode(output: "text", accepts: #"["audio"]"#, defaults: false).task == .speechToText)
+        #expect(try decode(output: "audio", accepts: nil, defaults: false).task == .textToSpeech)
+        #expect(try decode(output: "text", accepts: nil, defaults: false).task == .text)
+    }
+
     @Test func onlyImageModelsNeedImageSettings() throws {
         #expect(throws: RecipeValidationError.missingDefaults) {
             try decode(output: nil, accepts: nil, defaults: false)

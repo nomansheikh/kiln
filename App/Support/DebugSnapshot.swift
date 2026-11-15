@@ -35,6 +35,9 @@ enum DebugSnapshot {
         if ProcessInfo.processInfo.arguments.contains("--sample-thread") {
             loadSampleThread(into: model)
         }
+        if ProcessInfo.processInfo.arguments.contains("--sample-speech") {
+            loadSampleSpeech(into: model)
+        }
         // Every snapshot has the default window size, whatever size the window was left at.
         let window = NSApp.windows.first { $0.isVisible && $0.contentView != nil }
         let savedFrame = window?.frame
@@ -77,7 +80,7 @@ enum DebugSnapshot {
         let record = GenerationRecord(recipeID: "sample", recipeName: "Sample Model", request: request, durationSeconds: 12.4)
         let image = GeneratedImage(width: side, height: side, channels: 3, pixels: pixels)
         var turns: [GenerationTurn] = []
-        if let item = try? store.save(.image(image), record: record) {
+        if let item = try? store.save(image, record: record) {
             turns.append(GenerationTurn(item))
         }
         turns.append(GenerationTurn(prompt: "A portrait of a red fox, dramatic rim lighting", width: 1024, height: 1024,

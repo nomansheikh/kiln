@@ -39,7 +39,7 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `$schema` | string | no | `"./schema.json"`, so editors validate and autocomplete the file. The app ignores it. |
 | `id` | string | yes | Unique identifier. Also the file name (`<id>.json`). |
 | `name` | string | yes | Display name. |
-| `engine` | string | yes | Inference engine. The only engine Kiln includes is `sd.cpp`. |
+| `engine` | string | yes | Inference engine: `sd.cpp` (stable-diffusion.cpp, makes images) or `whisper.cpp` (speech to text). |
 | `components` | array of [component](#components) | yes | Files to download. At least one, unless the recipe has [variants](#variants), in which case these are the files shared by every variant and the array may be empty. The key must be present either way. |
 | `output` | string | no | What the model produces: `image`, `audio` or `text`. `image` when absent. See [kinds](#kinds-of-model). |
 | `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same three values. See [kinds](#kinds-of-model). |
@@ -49,7 +49,7 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `base_model` | string | no | Hugging Face repo of the original model the `diffusion_model` file was made from, for example `black-forest-labs/FLUX.1-dev`. Lets files from other repos of the same model run with this recipe. See [family recipes](#family-recipes). |
 | `variants` | array of [variant](#variants) | no | Alternative sets of files for the same model, usually different quantizations. |
 
-A recipe with an `engine` other than `sd.cpp` still loads, but generating with it fails with an "unsupported engine" error.
+A recipe with an `engine` Kiln does not include still loads, but generating with it fails with an "unsupported engine" error.
 
 ### Kinds of model
 
@@ -60,7 +60,29 @@ A recipe with an `engine` other than `sd.cpp` still loads, but generating with i
 | `image` | `["image"]`, an image to rework | No |
 | `audio`, `text` | `[]`, no attachment | When it takes an attachment and one is attached, as speech to text does |
 
-Kiln's only engine, `sd.cpp`, makes images, so every curated recipe is an image recipe and the script rejects any other `output` in `recipes/`.
+Each engine makes one kind, and a curated recipe must state it:
+
+| `engine` | `output` | `accepts` | `defaults` | Components |
+| --- | --- | --- | --- | --- |
+| `sd.cpp` | `image` (or absent) | absent | required | the roles in [Roles](#roles) |
+| `whisper.cpp` | `text` | `["audio"]` | not allowed | one `model` file in whisper.cpp's ggml format |
+
+A speech-to-text recipe looks like this:
+
+```json
+{
+  "$schema": "./schema.json",
+  "id": "whisper-large-v3-turbo",
+  "name": "Whisper Large v3 Turbo",
+  "engine": "whisper.cpp",
+  "components": [],
+  "output": "text",
+  "accepts": ["audio"],
+  "variants": [ … one `model` file each … ]
+}
+```
+
+In the app, the user attaches an audio file and sends it, with or without a prompt. The prompt, if any, is given to the model as words to expect (names, jargon); it is not an instruction.
 
 ## Components
 
@@ -98,10 +120,11 @@ Each role may appear at most once in a list of components. Any other value is re
 | `clip_l` | CLIP-L text encoder (Flux and SD3 families) | `clip_l` | `clip_l_path` |
 | `clip_g` | CLIP-G text encoder (SD3 family) | `clip_g` | `clip_g_path` |
 | `t5xxl` | T5-XXL text encoder (Flux and SD3 families) | `t5xxl` | `t5xxl_path` |
+| `model` | The one file of a model whose engine loads nothing else. Used by `whisper.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe`) | none |
 
 Roles a recipe does not use are left unset. There is no role for a LoRA or a vision projector, so a model that needs one of those cannot be described yet. The mapping lives in `generateCommand` in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
 
-To decide which roles a model needs, read its page under [`Vendor/stable-diffusion.cpp/docs/`](https://github.com/leejet/stable-diffusion.cpp/tree/master/docs) (for example `flux.md`, `sd3.md`, `qwen_image.md`). The command lines there use the flags `-m`, `--diffusion-model`, `--llm`, `--vae`, `--clip_l`, `--clip_g` and `--t5xxl`, which correspond to the seven roles in the order of the table.
+To decide which roles a model needs, read its page under [`Vendor/stable-diffusion.cpp/docs/`](https://github.com/leejet/stable-diffusion.cpp/tree/master/docs) (for example `flux.md`, `sd3.md`, `qwen_image.md`). The command lines there use the flags `-m`, `--diffusion-model`, `--llm`, `--vae`, `--clip_l`, `--clip_g` and `--t5xxl`, which correspond to the first seven roles in the order of the table.
 
 ## Defaults
 
@@ -291,7 +314,7 @@ Each variant:
 15. `components` has at least one entry, no two share a `role`, and each follows rules 5 to 8.
 16. The merged list (shared components with this variant's files replacing those of the same role) has no duplicate role.
 
-Decoding adds the structural checks: every required field must be present with the right type, `role` must be one of the seven values above, and `output` and `accepts` may hold only `image`, `audio` and `text`. Unknown extra fields are ignored by the app, which is why `$schema` is safe, and also why a misspelt optional field goes unnoticed; `scripts/recipe.py check` reports unknown fields for that reason.
+Decoding adds the structural checks: every required field must be present with the right type, `role` must be one of the values above, and `output` and `accepts` may hold only `image`, `audio` and `text`. Unknown extra fields are ignored by the app, which is why `$schema` is safe, and also why a misspelt optional field goes unnoticed; `scripts/recipe.py check` reports unknown fields for that reason.
 
 `index.json` and `schema.json` are reserved file names. The app does not load them as recipes.
 
@@ -306,7 +329,7 @@ Two things check every file in `recipes/` on each push: the test `everyCuratedRe
 The test requires:
 
 - the file name without `.json` equals the recipe `id`
-- `engine` is `sd.cpp`
+- `engine` is `sd.cpp` or `whisper.cpp`
 - every component of every variant (or of the recipe, when it has no variants) has `revision`, `size_bytes` and `sha256`
 - `recipes/index.json` lists exactly the recipe files
 
@@ -316,6 +339,7 @@ The script requires all of that, and also:
 - the file exists on Hugging Face at that revision, with that size and that SHA-256
 - `sampler` and `scheduler` are names the vendored stable-diffusion.cpp accepts
 - `base_model`, when set, is the model the Hub tags every `diffusion_model` repo of the recipe as made from (or is that repo itself), and the recipe has a `diffusion_model` component
+- `output`, `accepts` and `defaults` match the engine, as in the table under [kinds](#kinds-of-model)
 - there are no unknown fields
 
 ## The recipe script
@@ -340,7 +364,8 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--name NAME` | Display name. Required. |
 | `--component ROLE=OWNER/REPO:PATH` | A file every install needs. Repeat for each file. |
 | `--variant ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...` | One variant: its id, its name, optionally its minimum memory, then its files. Repeat for each variant. |
-| `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The required defaults. There are no built-in values: take them from the model card. |
+| `--engine NAME` | `sd.cpp` (the default) or `whisper.cpp`. For `whisper.cpp` the script writes `output` and `accepts` itself and takes none of the settings below. |
+| `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The defaults, required for an image recipe. There are no built-in values: take them from the model card. |
 | `--sigmas N,N,...` | Custom sigma schedule, `steps + 1` numbers separated by commas or spaces. |
 | `--flash-attention` | Sets `flash_attention` to `true`. |
 | `--scheduler NAME`, `--guidance N`, `--flow-shift N` | The optional defaults of the same names. |

@@ -53,6 +53,11 @@ final class AppModel {
                         ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-engine"),
                     storage: storage
                 ),
+                WhisperCppEngine.engineID: WhisperCppEngine(
+                    helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-whisper")
+                        ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-whisper"),
+                    storage: storage
+                ),
             ])
         )
 
@@ -90,7 +95,7 @@ final class AppModel {
     // MARK: - Actions across features
 
     /// Opens Generate with a new, empty chat.
-    func newImage() {
+    func newChat() {
         generation.startOver()
         selection = .generate
     }

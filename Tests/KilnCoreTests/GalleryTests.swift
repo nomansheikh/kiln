@@ -29,7 +29,7 @@ import Testing
     }
 
     @Test func savedImagesCarryTheirSettings() throws {
-        let saved = try store.save(.image(image()), record: record())
+        let saved = try store.save(image(), record: record())
 
         #expect(saved.url.pathExtension == "png")
         #expect(ImageCodec.record(in: saved.url) == record(prompt: "a red fox").withID(saved.record.id))
@@ -37,7 +37,7 @@ import Testing
 
     @Test func pixelsSurviveTheRoundTrip() throws {
         let original = image()
-        let saved = try store.save(.image(original), record: record())
+        let saved = try store.save(original, record: record())
 
         let source = try #require(CGImageSourceCreateWithURL(saved.url as CFURL, nil))
         let decoded = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
@@ -56,7 +56,7 @@ import Testing
     }
 
     @Test func descriptionIsReadableByOtherTools() throws {
-        let saved = try store.save(.image(image()), record: record())
+        let saved = try store.save(image(), record: record())
 
         #expect(PNGText.entries(in: saved.url)["parameters"] == """
         a red fox
@@ -66,7 +66,7 @@ import Testing
     }
 
     @Test func textChunksKeepNonASCIIAndHaveValidChecksums() throws {
-        let saved = try store.save(.image(image()), record: record(prompt: "caf\u{E9} \u{1F98A} \u{732B}"))
+        let saved = try store.save(image(), record: record(prompt: "caf\u{E9} \u{1F98A} \u{732B}"))
 
         #expect(ImageCodec.record(in: saved.url)?.request.prompt == "caf\u{E9} \u{1F98A} \u{732B}")
         // ImageIO rejects PNG files with a bad chunk CRC, so decoding proves the checksums.
@@ -77,7 +77,7 @@ import Testing
     }
 
     @Test func supportsImagesWithAlpha() throws {
-        let saved = try store.save(.image(image(channels: 4)), record: record())
+        let saved = try store.save(image(channels: 4), record: record())
 
         let source = try #require(CGImageSourceCreateWithURL(saved.url as CFURL, nil))
         let decoded = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
@@ -90,8 +90,8 @@ import Testing
     }
 
     @Test func listsNewestFirstAndIgnoresForeignFiles() throws {
-        let old = try store.save(.image(image()), record: record(prompt: "old", createdAt: Date(timeIntervalSince1970: 1_000)))
-        let new = try store.save(.image(image()), record: record(prompt: "new", createdAt: Date(timeIntervalSince1970: 2_000)))
+        let old = try store.save(image(), record: record(prompt: "old", createdAt: Date(timeIntervalSince1970: 1_000)))
+        let new = try store.save(image(), record: record(prompt: "new", createdAt: Date(timeIntervalSince1970: 2_000)))
         try Data("not a png".utf8).write(to: store.directory.appendingPathComponent("notes.txt"))
         try Data("not a png".utf8).write(to: store.directory.appendingPathComponent("broken.png"))
 
@@ -103,7 +103,7 @@ import Testing
 
     @Test func readsAnImageBackAsRawPixelsAtItsOwnSize() throws {
         let original = image()
-        let saved = try store.save(.image(original), record: record())
+        let saved = try store.save(original, record: record())
 
         let pixels = try ImageCodec.rgbPixels(of: saved.url, width: 4, height: 2)
 
@@ -121,7 +121,7 @@ import Testing
                 pixels.append(contentsOf: Array(repeating: UInt8(x < 4 ? 0 : 255), count: 3))
             }
         }
-        let saved = try store.save(.image(GeneratedImage(width: 8, height: 2, channels: 3, pixels: pixels)), record: record())
+        let saved = try store.save(GeneratedImage(width: 8, height: 2, channels: 3, pixels: pixels), record: record())
 
         let cropped = try ImageCodec.rgbPixels(of: saved.url, width: 2, height: 2)
 

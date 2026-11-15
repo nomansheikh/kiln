@@ -1,6 +1,6 @@
 # Kiln
 
-Kiln is a native macOS app that browses Hugging Face text-to-image models, downloads them and generates images locally on Apple Silicon with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and Metal. It is written in Swift 6 and SwiftUI, runs on macOS 14 or later, and is MIT licensed.
+Kiln is a native macOS app that downloads models from Hugging Face and runs them locally on Apple Silicon with Metal: it generates images with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and turns speech into text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp). It is written in Swift 6 and SwiftUI, runs on macOS 14 or later, and is MIT licensed.
 
 ![The Generate screen: a prompt and the image made from it](docs/screenshots/generate.png)
 
@@ -17,6 +17,7 @@ Kiln is early. Read this before relying on it.
 
 - **Tested:** text-to-image with the Stable Diffusion XL Base 1.0 recipe has been downloaded and run end to end through the app on one machine, an Apple M5 Ultra with 96 GB of memory. No other machine has been tested.
 - **Not run yet:** the Qwen-Image 2.1 Turbo recipe.
+- **Speech to text:** the Whisper Large v3 Turbo recipe has been downloaded and has transcribed a recording through the app on the same machine. Cancelling a transcription and long recordings have not been tried.
 - **Implemented but not confirmed with a real model:** image-to-image (attaching an image) and the live step preview. Both are unit-tested at the protocol level only.
 - **Memory-fit label:** a heuristic based on file sizes only. It does not account for the memory a generation needs on top of the weights.
 - **Hugging Face single-file downloads:** downloading one file from a repo gives a runnable model for all-in-one checkpoints (for example SD 1.5 or SDXL `.safetensors`), and for other versions of a model Kiln has a recipe for (for example another GGUF quantization), which borrow that recipe's remaining files and settings untested. Any other model split into several files needs a recipe.
@@ -29,8 +30,10 @@ Kiln is early. Read this before relying on it.
 
 - **Chat-style generation.** Each prompt and its image form a turn in a thread. Chats are saved and listed in the sidebar, where they can be renamed, archived and deleted.
 - **Live step preview.** While an image is sampling, a rough preview is shown when the model can provide one.
+- **Speech to text.** Pick a Whisper model, attach an audio file (WAV, MP3, M4A and other formats macOS can read) and send it; the transcript appears in the thread. An optional prompt lists names or words to expect. The language is detected automatically.
 - **Image-to-image.** Attach an image with the plus button, by dropping a file on the composer, or with "Edit this image" on a result. Three strengths: Subtle, Balanced and Strong.
 - **Model recipes.** A JSON manifest lists every file a model needs and its recommended settings, so a model is one click to download. Two recipes ship with the app: Stable Diffusion XL Base 1.0 and Qwen-Image 2.1 Turbo.
+- **Filter by task.** Once the recipes cover more than one task, chips above the list narrow it to Images or Speech to text. The Hugging Face list holds image models only, so it is shown for All and Images.
 - **Hugging Face browsing and search.** The Models screen lists the most downloaded text-to-image repos and searches the Hub. Each repo shows its `.safetensors` and `.gguf` files, which can be downloaded one at a time.
 - **Downloads.** Resumable, checked against the pinned size and SHA-256, with pause and cancel. A downloads panel in the sidebar shows progress, speed and time left.
 - **Memory-fit label.** Each recipe and Hub file is marked as fitting, tight or too large for this Mac.
@@ -55,7 +58,7 @@ git submodule update --init --recursive
 
 brew install cmake xcodegen
 
-# Build the engine helper (output: build/engine/kiln-engine)
+# Build the engine helpers (output: build/engine/kiln-engine and build/whisper/kiln-whisper)
 ./scripts/build-engine.sh
 
 # Generate Kiln.xcodeproj from project.yml
@@ -80,12 +83,12 @@ swift test
 | --- | --- |
 | `App/` | SwiftUI app: `Stores/`, `Features/`, `Shell/`, `DesignSystem/`, `Support/` |
 | `Sources/KilnCore/` | UI-free core library: recipes, Hugging Face client, downloads, engine client, gallery, chats |
-| `Engine/` | `kiln-engine`, the C++ helper that runs stable-diffusion.cpp |
+| `Engine/` | `kiln-engine`, the C++ helper that runs stable-diffusion.cpp, and `kiln-whisper` (in `whisper/`), the one that runs whisper.cpp |
 | `recipes/` | Curated recipe manifests bundled into the app |
 | `Tests/` | Unit tests for KilnCore |
 | `docs/` | Architecture and recipe reference |
 | `scripts/` | Build scripts |
-| `Vendor/stable-diffusion.cpp` | Git submodule |
+| `Vendor/stable-diffusion.cpp`, `Vendor/whisper.cpp` | Git submodules |
 
 ## How it works
 
@@ -128,7 +131,7 @@ Everything lives under `~/Library/Application Support/Kiln/`:
 | `models/<owner>/<repo>/<file>` | Downloaded model files |
 | `gallery/*.png` | Generated images. Settings are embedded in two text chunks: `parameters` (readable text) and `kiln` (JSON). |
 | `chats/<uuid>.json` | Saved chats, one file each |
-| `attachments/<uuid>.<ext>` | Copies of images attached to prompts |
+| `attachments/` | Copies of files attached to prompts |
 | `recipes-remote/<id>.json` | Curated recipes fetched from this repository, at most once a day |
 | `recipes/<id>.json` | Recipes you imported, and the single-file recipes created when you download one file from the Hugging Face list |
 

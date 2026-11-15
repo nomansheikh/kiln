@@ -25,9 +25,11 @@ public struct Chat: Codable, Sendable, Identifiable, Equatable {
         self.turns = turns
     }
 
-    /// A short title taken from a chat's first prompt.
-    public static func defaultTitle(for prompt: String, limit: Int = 48) -> String {
-        let singleLine = prompt
+    /// A short title taken from a chat's first prompt, or from the name of its
+    /// attached file when there is no prompt.
+    public static func defaultTitle(for prompt: String, attachmentName: String? = nil, limit: Int = 48) -> String {
+        let source = prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? attachmentName ?? "" : prompt
+        let singleLine = source
             .split(whereSeparator: \.isNewline)
             .joined(separator: " ")
             .trimmingCharacters(in: .whitespaces)
@@ -44,12 +46,16 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
     public enum Outcome: Codable, Sendable, Equatable {
         /// The image's file name inside the gallery folder.
         case image(fileName: String)
+        /// Text the model wrote, such as a transcript.
+        case text(String)
         case failed(message: String)
         case cancelled
     }
 
     public var id: UUID
     public var prompt: String
+    /// What the turn asked the model to make. Image when absent.
+    public var kind: MediaKind?
     /// Size of the requested image. Nil for other kinds of output.
     public var width: Int?
     public var height: Int?
@@ -60,6 +66,7 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
     public init(
         id: UUID = UUID(),
         prompt: String,
+        kind: MediaKind? = nil,
         width: Int? = nil,
         height: Int? = nil,
         outcome: Outcome,
@@ -68,6 +75,7 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
         self.attachmentFileName = attachmentFileName
         self.id = id
         self.prompt = prompt
+        self.kind = kind
         self.width = width
         self.height = height
         self.outcome = outcome

@@ -19,6 +19,7 @@ extension GenerationPhase {
             case .encodingPrompt: "Reading your prompt"
             case .sampling: "Creating image"
             case .decoding: "Finishing up"
+            case .transcribing: "Transcribing"
             case .other(let name): name
             }
         }
@@ -30,9 +31,12 @@ extension GenerationPhase {
         case .loadingModel:
             "The first load can take a while."
         case .running(let progress):
-            if case .sampling = progress.stage, progress.total > 0 {
+            switch progress.stage {
+            case .sampling where progress.total > 0:
                 "Step \(min(progress.completed, progress.total)) of \(progress.total)"
-            } else {
+            case .transcribing:
+                progress.fraction.map { $0.formatted(.percent.precision(.fractionLength(0))) }
+            default:
                 nil
             }
         default:

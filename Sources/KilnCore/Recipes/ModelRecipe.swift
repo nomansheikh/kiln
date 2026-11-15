@@ -97,6 +97,8 @@ extension ModelRecipe {
         case clipL = "clip_l"
         case clipG = "clip_g"
         case t5xxl
+        /// The one file of a model whose engine loads nothing else (whisper.cpp).
+        case model
     }
 
     public struct Component: Codable, Sendable, Equatable {

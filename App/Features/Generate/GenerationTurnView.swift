@@ -14,13 +14,20 @@ struct GenerationTurnView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .trailing, spacing: 8) {
                 if let attachment = turn.attachment {
-                    Thumbnail(url: attachment, maxPixelSize: 320)
-                        .frame(width: 120, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.hairline))
-                        .accessibilityLabel("Attached image")
+                    if AttachmentLibrary.kind(of: attachment) == .image {
+                        Thumbnail(url: attachment, maxPixelSize: 320)
+                            .frame(width: 120, height: 120)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.hairline))
+                            .accessibilityLabel("Attached image")
+                    } else {
+                        AttachmentChip(url: attachment)
+                    }
                 }
-                PromptBubble(text: turn.prompt)
+                // A file can be sent on its own, without a prompt.
+                if !turn.prompt.isEmpty {
+                    PromptBubble(text: turn.prompt)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             reply
@@ -33,15 +40,25 @@ struct GenerationTurnView: View {
     private var reply: some View {
         switch turn.state {
         case .running:
-            GenerationPlaceholder(phase: phase, aspectRatio: turn.aspectRatio, preview: preview)
-                .transition(.opacity)
+            if turn.kind == .image {
+                GenerationPlaceholder(phase: phase, aspectRatio: turn.aspectRatio, preview: preview)
+                    .transition(.opacity)
+            } else {
+                GenerationProgressLine(phase: phase)
+                    .transition(.opacity)
+            }
+        case .text(let text):
+            TextReplyMessage(text: text) {
+                model.generation.regenerate(turn)
+            }
+            .transition(Motion.settle(reduced: reduceMotion))
         case .finished(let item):
             GeneratedImageMessage(item: item, aspectRatio: turn.aspectRatio) {
                 model.generation.regenerate(turn)
             }
             .transition(Motion.settle(reduced: reduceMotion))
         case .failed(let message):
-            GenerationFailureMessage(message: message) {
+            GenerationFailureMessage(kind: turn.kind, message: message) {
                 model.generation.regenerate(turn)
             }
         case .cancelled:
@@ -67,14 +84,15 @@ struct PromptBubble: View {
     }
 }
 
-/// A plain-language error in place of an image, with a way to try again.
+/// A plain-language error in place of a reply, with a way to try again.
 struct GenerationFailureMessage: View {
+    let kind: MediaKind
     let message: String
     let retry: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("The image could not be created", systemImage: "exclamationmark.triangle.fill")
+            Label(title, systemImage: "exclamationmark.triangle.fill")
                 .font(.callout.weight(.semibold))
                 .symbolRenderingMode(.multicolor)
             Text(message)
@@ -87,5 +105,13 @@ struct GenerationFailureMessage: View {
         }
         .frame(maxWidth: 520, alignment: .leading)
         .card(padding: 14)
+    }
+
+    private var title: String {
+        switch kind {
+        case .image: "The image could not be created"
+        case .audio: "The audio could not be created"
+        case .text: "The text could not be created"
+        }
     }
 }

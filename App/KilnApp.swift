@@ -32,7 +32,7 @@ struct KilnApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("New Image") { model.newImage() }
+                Button("New Chat") { model.newChat() }
                     .keyboardShortcut("n", modifiers: .command)
             }
             CommandMenu("Image") {
