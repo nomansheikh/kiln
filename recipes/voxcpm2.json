@@ -1,0 +1,45 @@
+{
+  "$schema": "./schema.json",
+  "id": "voxcpm2",
+  "name": "VoxCPM2",
+  "engine": "audio.cpp",
+  "components": [],
+  "output": "audio",
+  "speech": {
+    "family": "voxcpm2",
+    "reference": "optional"
+  },
+  "license_note": "Apache-2.0, by OpenBMB (openbmb/VoxCPM2). The model card forbids use for impersonation, fraud or disinformation and asks that AI-generated content be clearly labeled. The files are the GGUF conversion published for audio.cpp (audio-cpp/audio.cpp-gguf).",
+  "variants": [
+    {
+      "id": "bf16",
+      "name": "BF16 (best quality)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VoxCPM2-GGUF/voxcpm2-bf16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 4772295296,
+          "sha256": "dc48028ebf08b9fd2456cbf5fa1ab52568d16660e34d0fa418c35e251ca1ecab"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "Q8 (smaller)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VoxCPM2-GGUF/voxcpm2-q8_0.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 2955007488,
+          "sha256": "8df1faf274e1bdeedef1fd9ddd6aba6632536f66f2e080991d2352af35ceef72"
+        }
+      ]
+    }
+  ]
+}

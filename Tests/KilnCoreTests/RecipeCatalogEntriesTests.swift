@@ -103,18 +103,34 @@ import Testing
             userDirectory: root.appendingPathComponent("user"),
             catalogDirectory: curatedRecipesDirectory.deletingLastPathComponent().appendingPathComponent("catalog")
         )
-        let files = try FileManager.default.contentsOfDirectory(at: shipped.catalogDirectory!, includingPropertiesForKeys: nil)
-        var written = 0
-        for file in files where file.pathExtension == "json" {
-            let json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-            written += (json["recipes"] as? [Any])?.count ?? 0
+        // The model files the curated recipes cover, as "repo\nfile".
+        let mainRoles: Set<String> = ["model", "checkpoint", "diffusion_model"]
+        func mainFiles(_ recipe: [String: Any]) -> [[String]] {
+            let shared = recipe["components"] as? [[String: Any]] ?? []
+            let variants = (recipe["variants"] as? [[String: Any]] ?? []).map { $0["components"] as? [[String: Any]] ?? [] }
+            return (variants.isEmpty ? [shared] : variants.map { shared + $0 }).map { install in
+                install.filter { mainRoles.contains($0["role"] as? String ?? "") }
+                    .map { "\($0["repo"] as? String ?? "")\n\($0["file"] as? String ?? "")" }
+            }
         }
+        func recipes(in directory: URL, key: String?) throws -> [[String: Any]] {
+            try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                .filter { $0.pathExtension == "json" && !["index.json", "schema.json"].contains($0.lastPathComponent) }
+                .flatMap { file -> [[String: Any]] in
+                    let json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+                    return key.map { json[$0] as? [[String: Any]] ?? [] } ?? [json]
+                }
+        }
+        let covered = Set(try recipes(in: curatedRecipesDirectory, key: nil).flatMap(mainFiles).joined())
+        let entries = try recipes(in: shipped.catalogDirectory!, key: "recipes")
+        // An entry stays in the list while at least one of its versions is not a curated recipe's file.
+        let remaining = entries.filter { entry in mainFiles(entry).contains { install in !install.contains(where: covered.contains) } }
 
         let result = shipped.loadAll()
 
         // Every entry the generator wrote is readable; only those a curated recipe covers are dropped.
-        #expect(written > 0)
-        #expect(result.catalogIDs.count >= written - 4)
+        #expect(!entries.isEmpty)
+        #expect(result.catalogIDs.count == remaining.count)
         #expect(result.failures.isEmpty)
         for recipe in result.recipes where result.catalogIDs.contains(recipe.id) {
             let installs = recipe.hasVariants ? recipe.resolvedVariants : [recipe]

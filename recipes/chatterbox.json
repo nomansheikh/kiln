@@ -1,0 +1,66 @@
+{
+  "$schema": "./schema.json",
+  "id": "chatterbox",
+  "name": "Chatterbox",
+  "engine": "audio.cpp",
+  "components": [],
+  "output": "audio",
+  "languages": [
+    "en",
+    "ar",
+    "da",
+    "de",
+    "el",
+    "es",
+    "fi",
+    "fr",
+    "hi",
+    "it",
+    "ko",
+    "ms",
+    "nl",
+    "no",
+    "pl",
+    "pt",
+    "sv",
+    "sw",
+    "tr"
+  ],
+  "speech": {
+    "family": "chatterbox",
+    "reference": "required"
+  },
+  "license_note": "MIT License, by Resemble AI (ResembleAI/chatterbox). The model has no voice of its own and speaks in a voice copied from a recording. The files are the GGUF conversion published for audio.cpp (audio-cpp/audio.cpp-gguf).",
+  "variants": [
+    {
+      "id": "f16",
+      "name": "F16 (best quality)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Chatterbox-GGUF/chatterbox-f16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 3744365922,
+          "sha256": "615371181a0bffe8239cf6f724d57f2b153618c52c31d526c8f20eacc763c6e1"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "Q8 (smaller)",
+      "min_memory_gb": 8,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Chatterbox-GGUF/chatterbox-q8_0.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 2088399204,
+          "sha256": "45d71d8d248ba831014813bbbbba74c7d786dd9447c02090fe05c44344f69453"
+        }
+      ]
+    }
+  ]
+}
