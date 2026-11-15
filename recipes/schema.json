@@ -31,6 +31,16 @@
       "type": "array",
       "items": { "$ref": "#/$defs/component" }
     },
+    "output": {
+      "description": "What the model produces: image, audio or text. Image when absent. The app supports all three; curated recipes use the sd.cpp engine, which only makes images.",
+      "enum": ["image"]
+    },
+    "accepts": {
+      "description": "Kinds of file the model takes as an attachment. When absent, an image model takes an image to rework and other models take none. An empty array means the model takes no attachment.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["image", "audio", "text"] }
+    },
     "defaults": { "$ref": "#/$defs/defaults" },
     "license_note": {
       "description": "Short, accurate summary of the licence of every file, including restrictions such as non-commercial use. When components have different licences, name each one.",

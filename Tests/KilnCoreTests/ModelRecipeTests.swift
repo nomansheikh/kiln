@@ -23,7 +23,7 @@ import Testing
 
         #expect(recipe.id == "qwen-image-2.1-turbo")
         #expect(recipe.components.map(\.role) == [.llm, .diffusionModel, .vae])
-        #expect(recipe.defaults.steps == 8)
+        #expect(recipe.defaults?.steps == 8)
         #expect(recipe.licenseNote == "note")
         #expect(recipe.minMemoryGB == 16)
         #expect(recipe.totalSizeBytes == nil)
@@ -147,9 +147,9 @@ import Testing
         let recipe = try RecipeStore.decode(Data(json.utf8))
 
         #expect(recipe.components.map(\.role) == [.diffusionModel, .clipL, .clipG, .t5xxl, .vae])
-        #expect(recipe.defaults.scheduler == "simple")
-        #expect(recipe.defaults.guidance == 3.5)
-        #expect(recipe.defaults.flowShift == 3.0)
+        #expect(recipe.defaults?.scheduler == "simple")
+        #expect(recipe.defaults?.guidance == 3.5)
+        #expect(recipe.defaults?.flowShift == 3.0)
     }
 
     @Test func sumsComponentSizes() {

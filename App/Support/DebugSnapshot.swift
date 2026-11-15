@@ -69,13 +69,15 @@ enum DebugSnapshot {
                 pixels.append(contentsOf: [UInt8(x), UInt8(y), UInt8(255 - (x + y) / 2)])
             }
         }
-        let request = GenerationRequest(prompt: "A misty alpine lake at dawn, pine forest reflected in still water",
-                                        width: 1024, height: 1024, steps: 8, cfg: 1, sampler: "euler", seed: 1234)
+        let request = GenerationRequest(
+            prompt: "A misty alpine lake at dawn, pine forest reflected in still water",
+            image: ImageSettings(width: 1024, height: 1024, steps: 8, cfg: 1, sampler: "euler", seed: 1234)
+        )
         let store = GalleryStore(directory: FileManager.default.temporaryDirectory.appendingPathComponent("kiln-sample-thread"))
         let record = GenerationRecord(recipeID: "sample", recipeName: "Sample Model", request: request, durationSeconds: 12.4)
         let image = GeneratedImage(width: side, height: side, channels: 3, pixels: pixels)
         var turns: [GenerationTurn] = []
-        if let item = try? store.save(image, record: record) {
+        if let item = try? store.save(.image(image), record: record) {
             turns.append(GenerationTurn(item))
         }
         turns.append(GenerationTurn(prompt: "A portrait of a red fox, dramatic rim lighting", width: 1024, height: 1024,

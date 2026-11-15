@@ -22,7 +22,7 @@ extension ModelRecipe {
                     sha256: file.sha256
                 ),
             ],
-            defaults: GenerationDefaults(steps: 20, cfg: 7.0, sampler: "euler", width: side, height: side),
+            defaults: ImageDefaults(steps: 20, cfg: 7.0, sampler: "euler", width: side, height: side),
             licenseNote: info.license.map { "License: \($0). See the model page on Hugging Face." }
         )
     }

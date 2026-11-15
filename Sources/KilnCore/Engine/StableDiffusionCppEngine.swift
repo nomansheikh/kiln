@@ -152,7 +152,7 @@ public actor StableDiffusionCppEngine: InferenceEngine {
                 finish(throwing: EngineError.invalidOutput)
                 return
             }
-            job.continuation.yield(.finished(image))
+            job.continuation.yield(.finished(.image(image)))
             finish()
         case .cancelled:
             finish(throwing: CancellationError())

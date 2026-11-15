@@ -31,6 +31,15 @@ import Testing
         #expect(store.loadAll() == [original])
     }
 
+    @Test func aTurnWithoutAnImageSizeLoadsBack() throws {
+        var original = chat("Talk", updatedAt: 2_000)
+        original.turns = [ChatTurn(prompt: "", outcome: .cancelled, attachmentFileName: "talk.m4a")]
+
+        try store.save(original)
+
+        #expect(store.loadAll() == [original])
+    }
+
     @Test func chatsAreListedMostRecentlyUpdatedFirst() throws {
         try store.save(chat("old", updatedAt: 1_000))
         try store.save(chat("new", updatedAt: 3_000))

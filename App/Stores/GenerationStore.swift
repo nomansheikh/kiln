@@ -52,8 +52,8 @@ final class GenerationStore {
     }
 
     var canGenerate: Bool {
-        !phase.isBusy && selectedRecipe != nil
-            && !draft.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard !phase.isBusy, let recipe = selectedRecipe else { return false }
+        return recipe.canRun(prompt: draft.prompt, hasAttachment: draft.attachment != nil)
     }
 
     /// The most recent image in the thread.
@@ -68,6 +68,11 @@ final class GenerationStore {
         draft.recipeID = recipe?.id
         if let defaults = recipe?.defaults {
             draft.apply(defaults)
+        }
+        // An attachment the new model cannot take would only make the next prompt fail.
+        if let attachment = draft.attachment, let recipe,
+           !recipe.inputKinds.contains(where: { AttachmentLibrary.accepts(attachment, as: $0) }) {
+            draft.attachment = nil
         }
     }
 
@@ -85,22 +90,12 @@ final class GenerationStore {
         if draft.randomSeed {
             draft.seed = GenerationRequest.randomSeed()
         }
-        let request = GenerationRequest(
-            prompt: draft.prompt.trimmingCharacters(in: .whitespacesAndNewlines),
-            negativePrompt: draft.negativePrompt,
-            width: draft.width,
-            height: draft.height,
-            steps: draft.steps,
-            cfg: draft.cfg,
-            sampler: draft.sampler,
-            // The recipe's sigma schedule only fits its own step count.
-            sigmas: draft.steps == recipe.defaults.steps ? recipe.defaults.sigmas : nil,
-            seed: draft.seed,
-            sourceImage: draft.attachment,
-            strength: draft.attachment == nil ? nil : draft.editStrength.rawValue
-        )
+        let request = draft.request(for: recipe)
         let turn = GenerationTurn(
-            prompt: request.prompt, width: request.width, height: request.height, attachment: draft.attachment
+            prompt: request.prompt,
+            width: request.image?.width,
+            height: request.image?.height,
+            attachment: draft.attachment
         )
         turns.append(turn)
         draft.prompt = ""
@@ -122,11 +117,11 @@ final class GenerationStore {
         generate()
     }
 
-    // MARK: - Attaching an image
+    // MARK: - Attaching a file
 
-    /// Attaches an image for the next prompt to rework.
+    /// Attaches a file for the next prompt, such as an image to rework.
     func attach(_ file: URL) throws {
-        draft.attachment = try attachments.add(file)
+        draft.attachment = try attachments.add(file, accepting: selectedRecipe?.inputKinds ?? [])
     }
 
     func removeAttachment() {
@@ -157,14 +152,14 @@ final class GenerationStore {
                     phase = .running(progress)
                 case .preview(let image):
                     preview = image
-                case .finished(let image):
+                case .finished(let output):
                     let record = GenerationRecord(
                         recipeID: recipe.id,
                         recipeName: recipe.name,
                         request: request,
                         durationSeconds: Date().timeIntervalSince(started)
                     )
-                    return .finished(try gallery.add(image, record: record))
+                    return .finished(try gallery.add(output, record: record))
                 }
             }
             return .failed("The engine finished without producing an image.")

@@ -50,8 +50,8 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 | `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
 | `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator` | Download queue, resumable transfers, verification, on-disk layout, speed estimate. |
-| `Engine/` | `InferenceEngine`, `StableDiffusionCppEngine`, `HelperProcess`, `EngineMessage` | Generation API, helper process management, wire format. |
-| `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | PNG encoding with embedded settings, reading an image file as raw RGB, listing and deleting images. |
+| `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `StableDiffusionCppEngine`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, wire format. |
+| `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
 | `Chats/` | `Chat`, `ChatTurn`, `ChatStore` | Saved chats as JSON files. |
 
 ### Hugging Face client
@@ -67,6 +67,12 @@ Files are downloaded from `https://huggingface.co/<repo>/resolve/<revision>/<fil
 `HFFile` marks a file as weights when its name ends in `.gguf` or `.safetensors`, and parses a quantization label such as `Q8_0` or `BF16` from the file name for display.
 
 The access token is optional. `KeychainTokenStore` keeps it as a generic password in the login Keychain (service `app.kiln.huggingface`, account `access-token`). `HFClient.authorizationHeader(for:token:)` returns a header only for `https` URLs whose host is exactly `huggingface.co`. `FileDownloader` asks for the header again on every redirect, so the token is not forwarded when a download is redirected to another host.
+
+### Engines and kinds
+
+A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`, which the gallery saves.
+
+The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Only `sd.cpp` (`StableDiffusionCppEngine`) is registered today. Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
 
 ## The helper process
 
@@ -323,7 +329,7 @@ Generated images are PNG files in one folder, `~/Library/Application Support/Kil
 | Keyword | Contents |
 | --- | --- |
 | `parameters` | Readable text in the layout other Stable Diffusion tools read: the prompt, an optional `Negative prompt:` line, then `Steps`, `Sampler`, `CFG scale`, `Seed`, `Size` and `Model`. |
-| `kiln` | The full `GenerationRecord` as JSON: `id`, `createdAt` (ISO 8601), `recipeID`, `recipeName`, `durationSeconds` (when known) and `request` with the prompt, negative prompt, width, height, steps, cfg, sampler, sigmas and seed, plus `sourceImage` and `strength` for image-to-image. |
+| `kiln` | The full `GenerationRecord` as JSON: `id`, `createdAt` (ISO 8601), `recipeID`, `recipeName`, `durationSeconds` (when known) and `request`. The request holds the `prompt`, the `attachment` (image-to-image) and `image`: negative prompt, width, height, steps, cfg, sampler, sigmas, seed and, with an attachment, strength. Images saved before requests had kinds keep these settings at the top level of `request` and call the attachment `sourceImage`; `GenerationRequest` reads both layouts. |
 
 The chunks are written and read directly by `PNGText`, because ImageIO does not round-trip arbitrary PNG text.
 
@@ -335,7 +341,7 @@ Listing the gallery reads only the chunks before the pixel data of each `.png` f
 
 `ChatStore` keeps one JSON file per chat, `chats/<uuid>.json`, so a damaged file costs one chat at most. Files that cannot be decoded are skipped. Chats are listed most recently updated first.
 
-A `Chat` has an `id`, a `title`, `createdAt`, `updatedAt`, an `isArchived` flag and a list of turns. The title defaults to the first prompt, shortened to a single line of about 48 characters. A `ChatTurn` stores the prompt, the requested width and height, an optional `attachmentFileName`, and an outcome:
+A `Chat` has an `id`, a `title`, `createdAt`, `updatedAt`, an `isArchived` flag and a list of turns. The title defaults to the first prompt, shortened to a single line of about 48 characters. A `ChatTurn` stores the prompt, the requested width and height (for an image; absent for other kinds), an optional `attachmentFileName`, and an outcome:
 
 - `image`: the file name of the result inside the gallery folder
 - `failed`: the error message
@@ -347,7 +353,7 @@ The chat is created when its first prompt is sent and saved again when each turn
 
 ### Attachments
 
-`AttachmentLibrary` (in `App/Stores/`) copies every attached image into `attachments/<uuid>.<ext>`, so a chat keeps its picture after the original file is moved or deleted. A file is accepted when ImageIO can open it. Chat turns refer to the copy by file name. Kiln does not currently delete attachment copies.
+`AttachmentLibrary` (in `App/Stores/`) copies every attached file into `attachments/<uuid>.<ext>`, so a chat keeps it after the original file is moved or deleted. A file is accepted only as one of the kinds in the selected recipe's `accepts`: an image when ImageIO can open it, another kind when its file type conforms to that kind. Switching to a model that cannot take the attached file removes the attachment from the draft. Chat turns refer to the copy by file name. Kiln does not currently delete attachment copies.
 
 ## The app layer
 

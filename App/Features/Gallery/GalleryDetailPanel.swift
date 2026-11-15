@@ -10,6 +10,7 @@ struct GalleryDetailPanel: View {
     let onClose: () -> Void
 
     private var request: GenerationRequest { item.record.request }
+    private var image: ImageSettings? { request.image }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,8 +22,8 @@ struct GalleryDetailPanel: View {
                     preview
 
                     textBlock("Prompt", text: request.prompt, copyHelp: "Copy Prompt")
-                    if !request.negativePrompt.isEmpty {
-                        textBlock("Negative Prompt", text: request.negativePrompt, copyHelp: "Copy Negative Prompt")
+                    if let negative = image?.negativePrompt, !negative.isEmpty {
+                        textBlock("Negative Prompt", text: negative, copyHelp: "Copy Negative Prompt")
                     }
 
                     settings
@@ -69,7 +70,7 @@ struct GalleryDetailPanel: View {
     private var preview: some View {
         let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
         return Color.clear
-            .aspectRatio(CGFloat(max(request.width, 1)) / CGFloat(max(request.height, 1)), contentMode: .fit)
+            .aspectRatio(image.map { CGFloat(max($0.width, 1)) / CGFloat(max($0.height, 1)) } ?? 1, contentMode: .fit)
             .overlay { Thumbnail(url: item.url, maxPixelSize: 800) }
             .clipShape(shape)
             .overlay { shape.strokeBorder(Theme.hairline) }
@@ -116,16 +117,20 @@ struct GalleryDetailPanel: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 6) {
-                Pill(text: "\(request.width) × \(request.height)", systemImage: "aspectratio")
-                Pill(text: "\(request.steps) steps")
-                Pill(text: "CFG \(request.cfg.formatted())")
+            if let image {
+                HStack(spacing: 6) {
+                    Pill(text: "\(image.width) × \(image.height)", systemImage: "aspectratio")
+                    Pill(text: "\(image.steps) steps")
+                    Pill(text: "CFG \(image.cfg.formatted())")
+                }
             }
 
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 14, verticalSpacing: 7) {
                 detail("Model", item.record.recipeName)
-                detail("Sampler", request.sampler)
-                detail("Seed", String(request.seed), monospaced: true)
+                if let image {
+                    detail("Sampler", image.sampler)
+                    detail("Seed", String(image.seed), monospaced: true)
+                }
                 detail("Created", item.record.createdAt.formatted(date: .abbreviated, time: .shortened))
                 if let seconds = item.record.durationSeconds {
                     detail("Duration", "\(seconds.formatted(.number.precision(.fractionLength(1)))) s")

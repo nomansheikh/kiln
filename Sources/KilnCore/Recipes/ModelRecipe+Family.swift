@@ -79,6 +79,8 @@ extension ModelRecipe {
             name: file.name,
             engine: engine,
             components: components.filter { $0.role != .diffusionModel } + [denoiser],
+            output: output,
+            accepts: accepts,
             defaults: defaults,
             licenseNote: notes.compactMap { $0 }.joined(separator: " ")
         )

@@ -41,13 +41,26 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `name` | string | yes | Display name. |
 | `engine` | string | yes | Inference engine. The only engine Kiln includes is `sd.cpp`. |
 | `components` | array of [component](#components) | yes | Files to download. At least one, unless the recipe has [variants](#variants), in which case these are the files shared by every variant and the array may be empty. The key must be present either way. |
-| `defaults` | [defaults](#defaults) object | yes | Recommended generation settings. |
+| `output` | string | no | What the model produces: `image`, `audio` or `text`. `image` when absent. See [kinds](#kinds-of-model). |
+| `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same three values. See [kinds](#kinds-of-model). |
+| `defaults` | [defaults](#defaults) object | for image models | Recommended generation settings of an image model. Required when `output` is `image`. |
 | `license_note` | string | no | Short, human-readable summary of the model's licence terms. |
 | `min_memory_gb` | number | no | Smallest amount of system RAM the recipe is expected to run on. |
 | `base_model` | string | no | Hugging Face repo of the original model the `diffusion_model` file was made from, for example `black-forest-labs/FLUX.1-dev`. Lets files from other repos of the same model run with this recipe. See [family recipes](#family-recipes). |
 | `variants` | array of [variant](#variants) | no | Alternative sets of files for the same model, usually different quantizations. |
 
 A recipe with an `engine` other than `sd.cpp` still loads, but generating with it fails with an "unsupported engine" error.
+
+### Kinds of model
+
+`output` and `accepts` describe what goes in and what comes out. The app derives the Generate screen from them: the composer offers an attach button only for the kinds in `accepts` and shows size and step controls only for image models, and the model menu groups models by `output` once more than one kind is installed.
+
+| `output` | `accepts` when absent | Can run without a prompt |
+| --- | --- | --- |
+| `image` | `["image"]`, an image to rework | No |
+| `audio`, `text` | `[]`, no attachment | When it takes an attachment and one is attached, as speech to text does |
+
+Kiln's only engine, `sd.cpp`, makes images, so every curated recipe is an image recipe and the script rejects any other `output` in `recipes/`.
 
 ## Components
 
@@ -265,7 +278,8 @@ Each component:
 
 Defaults:
 
-9. `steps` is greater than zero.
+9. An image recipe (no `output`, or `output` set to `image`) has `defaults`. For any recipe that has them:
+   `steps` is greater than zero.
 10. `cfg` is not negative.
 11. `sampler` is not empty.
 12. `width` and `height` are greater than zero.
@@ -277,7 +291,7 @@ Each variant:
 15. `components` has at least one entry, no two share a `role`, and each follows rules 5 to 8.
 16. The merged list (shared components with this variant's files replacing those of the same role) has no duplicate role.
 
-Decoding adds the structural checks: every required field must be present with the right type, and `role` must be one of the seven values above. Unknown extra fields are ignored by the app, which is why `$schema` is safe, and also why a misspelt optional field goes unnoticed; `scripts/recipe.py check` reports unknown fields for that reason.
+Decoding adds the structural checks: every required field must be present with the right type, `role` must be one of the seven values above, and `output` and `accepts` may hold only `image`, `audio` and `text`. Unknown extra fields are ignored by the app, which is why `$schema` is safe, and also why a misspelt optional field goes unnoticed; `scripts/recipe.py check` reports unknown fields for that reason.
 
 `index.json` and `schema.json` are reserved file names. The app does not load them as recipes.
 

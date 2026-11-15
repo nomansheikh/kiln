@@ -13,7 +13,7 @@ struct EngineFixture {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("kiln-engine-tests-\(UUID().uuidString)")
         storage = ModelStorage(root: root.appendingPathComponent("models"))
         recipe = makeRecipe(components: [.init(role: .checkpoint, repo: "owner/name", file: "model.safetensors")])
-        request = GenerationRequest(prompt: "a cat", defaults: recipe.defaults, seed: 1)
+        request = GenerationRequest(prompt: "a cat", defaults: recipe.defaults!, seed: 1)
 
         let model = storage.url(for: recipe.components[0])
         try FileManager.default.createDirectory(at: model.deletingLastPathComponent(), withIntermediateDirectories: true)

@@ -35,7 +35,12 @@ RESERVED_NAMES = {"index.json", "schema.json"}
 # ModelRecipe.ComponentRole
 ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
 
-RECIPE_KEYS = {"$schema", "id", "name", "engine", "components", "defaults", "license_note", "min_memory_gb", "variants", "tested", "base_model"}
+RECIPE_KEYS = {
+    "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults",
+    "license_note", "min_memory_gb", "variants", "tested", "base_model",
+}
+# MediaKind
+KINDS = ["image", "audio", "text"]
 COMPONENT_KEYS = {"role", "repo", "file", "revision", "size_bytes", "sha256"}
 DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
@@ -284,7 +289,17 @@ def validate_recipe(recipe, curated=True, file_name=None):
         elif curated and not any(c.get("role") == "diffusion_model" for _, c in installs(recipe) if isinstance(c, dict)):
             problems.append("base_model needs a diffusion_model component: it names the model that file was made from.")
 
-    validate_defaults(recipe.get("defaults"), problems, curated)
+    output = recipe.get("output", "image")
+    if output not in KINDS:
+        problems.append("output %s must be one of: %s." % (json.dumps(output), ", ".join(KINDS)))
+    elif curated and output != "image":
+        problems.append('output must be "image": the %s engine only makes images (found "%s").' % (ENGINE, output))
+    accepts = recipe.get("accepts")
+    if accepts is not None and (not isinstance(accepts, list) or any(kind not in KINDS for kind in accepts)):
+        problems.append("accepts must be an array of: %s." % ", ".join(KINDS))
+    # Only image models have image settings; the app requires them there.
+    if output == "image" or recipe.get("defaults") is not None:
+        validate_defaults(recipe.get("defaults"), problems, curated)
 
     variants = recipe.get("variants")
     if variants is not None and not isinstance(variants, list):

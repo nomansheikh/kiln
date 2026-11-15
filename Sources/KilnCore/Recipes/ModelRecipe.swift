@@ -7,7 +7,12 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var name: String
     public var engine: String
     public var components: [Component]
-    public var defaults: GenerationDefaults
+    /// What the model produces. Image when absent; use `outputKind`.
+    public var output: MediaKind?
+    /// Kinds of file the model takes as an attachment. See `inputKinds`.
+    public var accepts: [MediaKind]?
+    /// Recommended settings of an image model. Required when the output is an image.
+    public var defaults: ImageDefaults?
     public var licenseNote: String?
     /// Smallest amount of system RAM the recipe is expected to run on.
     public var minMemoryGB: Double?
@@ -27,7 +32,9 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         name: String,
         engine: String,
         components: [Component],
-        defaults: GenerationDefaults,
+        output: MediaKind? = nil,
+        accepts: [MediaKind]? = nil,
+        defaults: ImageDefaults?,
         licenseNote: String? = nil,
         minMemoryGB: Double? = nil,
         variants: [Variant]? = nil
@@ -37,16 +44,34 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         self.name = name
         self.engine = engine
         self.components = components
+        self.output = output
+        self.accepts = accepts
         self.defaults = defaults
         self.licenseNote = licenseNote
         self.minMemoryGB = minMemoryGB
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, engine, components, defaults, variants, tested
+        case id, name, engine, components, output, accepts, defaults, variants, tested
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
         case baseModel = "base_model"
+    }
+
+    public var outputKind: MediaKind { output ?? .image }
+
+    /// Kinds of file the model takes as an attachment. An image model takes an
+    /// image to rework unless the recipe says otherwise.
+    public var inputKinds: [MediaKind] {
+        accepts ?? (outputKind == .image ? [.image] : [])
+    }
+
+    /// Whether a prompt is enough, or needed, to start. A model that does not make
+    /// images can run on an attachment alone, as speech to text does.
+    public func canRun(prompt: String, hasAttachment: Bool) -> Bool {
+        let hasPrompt = !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if hasPrompt { return true }
+        return hasAttachment && outputKind != .image && !inputKinds.isEmpty
     }
 
     /// Total download size, or nil when any component has no declared size.
@@ -107,7 +132,8 @@ extension ModelRecipe {
         }
     }
 
-    public struct GenerationDefaults: Codable, Sendable, Equatable {
+    /// Recommended settings of an image model.
+    public struct ImageDefaults: Codable, Sendable, Equatable {
         public var steps: Int
         public var cfg: Double
         public var sampler: String

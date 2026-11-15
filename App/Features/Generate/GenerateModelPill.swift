@@ -17,13 +17,15 @@ struct GenerateModelPill: View {
             // A Menu of Toggles rather than a Picker so every change goes through selectRecipe(_:),
             // while the menu still draws its own checkmark beside the current model.
             Menu {
-                ForEach(installed) { recipe in
-                    Toggle(isOn: Binding(
-                        get: { recipe.id == model.generation.draft.recipeID },
-                        set: { _ in model.generation.selectRecipe(recipe) }
-                    )) {
-                        Text(verbatim: recipe.name)
+                let kinds = MediaKind.allCases.filter { kind in installed.contains { $0.outputKind == kind } }
+                if kinds.count > 1 {
+                    ForEach(kinds, id: \.self) { kind in
+                        Section(kind.title) {
+                            choices(installed.filter { $0.outputKind == kind })
+                        }
                     }
+                } else {
+                    choices(installed)
                 }
                 Divider()
                 Button("Unload from Memory", systemImage: "memorychip") {
@@ -36,14 +38,24 @@ struct GenerateModelPill: View {
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
-        .focusable(false)
             .focusable(false)
             .fixedSize()
             .help(model.generation.loadedRecipeID == nil ? "Model" : "Model (loaded in memory)")
         }
     }
 
-    private func label(_ name: String) -> some View {
+    private func choices(_ recipes: [ModelRecipe]) -> some View {
+        ForEach(recipes) { recipe in
+            Toggle(isOn: Binding(
+                get: { recipe.id == model.generation.draft.recipeID },
+                set: { _ in model.generation.selectRecipe(recipe) }
+            )) {
+                Text(verbatim: recipe.name)
+            }
+        }
+    }
+
+        private func label(_ name: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "cube")
                 .foregroundStyle(.secondary)
