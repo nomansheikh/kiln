@@ -84,6 +84,8 @@ CI (`.github/workflows/ci.yml`) runs on every pull request and on every push to 
 
 A new push to a pull request cancels the run in progress.
 
+Every GitHub Action in the workflows is pinned to a commit, with its version in a comment beside it, so a moved tag cannot change what CI runs. Dependabot (`.github/dependabot.yml`) opens a pull request when an action has a new release. Keep that form when adding one.
+
 Never commit these. They are in `.gitignore`:
 
 - `Kiln.xcodeproj` (generated)
