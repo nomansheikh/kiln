@@ -2,12 +2,15 @@ import SwiftUI
 
 /// The composer's border as a sign of what it is doing: a steady accent line
 /// while it has the keyboard, and a glow travelling around it while a model
-/// is working. With Reduce Motion the glow holds still.
+/// is working. With Reduce Motion the glow holds still. A click outside the
+/// composer takes the keyboard away from it.
 struct ComposerGlow: ViewModifier {
     let isWorking: Bool
     let isFocused: Bool
     var cornerRadius: CGFloat = 26
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Names this composer's frame to `FocusDismissal`.
+    @State private var region = UUID()
 
     /// How long the glow takes to go round once.
     private static let period: TimeInterval = 3.2
@@ -15,6 +18,16 @@ struct ComposerGlow: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content
+            // A click anywhere outside this frame gives the keyboard up.
+            .background {
+                GeometryReader { geometry in
+                    let frame = geometry.frame(in: .global)
+                    Color.clear
+                        .onAppear { FocusDismissal.shared.setRegion(frame, for: region) }
+                        .onChange(of: frame) { _, frame in FocusDismissal.shared.setRegion(frame, for: region) }
+                        .onDisappear { FocusDismissal.shared.setRegion(nil, for: region) }
+                }
+            }
             .overlay {
                 ZStack {
                     if isWorking {
