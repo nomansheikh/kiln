@@ -8,6 +8,8 @@ struct GenerationTurn: Identifiable, Equatable {
         case finished(GalleryItem)
         /// Text the model wrote, such as a transcript.
         case text(String)
+        /// Sound the model made, such as speech.
+        case audio(AudioItem)
         case failed(String)
         case cancelled
     }

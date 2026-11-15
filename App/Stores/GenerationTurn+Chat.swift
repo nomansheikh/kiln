@@ -3,7 +3,7 @@ import KilnCore
 /// Converting thread turns to and from their saved form.
 extension GenerationTurn {
     /// A saved turn, with its image looked up in the gallery.
-    init(_ turn: ChatTurn, images: [GalleryItem], attachments: AttachmentLibrary) {
+    init(_ turn: ChatTurn, images: [GalleryItem], sounds: [AudioItem], attachments: AttachmentLibrary) {
         let state: State
         switch turn.outcome {
         case .image(let fileName):
@@ -14,6 +14,12 @@ extension GenerationTurn {
             }
         case .text(let text):
             state = .text(text)
+        case .audio(let fileName):
+            if let item = sounds.first(where: { $0.url.lastPathComponent == fileName }) {
+                state = .audio(item)
+            } else {
+                state = .failed("This audio file is no longer on this Mac.")
+            }
         case .failed(let message):
             state = .failed(message)
         case .cancelled:
@@ -37,6 +43,7 @@ extension GenerationTurn {
         switch state {
         case .finished(let item): outcome = .image(fileName: item.url.lastPathComponent)
         case .text(let text): outcome = .text(text)
+        case .audio(let item): outcome = .audio(fileName: item.url.lastPathComponent)
         case .failed(let message): outcome = .failed(message: message)
         case .running, .cancelled: outcome = .cancelled
         }

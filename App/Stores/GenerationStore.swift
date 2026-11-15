@@ -25,22 +25,25 @@ final class GenerationStore {
     /// The model currently held in memory by the engine, if any.
     private(set) var loadedRecipeID: String?
 
-    private let library: ModelLibrary
+    let library: ModelLibrary
+    let attachments: AttachmentLibrary
     private let gallery: GalleryLibrary
+    private let audio: AudioLibrary
     private let chats: ChatLibrary
-    private let attachments: AttachmentLibrary
     private let engine: any InferenceEngine
     private var task: Task<Void, Never>?
 
     init(
         library: ModelLibrary,
         gallery: GalleryLibrary,
+        audio: AudioLibrary,
         chats: ChatLibrary,
         attachments: AttachmentLibrary,
         engine: any InferenceEngine
     ) {
         self.library = library
         self.gallery = gallery
+        self.audio = audio
         self.chats = chats
         self.attachments = attachments
         self.engine = engine
@@ -59,28 +62,6 @@ final class GenerationStore {
     /// The most recent image in the thread.
     var latestImage: GalleryItem? {
         turns.last { $0.image != nil }?.image
-    }
-
-    // MARK: - Choosing a model
-
-    /// Selects a model and applies its recommended settings.
-    func selectRecipe(_ recipe: ModelRecipe?) {
-        draft.recipeID = recipe?.id
-        if let defaults = recipe?.defaults {
-            draft.apply(defaults)
-        }
-        // An attachment the new model cannot take would only make the next prompt fail.
-        if let attachment = draft.attachment, let recipe,
-           !recipe.inputKinds.contains(where: { AttachmentLibrary.accepts(attachment, as: $0) }) {
-            draft.attachment = nil
-        }
-    }
-
-    /// Picks an installed model when the current choice is missing or was deleted.
-    func selectDefaultRecipeIfNeeded() {
-        if let id = draft.recipeID, library.installedIDs.contains(id) { return }
-        let installed = library.installedRecipes
-        selectRecipe(installed.first { $0.outputKind == .image } ?? installed.first)
     }
 
     // MARK: - Generating
@@ -119,17 +100,6 @@ final class GenerationStore {
         generate()
     }
 
-    // MARK: - Attaching a file
-
-    /// Attaches a file for the next prompt, such as an image to rework.
-    func attach(_ file: URL) throws {
-        draft.attachment = try attachments.add(file, accepting: selectedRecipe?.inputKinds ?? [])
-    }
-
-    func removeAttachment() {
-        draft.attachment = nil
-    }
-
     func cancel() {
         task?.cancel()
     }
@@ -154,16 +124,18 @@ final class GenerationStore {
                     phase = .running(progress)
                 case .preview(let image):
                     preview = image
-                case .finished(.text(let text)):
-                    return .text(text)
-                case .finished(.image(let image)):
+                case .finished(let output):
                     let record = GenerationRecord(
                         recipeID: recipe.id,
                         recipeName: recipe.name,
                         request: request,
                         durationSeconds: Date().timeIntervalSince(started)
                     )
-                    return .finished(try gallery.add(image, record: record))
+                    switch output {
+                    case .text(let text): return .text(text)
+                    case .image(let image): return .finished(try gallery.add(image, record: record))
+                    case .audio(let sound): return .audio(try audio.add(sound, record: record))
+                    }
                 }
             }
             return .failed("The engine finished without producing an image.")
@@ -211,7 +183,9 @@ final class GenerationStore {
     func open(_ chat: Chat) {
         guard !phase.isBusy, chat.id != chatID else { return }
         chatID = chat.id
-        turns = chat.turns.map { GenerationTurn($0, images: gallery.items, attachments: attachments) }
+        turns = chat.turns.map {
+            GenerationTurn($0, images: gallery.items, sounds: audio.items, attachments: attachments)
+        }
     }
 
     /// Loads a past image's settings into the draft.

@@ -7,6 +7,7 @@ public struct GenerationProgress: Sendable, Equatable {
         case sampling
         case decoding
         case transcribing
+        case speaking
         case other(String)
     }
 
@@ -45,6 +46,7 @@ public struct GeneratedImage: Sendable, Hashable {
 public enum GenerationOutput: Sendable, Hashable {
     case image(GeneratedImage)
     case text(String)
+    case audio(GeneratedAudio)
 }
 
 public enum GenerationEvent: Sendable, Equatable {
@@ -61,6 +63,8 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case missingComponents([String])
     case unreadableSourceImage
     case missingAudio
+    case missingText
+    case unknownVoice(String)
     case unreadableAudio
     case helperUnavailable(String)
     case modelLoadFailed(detail: String)
@@ -81,6 +85,10 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "The attached image could not be read. Try a PNG or JPEG file."
         case .missingAudio:
             "This model turns speech into text. Attach an audio file first."
+        case .missingText:
+            "This model reads text aloud. Type what it should say first."
+        case .unknownVoice(let voice):
+            "This model has no voice called \"\(voice)\". Pick another voice."
         case .unreadableAudio:
             "The attached audio could not be read. Try a WAV, MP3 or M4A file."
         case .helperUnavailable(let reason):

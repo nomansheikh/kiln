@@ -4,7 +4,7 @@ Instructions for AI coding agents contributing to Kiln. Follow this file and the
 
 ## 1. The project
 
-Kiln is a native macOS app (Swift 6, SwiftUI, macOS 14 or later, Apple Silicon, MIT licence). It downloads models from Hugging Face and runs them locally, each engine in its own helper process: image generation with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and speech to text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp).
+Kiln is a native macOS app (Swift 6, SwiftUI, macOS 14 or later, Apple Silicon, MIT licence). It downloads models from Hugging Face and runs them locally, each engine in its own helper process: image generation with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), speech to text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) and text to speech with [audio.cpp](https://github.com/0xShug0/audio.cpp).
 
 A model is described by a **recipe**: one JSON file in `recipes/` listing every file the model needs (Hugging Face repo, path, pinned commit, byte size, SHA-256, role) and its default settings.
 
@@ -18,8 +18,8 @@ There are two kinds of contribution:
 | Path | What belongs there |
 | --- | --- |
 | `recipes/` | Curated recipes, one `<id>.json` per model. `index.json` (generated list of recipes) and `schema.json` (JSON Schema) are reserved names, not recipes. |
-| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build both helpers), `release.sh` and `package-dmg.sh` (release tooling). |
-| `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, one engine class per helper, audio decoding, wire format), `Gallery/` (PNG files with embedded settings), `Chats/` (saved chats). |
+| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build the three helpers), `release.sh` and `package-dmg.sh` (release tooling). |
+| `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, one engine class per helper, audio decoding, wire format), `Gallery/` (PNG files with embedded settings), `Audio/` (generated sound as WAV files), `Chats/` (saved chats). |
 | `Tests/KilnCoreTests/` | Unit tests for KilnCore, written with Swift Testing. Test doubles and fixtures are in `Support/`. |
 | `App/` | The SwiftUI app. `KilnApp.swift` is the entry point. |
 | `App/Stores/` | Observable state: `AppModel` (the root) and one store per feature. |
@@ -29,8 +29,10 @@ There are two kinds of contribution:
 | `App/Support/` | `AppDelegate`, `KeyboardNavigationMonitor`, `DebugSnapshot`. |
 | `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. |
 | `Engine/whisper/` | `kiln-whisper`: the C++ helper that links whisper.cpp and turns speech into text. |
+| `Engine/audio/` | `kiln-audio`: the C++ helper that links audio.cpp and turns text into speech. Its `CMakeLists.txt` lists the model families compiled in. |
 | `Vendor/stable-diffusion.cpp/` | Git submodule. Read-only. Its `docs/` folder documents each supported model family. |
 | `Vendor/whisper.cpp/` | Git submodule, pinned to a release tag. Read-only. |
+| `Vendor/audio.cpp/` | Git submodule, pinned to a release tag. Read-only. Its `docs/models/` folder documents each model family. |
 | `docs/` | `architecture.md` (modules, helper protocol, download flow), `recipes.md` (recipe reference), `releasing.md`. |
 | `.github/` | CI (`workflows/ci.yml`), release workflow, issue and pull request templates. |
 | `Package.swift` | Swift package: the `KilnCore` library and its tests. |
@@ -64,9 +66,9 @@ python3 scripts/recipe.py check
 
 | Command | What it does | Cost |
 | --- | --- | --- |
-| `git submodule update --init --recursive` | Fetches stable-diffusion.cpp and whisper.cpp into `Vendor/`. | Network |
+| `git submodule update --init --recursive` | Fetches stable-diffusion.cpp, whisper.cpp and audio.cpp into `Vendor/`. | Network |
 | `brew install cmake xcodegen` | Installs the two build tools. | Once |
-| `./scripts/build-engine.sh` | Compiles both helpers: `build/engine/kiln-engine` (stable-diffusion.cpp) and `build/whisper/kiln-whisper` (whisper.cpp). The app build runs it only when a helper is missing, so run it again after changing `Engine/`. | Slow |
+| `./scripts/build-engine.sh` | Compiles the three helpers: `build/engine/kiln-engine` (stable-diffusion.cpp), `build/whisper/kiln-whisper` (whisper.cpp) and `build/audio/kiln-audio` (audio.cpp). The app build runs it only when a helper is missing, so run it again after changing `Engine/`. | Slow |
 | `xcodegen generate` | Writes `Kiln.xcodeproj` from `project.yml`. Run it again after adding, moving or deleting files under `App/`. | Fast |
 | `swift test` | Builds KilnCore and runs its unit tests. Needs no engine, no network and no model. | Fast |
 | `xcodebuild ... build` | Builds the app (the line above is the one CI uses). | Slow |
@@ -140,7 +142,7 @@ ROLE=OWNER/REPO@REVISION:PATH     a specific commit or branch
 | `t5xxl` | T5-XXL text encoder | `--t5xxl` |
 
 - Pick roles from the example command for the model family in `Vendor/stable-diffusion.cpp/docs/`: each flag in the table maps to one role.
-- These seven are the roles of an image recipe. A speech-to-text recipe has one more, `model` (see "Speech-to-text recipes" below).
+- These seven are the roles of an image recipe. Speech recipes use two more, `model` and `voice` (see "Speech-to-text recipes" and "Text-to-speech recipes" below).
 - Each role may appear once per install. There are no other roles. If the model needs a file with no role here (a LoRA, a vision projector, or any other flag), it cannot be described yet: stop and say so instead of forcing the file into another role.
 - Prefer `.gguf` or `.safetensors` files.
 
@@ -185,6 +187,26 @@ python3 scripts/recipe.py new \
 ```
 
 The script writes `"output": "text"` and `"accepts": ["audio"]` itself and rejects `--steps` and the other image settings. Everything else in this section applies: variants, `min_memory_gb`, `license_note` (check both the converted file's page and the original model's), and the rules about traceable files.
+
+### Text-to-speech recipes
+
+A model that reads text aloud runs on the `audio.cpp` engine. It needs one `model` file in audio.cpp's GGUF format, `--family` with audio.cpp's name for the model (the `Family` field on its page in `Vendor/audio.cpp/docs/models/` or `docs/tts.md`), and its voices:
+
+```sh
+python3 scripts/recipe.py new \
+  --id pocket-tts-english \
+  --name "PocketTTS English" \
+  --engine audio.cpp --family pocket_tts --voice alba \
+  --component voice=audio-cpp/audio.cpp-gguf:PocketTTS-GGUF/english/embeddings/alba.safetensors \
+  --component voice=audio-cpp/audio.cpp-gguf:PocketTTS-GGUF/english/embeddings/george.safetensors \
+  --variant bf16 "Full precision (best quality)" min_memory_gb=8 model=audio-cpp/audio.cpp-gguf:PocketTTS-GGUF/english/pocket-tts-english-bf16.gguf \
+  --license-note "..."
+```
+
+- A voice stored in its own file is a `voice=` component, repeated once per voice; the voice is named after the file. Voices built into the model file are listed with `--voices` instead.
+- The family must be compiled into the helper: add it to `AUDIOCPP_MODELS` in `Engine/audio/CMakeLists.txt` in the same pull request, and rebuild with `./scripts/build-engine.sh`. A family that needs eSpeak cannot be added: eSpeak is GPL-3.0 and Kiln does not ship it.
+- **Every voice has its own licence.** Check the source of each one (for Kyutai's voices, the `kyutai/tts-voices` page) and leave out any voice that is non-commercial or has no stated licence. Name each source in `license_note`.
+- Check the model's licence in `Vendor/audio.cpp/docs/model_licenses.md` and on the original model's page, and repeat any use restrictions the model card states.
 
 ### `base_model`
 
@@ -236,7 +258,7 @@ Curated recipes are fetched by released apps from this repository (once it is pu
 - **Respect Reduce Motion:** take animations and transitions from `App/DesignSystem/Motion.swift`, which falls back to plain fades. Do not write ad hoc animations in a feature.
 - **Comments** only where something is not obvious from the code. Explain why, not what.
 - **Coupled changes:**
-  - Helper protocol: `Engine/main.cpp` or `Engine/whisper/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` (and `EngineMessage+Transcribe.swift`) and `docs/architecture.md` together.
+  - Helper protocol: `Engine/main.cpp`, `Engine/whisper/main.cpp` or `Engine/audio/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` (and `EngineMessage+Transcribe.swift`, `EngineMessage+Speak.swift`) and `docs/architecture.md` together.
   - Recipe format: `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and `docs/recipes.md` together.
 
 ### Tests

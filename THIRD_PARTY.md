@@ -2,7 +2,7 @@
 
 Kiln itself is MIT licensed (see [LICENSE](LICENSE)). The Swift app and the `KilnCore` library use only Apple system frameworks and have no third-party Swift dependencies.
 
-The app bundles two helper programs. `kiln-whisper` is covered in [its own section](#kiln-whisper) at the end.
+The app bundles three helper programs. `kiln-whisper` and `kiln-audio` are covered in [their own sections](#kiln-whisper) at the end.
 
 The `kiln-engine` helper is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/CMakeLists.txt](Engine/CMakeLists.txt): Metal on, examples off, WebP off, WebM off, no CUDA.
 
@@ -119,3 +119,27 @@ Paths are relative to `Vendor/whisper.cpp/`, a git submodule. This section was l
 The YaRN RoPE notice listed above for `ggml/src/ggml-cpu/ops.cpp` and `ggml/src/ggml-metal/kernels/rope.metal` applies to this copy of ggml as well. Other files in the tree that carry their own notices (`ggml/src/ggml-cpu/llamafile/`, `ggml/src/ggml-cpu/kleidiai/`) are not compiled into the helper.
 
 Model files are not part of the app. The Whisper recipe downloads them from Hugging Face; their licence is stated in the recipe's `license_note`.
+
+## kiln-audio
+
+The `kiln-audio` helper (text to speech) is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/audio/CMakeLists.txt](Engine/audio/CMakeLists.txt): Metal on, only the `pocket_tts` model family, no eSpeak, no model manager, no server. It was read from the object files of a build.
+
+Paths are relative to `Vendor/audio.cpp/`, a git submodule. This section was last checked against submodule commit `61c7838baf1f7f34769b5b7bd369c0d78edf9535` (tag `v0.9.5`) on 2026-11-15.
+
+| Component | License | Upstream | License verified from |
+| --- | --- | --- | --- |
+| audio.cpp (`src/`, including `src/capi/audiocpp.cpp`, which is compiled directly into the helper) | Apache-2.0, Copyright 2026 ShugoAI LLC | https://github.com/0xShug0/audio.cpp | `LICENSE` |
+| ggml (`external/ggml/`), including its CPU, BLAS (Apple Accelerate) and Metal backends | MIT, Copyright (c) 2023-2026 The ggml authors | https://github.com/ggml-org/ggml | `external/ggml/LICENSE` |
+| SentencePiece (`external/sentencepiece/`) | Apache-2.0 | https://github.com/google/sentencepiece | `external/sentencepiece/LICENSE` |
+| Protocol Buffers, lite runtime (`external/sentencepiece/third_party/protobuf-lite/`) | BSD 3-Clause, Copyright 2008 Google Inc. | https://github.com/protocolbuffers/protobuf | `LICENSE` in that folder |
+| Abseil, subset (`external/sentencepiece/third_party/absl/`) | Apache-2.0 | https://github.com/abseil/abseil-cpp | `LICENSE` in that folder |
+| cJSON (`external/cJSON/`) | MIT, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors | https://github.com/DaveGamble/cJSON | `external/cJSON/LICENSE` |
+| LibYAML (`external/libyaml/`) | MIT, Copyright (c) 2017-2020 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov | https://github.com/yaml/libyaml | `external/libyaml/License` |
+| Unicode helpers (`external/llama_tokenizer/unicode.cpp`, `unicode-data.cpp`) | Not stated in the folder: it has no licence file and the files carry no notice. Their names and role match `src/unicode.cpp` in llama.cpp, which is MIT (Copyright (c) 2023-2026 The ggml authors). Treated here as covered by audio.cpp's Apache-2.0 `LICENSE`; the origin was not confirmed. | https://github.com/ggml-org/llama.cpp (presumed) | not verified |
+| JSON for Modern C++ (`Vendor/stable-diffusion.cpp/thirdparty/json.hpp`, version 3.11.2). Included only by `Engine/audio/main.cpp`. | MIT, Copyright 2013-2022 Niels Lohmann | https://github.com/nlohmann/json | SPDX header in the file |
+
+The headers in `external/sentencepiece/third_party/darts_clone/` (BSD 3-Clause) and `esaxx/` (MIT) are in the tree; whether they are compiled into the helper was not checked, since header-only code leaves no object file. Their licence files are beside them.
+
+audio.cpp can be built with eSpeak-ng, which is GPL-3.0-or-later. Kiln does not enable that option (`AUDIOCPP_STATIC_ESPEAK` is off), so no GPL code is in the helper. Model families that need eSpeak, such as Kokoro for English, are not compiled in for that reason.
+
+Model and voice files are not part of the app. Recipes download them from Hugging Face; their licences are stated in each recipe's `license_note`.

@@ -55,7 +55,7 @@ extension MediaKind {
     var promptPlaceholder: String {
         switch self {
         case .image: "Describe an image"
-        case .audio: "Describe the sound, or type what to say"
+        case .audio: "Type what to say"
         case .text: "Ask anything"
         }
     }

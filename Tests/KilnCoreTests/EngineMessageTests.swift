@@ -16,6 +16,9 @@ import Testing
         #expect(EngineMessage.decodeEvent(#"{"code":"load_failed","message":"nope","type":"error"}"#)
             == .error(code: "load_failed", message: "nope"))
         #expect(EngineMessage.decodeEvent(#"{"path":"/tmp/a.txt","type":"text"}"#) == .text(path: "/tmp/a.txt"))
+        #expect(EngineMessage.decodeEvent(#"{"channels":1,"frames":36480,"path":"/tmp/a.f32","sample_rate":24000,"type":"audio"}"#)
+            == .audio(path: "/tmp/a.f32", sampleRate: 24_000, channels: 1, frames: 36_480))
+        #expect(EngineMessage.decodeEvent(#"{"path":"/tmp/a.f32","type":"audio"}"#) == nil)
         #expect(EngineMessage.decodeEvent(#"{"type":"cancelled"}"#) == .cancelled)
         #expect(EngineMessage.decodeEvent(#"{"type":"idle"}"#) == .idle)
     }

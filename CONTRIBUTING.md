@@ -21,7 +21,8 @@ Find the model on Hugging Face, decide which files it needs, and give each one a
 | `llm` | A language model used as the text encoder (Qwen-Image and similar) |
 | `vae` | A standalone VAE |
 | `clip_l`, `clip_g`, `t5xxl` | CLIP and T5 text encoders (Flux and SD3 families) |
-| `model` | The one file of a speech-to-text model, with `--engine whisper.cpp` (see [docs/recipes.md](docs/recipes.md#kinds-of-model)) |
+| `model` | The model file of a speech model, with `--engine whisper.cpp` or `--engine audio.cpp` (see [docs/recipes.md](docs/recipes.md#kinds-of-model)) |
+| `voice` | A voice of a text-to-speech model, one component per voice (see [docs/recipes.md](docs/recipes.md#speech)) |
 
 Then run `new`, writing each file as `ROLE=OWNER/REPO:PATH`:
 
@@ -58,7 +59,7 @@ This validates every recipe and verifies each file against Hugging Face at its p
 swift test
 ```
 
-`everyCuratedRecipeIsValid` decodes every file in `recipes/` with the app's own code and fails if a file name does not match its id, if `engine` is not `sd.cpp` or `whisper.cpp`, if any file of any variant is missing `revision`, `size_bytes` or `sha256`, or if `index.json` does not list exactly the recipe files.
+`everyCuratedRecipeIsValid` decodes every file in `recipes/` with the app's own code and fails if a file name does not match its id, if `engine` is not `sd.cpp`, `whisper.cpp` or `audio.cpp`, if any file of any variant is missing `revision`, `size_bytes` or `sha256`, or if `index.json` does not list exactly the recipe files.
 
 ### 4. Try it in the app, if you can
 
@@ -97,9 +98,9 @@ Build instructions are in the [README](README.md#build-from-source). The structu
 - **`KilnCore` stays free of UI.** It must not import SwiftUI or AppKit; views and app state belong in `App/`.
 - **Swift 6 strict concurrency.** The package and the app build in Swift 6 language mode. Do not silence concurrency diagnostics without a comment explaining why the code is safe.
 - **`swift test` must pass.** New behaviour in `KilnCore` needs tests. Network and process boundaries are behind protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`) so they can be tested without the network or real weights. The SwiftUI app has no tests, so keep logic that can be tested in `KilnCore`.
-- Changes to a helper protocol must update the helper (`Engine/main.cpp` or `Engine/whisper/main.cpp`), `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
+- Changes to a helper protocol must update the helper (`Engine/main.cpp`, `Engine/whisper/main.cpp` or `Engine/audio/main.cpp`), `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
 - Changes to the recipe format must update `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and [docs/recipes.md](docs/recipes.md) together.
-- Do not edit `Vendor/stable-diffusion.cpp` or `Vendor/whisper.cpp`; they are git submodules.
+- Do not edit `Vendor/stable-diffusion.cpp`, `Vendor/whisper.cpp` or `Vendor/audio.cpp`; they are git submodules.
 
 ### Screenshots for a pull request
 

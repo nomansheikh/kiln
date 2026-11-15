@@ -10,6 +10,8 @@ enum EngineMessage {
         case preview(path: String, width: Int, height: Int, channels: Int)
         /// A finished transcript, in a UTF-8 file.
         case text(path: String)
+        /// Finished sound, in a file of raw interleaved 32-bit floats.
+        case audio(path: String, sampleRate: Int, channels: Int, frames: Int)
         case cancelled
         case error(code: String, message: String)
         case idle
@@ -26,7 +28,14 @@ enum EngineMessage {
         var width: Int?
         var height: Int?
         var channels: Int?
+        var sampleRate: Int?
+        var frames: Int?
         var code: String?
+
+        enum CodingKeys: String, CodingKey {
+            case type, version, commit, stage, completed, total, path, width, height, channels, frames, code, message
+            case sampleRate = "sample_rate"
+        }
         var message: String?
     }
 
@@ -49,6 +58,11 @@ enum EngineMessage {
                 : .preview(path: path, width: width, height: height, channels: channels)
         case "text":
             return raw.path.map { .text(path: $0) }
+        case "audio":
+            guard let path = raw.path, let sampleRate = raw.sampleRate, let channels = raw.channels, let frames = raw.frames else {
+                return nil
+            }
+            return .audio(path: path, sampleRate: sampleRate, channels: channels, frames: frames)
         case "cancelled":
             return .cancelled
         case "error":
@@ -177,6 +191,7 @@ enum EngineMessage {
         case "sampling": .sampling
         case "vae_decode": .decoding
         case "transcribing": .transcribing
+        case "speaking": .speaking
         default: .other(name)
         }
     }

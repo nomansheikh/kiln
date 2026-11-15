@@ -16,6 +16,8 @@ struct GenerationDraft: Equatable {
     /// An image the prompt should rework instead of starting from nothing.
     var attachment: URL?
     var editStrength = EditStrength.balanced
+    /// The voice a speech model speaks in. Nil uses the model's own default.
+    var voice: String?
 
     /// Applies a recipe's recommended settings, keeping the prompt.
     mutating func apply(_ defaults: ModelRecipe.ImageDefaults) {
@@ -57,6 +59,9 @@ struct GenerationDraft: Equatable {
                 seed: seed,
                 strength: attachment == nil ? nil : editStrength.rawValue
             )
+        }
+        if recipe.outputKind == .audio {
+            request.speech = SpeechSettings(voice: voice)
         }
         return request
     }

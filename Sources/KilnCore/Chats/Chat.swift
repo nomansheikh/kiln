@@ -48,6 +48,8 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
         case image(fileName: String)
         /// Text the model wrote, such as a transcript.
         case text(String)
+        /// The sound's file name inside the audio folder.
+        case audio(fileName: String)
         case failed(message: String)
         case cancelled
     }
