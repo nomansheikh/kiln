@@ -157,7 +157,7 @@ A recipe with `reference` lets the user speak in a voice of their own. The Speec
 
 The sheet can write the words itself by running an installed speech-to-text model on exactly the part of the recording that is used.
 
-Set `reference_text` to `required` when the model refuses a recording without its words; the app then says so before sending. A recipe whose `reference` is `required` needs no voices of its own.
+Set `reference_text` to `required` when the model refuses a recording without its words; the app then says so before sending. A recipe needs no named voices when it says another way the model gets a voice: copying one (`reference`), a description (`instruction` or `styles`), or a script's speakers (`speakers`).
 
 A voice can also be designed. "Design a voice…" asks an installed model that can make up a voice (one with `styles`, or with `instruction` set to `required`) to speak a sample from a description, and saves the sample with its words as one of the user's voices. Any model with `reference` can then speak in it.
 
