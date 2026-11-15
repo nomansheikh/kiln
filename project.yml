@@ -43,7 +43,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Kiln
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.graphics-design
-        INFOPLIST_KEY_NSHumanReadableCopyright: "MIT License"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Noman Sheikh. MIT License."
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: YES
