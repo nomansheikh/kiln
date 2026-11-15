@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The app's name and version, the check for new versions, and licensing notes.
+/// The app's name and version, the check for new versions, a link to the source and licensing notes.
 struct AboutCard: View {
     @Environment(AppModel.self) private var model
 
@@ -12,9 +12,11 @@ struct AboutCard: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development build"
     }
 
+    private static let repository = URL(string: "https://github.com/nomansheikh/kiln")!
+
     var body: some View {
         SettingsCard(title: "About", symbol: "info.circle") {
-            SettingsRow(appName, description: Text("Generates images on this Mac with models you download.")) {
+            SettingsRow(appName, description: Text("Runs image and speech models you download, on this Mac.")) {
                 Pill(text: version)
             }
             SettingsRowDivider()
@@ -32,14 +34,18 @@ struct AboutCard: View {
             SettingsRowDivider()
             SettingsRow(
                 "Open source",
-                description: Text("Kiln is open source under the MIT license and runs models with stable-diffusion.cpp.")
+                description: Text(
+                    "Kiln is open source under the MIT license. It runs models with stable-diffusion.cpp, whisper.cpp and audio.cpp."
+                )
             ) {
-                EmptyView()
+                Link("View on GitHub", destination: Self.repository)
+                    .buttonStyle(SoftButtonStyle())
+                    .pointerCursor()
             }
             SettingsRowDivider()
             SettingsRow(
                 "Model licenses",
-                description: Text("Each model's license is set by its authors. Check the model's page before using its images.")
+                description: Text("Each model's license is set by its authors. Check the model's page before using what it makes.")
             ) {
                 EmptyView()
             }
