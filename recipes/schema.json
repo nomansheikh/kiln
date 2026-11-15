@@ -87,6 +87,14 @@
             }
           }
         },
+        "reference": {
+          "description": "Whether the model can speak in a voice copied from a recording: \"optional\", or \"required\" for a model with no voice of its own. Leave out for a model that cannot copy a voice.",
+          "enum": ["optional", "required"]
+        },
+        "reference_text": {
+          "description": "Whether the model also wants the words spoken in that recording: \"optional\" or \"required\". Needs \"reference\".",
+          "enum": ["optional", "required"]
+        },
         "tags": {
           "description": "Marks the model understands inside the text, written as they are typed, for example \"[laughter]\". The app offers them in a menu.",
           "type": "array",

@@ -29,6 +29,25 @@ struct SpeechComposer: View {
                 .padding(.top, 8)
                 .padding(.bottom, 4)
 
+            if let problem = speech.voiceProblem {
+                HStack(spacing: 8) {
+                    Label(problem, systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Button(speech.savedVoice == nil ? "Add a voice\u{2026}" : "Add the words\u{2026}") {
+                        if let voice = speech.savedVoice {
+                            speech.edit(voice)
+                        } else {
+                            speech.editedVoiceID = nil
+                            speech.isAddingVoice = true
+                        }
+                    }
+                    .buttonStyle(SoftButtonStyle())
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 8)
+            }
+
             if let skipped {
                 Text(skipped)
                     .font(.caption)
@@ -38,7 +57,7 @@ struct SpeechComposer: View {
             }
 
             HStack(spacing: 8) {
-                if let recipe = speech.selectedRecipe, !recipe.voices.isEmpty {
+                if let recipe = speech.selectedRecipe, !recipe.voices.isEmpty || speech.copiesVoices {
                     SpeechVoiceChip(voices: recipe.voices)
                 }
                 if let languages = speech.selectedRecipe?.languages, languages.count > 1 {
@@ -120,6 +139,7 @@ struct SpeechComposer: View {
         if speech.preparingPreview != nil || speech.isEngineBusyElsewhere() {
             return "Another model is working. Wait for it to finish."
         }
+        if let problem = speech.voiceProblem { return problem }
         if speech.needsInstruction { return "This model needs a description of the voice. Add one under Style." }
         return "Type something first"
     }

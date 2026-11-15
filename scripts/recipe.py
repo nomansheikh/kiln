@@ -55,7 +55,7 @@ DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
     "sigmas", "flash_attention", "scheduler", "guidance", "flow_shift",
 }
-SPEECH_KEYS = {"family", "voices", "voice", "instruction", "styles", "tags"}
+SPEECH_KEYS = {"family", "voices", "voice", "instruction", "styles", "tags", "reference", "reference_text"}
 INSTRUCTIONS = ("optional", "required")
 VARIANT_KEYS = {"id", "name", "components", "min_memory_gb"}
 
@@ -263,8 +263,14 @@ def validate_speech(recipe, problems, curated):
         problems.append("speech.voice must be a string.")
     elif curated and voice is not None and voice not in names:
         problems.append('speech.voice "%s" is not one of the recipe\'s voices: %s.' % (voice, ", ".join(names) or "none"))
-    if curated and not names:
-        problems.append('The recipe has no voices: add "voice" components or list speech.voices.')
+    for key in ("reference", "reference_text"):
+        if speech.get(key) is not None and speech.get(key) not in INSTRUCTIONS:
+            problems.append("speech.%s must be one of: %s." % (key, ", ".join(INSTRUCTIONS)))
+    if speech.get("reference_text") is not None and speech.get("reference") is None:
+        problems.append("speech.reference_text needs speech.reference: the words belong to a recording of a voice.")
+    # A model that only copies voices has none of its own.
+    if curated and not names and speech.get("reference") != "required":
+        problems.append('The recipe has no voices: add "voice" components, list speech.voices, or set speech.reference to "required".')
     instruction = speech.get("instruction")
     if instruction is not None and instruction not in INSTRUCTIONS:
         problems.append("speech.instruction must be one of: %s." % ", ".join(INSTRUCTIONS))
@@ -630,8 +636,10 @@ def command_new(args):
     speaks = ENGINES[args.engine]["output"] == "audio"
     if speaks and not args.family:
         raise UsageError("A recipe for the %s engine needs --family, the engine's name for the model." % args.engine)
-    if not speaks and (args.family or args.voice or args.voices or args.instruction or args.style or args.tags):
-        raise UsageError("--family, --voice, --voices, --instruction, --style and --tags are for recipes of an engine that makes audio.")
+    if not speaks and (args.family or args.voice or args.voices or args.instruction or args.style or args.tags
+                       or args.reference or args.reference_text):
+        raise UsageError("--family, --voice, --voices, --instruction, --style, --tags, --reference and --reference-text "
+                         "are for recipes of an engine that makes audio.")
 
     defaults = {"steps": args.steps, "cfg": args.cfg, "sampler": args.sampler, "width": args.width, "height": args.height}
     if args.sigmas:
@@ -672,6 +680,10 @@ def command_new(args):
                 recipe["speech"]["styles"].append({"name": name.strip(), "options": [w.strip() for w in words.split(",") if w.strip()]})
         if args.tags:
             recipe["speech"]["tags"] = args.tags
+        if args.reference:
+            recipe["speech"]["reference"] = args.reference
+        if args.reference_text:
+            recipe["speech"]["reference_text"] = args.reference_text
     if args.license_note:
         recipe["license_note"] = args.license_note
     if args.min_memory_gb is not None:
@@ -978,6 +990,10 @@ def build_parser():
                              '"Age=child,elderly"; repeat for each group')
     speech.add_argument("--tags", nargs="+", metavar="TAG",
                         help='marks the model understands inside the text, as they are typed, for example "[laughter]"')
+    speech.add_argument("--reference", choices=INSTRUCTIONS,
+                        help="the model can speak in a voice copied from a recording: optional, or required when it has no voice of its own")
+    speech.add_argument("--reference-text", choices=INSTRUCTIONS,
+                        help="whether the model also wants the words spoken in that recording")
     new.add_argument("--languages", nargs="+", metavar="CODE",
                      help="language codes the user may choose between, for a speech model that works in several")
     settings = new.add_argument_group("default settings of an image recipe (take them from the model card)")

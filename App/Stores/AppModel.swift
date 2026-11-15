@@ -66,7 +66,14 @@ final class AppModel {
         self.audio = audio
         self.chats = chats
         self.generation = generation
-        let speech = SpeechStore(library: library, audio: audio, engine: engine)
+        #if DEBUG
+        let voicesDirectory = DebugSnapshot.voicesDirectory ?? VoiceStore.defaultDirectory
+        #else
+        let voicesDirectory = VoiceStore.defaultDirectory
+        #endif
+        let speech = SpeechStore(
+            library: library, audio: audio, voices: VoiceLibrary(store: VoiceStore(directory: voicesDirectory)), engine: engine
+        )
         self.speech = speech
         // The engines hold one model in memory, so only one screen generates at a time.
         generation.isEngineBusyElsewhere = { [weak speech] in speech?.isUsingEngine ?? false }

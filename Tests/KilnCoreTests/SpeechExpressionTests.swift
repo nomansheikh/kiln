@@ -19,7 +19,7 @@ import Testing
     }
 
     /// Runs one request and returns what the helper was sent.
-    private func sent(_ instruction: ModelRecipe.Instruction?, _ settings: SpeechSettings) async throws -> [String: Any] {
+    private func sent(_ instruction: ModelRecipe.Support?, _ settings: SpeechSettings) async throws -> [String: Any] {
         let seen = fixture.root.appendingPathComponent("request.json")
         let engine = try fixture.engine(onSpeak: "printf '%s' \"$line\" > '\(seen.path)'\n" + fixture.success)
         var recipe = fixture.recipe

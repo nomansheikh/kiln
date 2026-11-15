@@ -143,10 +143,20 @@ A recipe for the `audio.cpp` engine has a `speech` object:
 | `instruction` | string | no | `optional` when the model takes a free description of the voice or the delivery, such as "Very happy."; `required` when it cannot speak without one. Leave it out for a model that takes none. |
 | `styles` | array of objects | no | For a model that takes fixed words instead of a free description: groups of `{"name", "options"}`, such as `{"name": "Age", "options": ["child", "elderly"]}`. The user may choose one word per group. Cannot be combined with `instruction`. |
 | `tags` | array of strings | no | Marks the model understands inside the text, written as they are typed, such as `[laughter]`. |
+| `reference` | string | no | `optional` when the model can speak in a voice copied from a recording; `required` when it has no voice of its own and cannot speak without one. Leave it out for a model that cannot copy a voice. |
+| `reference_text` | string | no | `optional` or `required`: whether the model also wants the words spoken in that recording. Needs `reference`. |
 
 Voices come from one of two places. A model with voices inside its file lists them in `speech.voices`. A model that loads each voice from its own file lists those files as components with the role `voice`; each is a voice named after its file, so `embeddings/alba.safetensors` is the voice `alba`. `voice` is the only role that may appear more than once, and no two voice files may share a name.
 
 `family` and every voice name may use only letters, digits, dots, dashes and underscores, and may not start with a dot: the engine builds a file path from a voice name.
+
+#### Copying a voice
+
+A recipe with `reference` lets the user speak in a voice of their own. The Speech screen's voice list gets a "My voices" section and "Add a voice…", which saves a recording with a name and, optionally, the words spoken in it, in `~/Library/Application Support/Kiln/voices`. A chosen voice of the user's own takes the place of the model's named voice: the app decodes the first fifteen seconds of the recording to mono at 24 kHz and hands the samples to the helper, with the words as audio.cpp's `reference_text` option when the recipe has `reference_text`.
+
+The sheet can write the words itself by running an installed speech-to-text model on exactly the part of the recording that is used.
+
+Set `reference_text` to `required` when the model refuses a recording without its words; the app then says so before sending. A recipe whose `reference` is `required` needs no voices of its own.
 
 #### Expression
 
@@ -386,6 +396,8 @@ Speech (these rules are not numbered, so the numbers below stay as they were):
 - `speech.voices`, when present, is not empty and has no repeats.
 - `speech.instruction`, when present, is `optional` or `required`.
 - `speech.styles`, when present, has named groups, each with at least one word; no word repeats or contains a comma; and `instruction` is absent.
+- `speech.reference` and `speech.reference_text`, when present, are `optional` or `required`, and `reference_text` is only given with `reference`.
+- A curated speech recipe has at least one voice, or `speech.reference` set to `required`.
 - `speech.tags`, when present, is not empty, has no repeats, and every tag is one line of at most 40 characters.
 
 Languages: `languages`, when present, is not empty, has no repeats, and every entry is 2 to 12 letters, dashes or underscores.
@@ -448,6 +460,7 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--variant ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...` | One variant: its id, its name, optionally its minimum memory, then its files. Repeat for each variant. |
 | `--engine NAME` | `sd.cpp` (the default), `whisper.cpp` or `audio.cpp`. For the last two the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
 | `--instruction optional\|required`, `--style NAME=WORD,WORD`, `--tags TAG ...` | For `audio.cpp`: `speech.instruction`, one group of `speech.styles` (repeat for each group) and `speech.tags`. See [Expression](#expression). |
+| `--reference optional\|required`, `--reference-text optional\|required` | For `audio.cpp`: `speech.reference` and `speech.reference_text`. See [Copying a voice](#copying-a-voice). |
 | `--family NAME`, `--voice NAME`, `--voices NAME ...` | For `audio.cpp`: `speech.family` (required), `speech.voice` and `speech.voices`. Voice files are given as `--component voice=OWNER/REPO:PATH`, once per voice. |
 | `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The defaults, required for an image recipe. There are no built-in values: take them from the model card. |
 | `--sigmas N,N,...` | Custom sigma schedule, `steps + 1` numbers separated by commas or spaces. |

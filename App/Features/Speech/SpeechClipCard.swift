@@ -32,7 +32,11 @@ struct SpeechClipCard: View {
                 .help(isPlaying ? "Pause" : "Play")
                 .accessibilityLabel(isPlaying ? "Pause" : "Play")
 
-                if let voice = clip.record.request.speech?.voice {
+                if let name = clip.record.request.speech?.reference?.name {
+                    VoiceAvatar(name: name, size: 22)
+                    Text(verbatim: name)
+                        .font(.callout.weight(.semibold))
+                } else if let voice = clip.record.request.speech?.voice {
                     VoiceAvatar(name: voice, size: 22)
                     Text(verbatim: GenerationVoiceMenu.title(voice))
                         .font(.callout.weight(.semibold))

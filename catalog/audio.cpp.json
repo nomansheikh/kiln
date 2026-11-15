@@ -38,7 +38,9 @@
         }
       ],
       "speech": {
-        "family": "audio8_tts"
+        "family": "audio8_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "yue",
@@ -71,7 +73,9 @@
         }
       ],
       "speech": {
-        "family": "audio8_tts"
+        "family": "audio8_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "yue",
@@ -139,7 +143,9 @@
         }
       ],
       "speech": {
-        "family": "breeze_tts"
+        "family": "breeze_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: BreezeBlue Research and Non-Commercial License. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -180,7 +186,8 @@
         }
       ],
       "speech": {
-        "family": "chatterbox"
+        "family": "chatterbox",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -221,7 +228,9 @@
         }
       ],
       "speech": {
-        "family": "cosyvoice3"
+        "family": "cosyvoice3",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -262,7 +271,9 @@
         }
       ],
       "speech": {
-        "family": "dots_tts"
+        "family": "dots_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -303,7 +314,9 @@
         }
       ],
       "speech": {
-        "family": "dots_tts"
+        "family": "dots_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -344,7 +357,9 @@
         }
       ],
       "speech": {
-        "family": "dots_tts"
+        "family": "dots_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -371,7 +386,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -398,7 +415,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -425,7 +444,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -452,7 +473,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -479,7 +502,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -506,7 +531,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -533,7 +560,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -560,7 +589,9 @@
         }
       ],
       "speech": {
-        "family": "f5_tts"
+        "family": "f5_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -601,7 +632,9 @@
         }
       ],
       "speech": {
-        "family": "fish_audio"
+        "family": "fish_audio",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Fish Audio Research License. Research or non-commercial use only. Commercial use needs a separate license from Fish Audio. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -621,7 +654,9 @@
         }
       ],
       "speech": {
-        "family": "glm_tts"
+        "family": "glm_tts",
+        "reference": "optional",
+        "reference_text": "required"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -662,7 +697,9 @@
         }
       ],
       "speech": {
-        "family": "higgs_audio_tts"
+        "family": "higgs_audio_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Boson Higgs TTS 3 Research and Non-Commercial License. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -717,7 +754,8 @@
         }
       ],
       "speech": {
-        "family": "index_tts2"
+        "family": "index_tts2",
+        "reference": "optional"
       },
       "languages": [
         "zh",
@@ -779,7 +817,8 @@
         }
       ],
       "speech": {
-        "family": "index_tts2"
+        "family": "index_tts2",
+        "reference": "optional"
       },
       "languages": [
         "zh",
@@ -827,7 +866,8 @@
         }
       ],
       "speech": {
-        "family": "irodori_tts"
+        "family": "irodori_tts",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -847,7 +887,8 @@
         }
       ],
       "speech": {
-        "family": "irodori_tts"
+        "family": "irodori_tts",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -888,7 +929,8 @@
         }
       ],
       "speech": {
-        "family": "irodori_tts"
+        "family": "irodori_tts",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -929,7 +971,8 @@
         }
       ],
       "speech": {
-        "family": "irodori_tts"
+        "family": "irodori_tts",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -970,7 +1013,8 @@
         }
       ],
       "speech": {
-        "family": "irodori_tts"
+        "family": "irodori_tts",
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1115,7 +1159,9 @@
         }
       ],
       "speech": {
-        "family": "ming3_tts"
+        "family": "ming3_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "zh",
@@ -1179,7 +1225,8 @@
         }
       ],
       "speech": {
-        "family": "miotts"
+        "family": "miotts",
+        "reference": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1220,7 +1267,8 @@
         }
       ],
       "speech": {
-        "family": "moss_tts_local"
+        "family": "moss_tts_local",
+        "reference": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1261,7 +1309,9 @@
         }
       ],
       "speech": {
-        "family": "moss_tts_nano"
+        "family": "moss_tts_nano",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1337,6 +1387,8 @@
       ],
       "speech": {
         "family": "omnivoice",
+        "reference": "optional",
+        "reference_text": "required",
         "styles": [
           {
             "name": "Gender",
@@ -1443,6 +1495,8 @@
       ],
       "speech": {
         "family": "omnivoice",
+        "reference": "optional",
+        "reference_text": "required",
         "styles": [
           {
             "name": "Gender",
@@ -1527,7 +1581,9 @@
         }
       ],
       "speech": {
-        "family": "outetts"
+        "family": "outetts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: CC-BY-NC-SA-4.0. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1617,7 +1673,9 @@
           "ask",
           "kaj"
         ],
-        "voice": "tor"
+        "voice": "tor",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Includes Kanade (MIT), WavLM and CosyVoice2 HiFT components; retain their upstream notices as well. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1668,7 +1726,8 @@
       ],
       "speech": {
         "family": "pocket_tts",
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1719,7 +1778,8 @@
       ],
       "speech": {
         "family": "pocket_tts",
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1764,7 +1824,8 @@
         "voices": [
           "alba"
         ],
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1809,7 +1870,8 @@
         "voices": [
           "alba"
         ],
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1854,7 +1916,8 @@
         "voices": [
           "alba"
         ],
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1899,7 +1962,8 @@
         "voices": [
           "alba"
         ],
-        "voice": "alba"
+        "voice": "alba",
+        "reference": "optional"
       },
       "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -1954,7 +2018,9 @@
         }
       ],
       "speech": {
-        "family": "qwen3_tts"
+        "family": "qwen3_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "zh",
@@ -2115,7 +2181,9 @@
         }
       ],
       "speech": {
-        "family": "qwen3_tts"
+        "family": "qwen3_tts",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "zh",
@@ -2188,7 +2256,8 @@
         }
       ],
       "speech": {
-        "family": "sopro_tts"
+        "family": "sopro_tts",
+        "reference": "optional"
       },
       "languages": [
         "en",
@@ -2373,7 +2442,8 @@
         }
       ],
       "speech": {
-        "family": "vieneu_v3_turbo"
+        "family": "vieneu_v3_turbo",
+        "reference": "optional"
       },
       "license_note": "audio.cpp does not record a licence for this model. Check the model's page before using it."
     },
@@ -2393,7 +2463,8 @@
         }
       ],
       "speech": {
-        "family": "vieneu_v3_turbo"
+        "family": "vieneu_v3_turbo",
+        "reference": "optional"
       },
       "license_note": "audio.cpp does not record a licence for this model. Check the model's page before using it."
     },
@@ -2413,7 +2484,9 @@
         }
       ],
       "speech": {
-        "family": "voxcpm1"
+        "family": "voxcpm1",
+        "reference": "optional",
+        "reference_text": "optional"
       },
       "languages": [
         "zh",
@@ -2474,7 +2547,8 @@
         }
       ],
       "speech": {
-        "family": "voxcpm2"
+        "family": "voxcpm2",
+        "reference": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -2494,7 +2568,8 @@
         }
       ],
       "speech": {
-        "family": "voxcpm2"
+        "family": "voxcpm2",
+        "reference": "optional"
       },
       "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },

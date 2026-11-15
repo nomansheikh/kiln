@@ -73,10 +73,30 @@ public struct SpeechSettings: Codable, Sendable, Equatable {
     public var voice: String?
     /// A description of the voice or the delivery, for a model that takes one.
     public var instruction: String?
+    /// A recording of the voice to speak in, for a model that can copy one.
+    /// It takes the place of `voice`.
+    public var reference: VoiceReference?
 
-    public init(voice: String? = nil, instruction: String? = nil) {
+    public init(voice: String? = nil, instruction: String? = nil, reference: VoiceReference? = nil) {
         self.voice = voice
         self.instruction = instruction
+        self.reference = reference
+    }
+}
+
+/// A recording of a voice for a model to copy.
+public struct VoiceReference: Codable, Sendable, Equatable {
+    /// An audio file of the voice speaking.
+    public var file: URL
+    /// The words spoken in it, which some models need.
+    public var transcript: String?
+    /// What the user calls the voice, for showing with a clip made in it.
+    public var name: String?
+
+    public init(file: URL, transcript: String? = nil, name: String? = nil) {
+        self.file = file
+        self.transcript = transcript
+        self.name = name
     }
 }
 

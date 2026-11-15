@@ -12,17 +12,27 @@ extension ModelRecipe {
         public var voice: String?
         /// Whether the model takes a description of the voice or the delivery,
         /// such as "Very happy." Absent for a model that takes none.
-        public var instruction: Instruction?
+        public var instruction: Support?
         /// The fixed words the model takes instead of a free description, in
         /// groups of which one word may be chosen, such as an age or a pitch.
         public var styles: [StyleGroup]?
         /// Marks the model understands inside the text, such as `[laughter]`,
         /// written as they are typed.
         public var tags: [String]?
+        /// Whether the model can speak in a voice copied from a recording.
+        /// Absent for a model that cannot.
+        public var reference: Support?
+        /// Whether the model also wants the words spoken in that recording.
+        public var referenceText: Support?
+
+        enum CodingKeys: String, CodingKey {
+            case family, voices, voice, instruction, styles, tags, reference
+            case referenceText = "reference_text"
+        }
 
         public init(
-            family: String, voices: [String]? = nil, voice: String? = nil, instruction: Instruction? = nil,
-            styles: [StyleGroup]? = nil, tags: [String]? = nil
+            family: String, voices: [String]? = nil, voice: String? = nil, instruction: Support? = nil,
+            styles: [StyleGroup]? = nil, tags: [String]? = nil, reference: Support? = nil, referenceText: Support? = nil
         ) {
             self.family = family
             self.voices = voices
@@ -30,6 +40,8 @@ extension ModelRecipe {
             self.instruction = instruction
             self.styles = styles
             self.tags = tags
+            self.reference = reference
+            self.referenceText = referenceText
         }
 
         /// What the model is told for a set of chosen style words: the ones it
@@ -53,11 +65,12 @@ extension ModelRecipe {
         }
     }
 
-    /// How a model treats a description of the voice or the delivery.
-    public enum Instruction: String, Codable, Sendable {
-        /// The model works without one.
+    /// How a model treats something it can be given: a description of the
+    /// voice, a recording of one, or the words in that recording.
+    public enum Support: String, Codable, Sendable {
+        /// The model works without it.
         case optional
-        /// The model cannot speak without one.
+        /// The model cannot speak without it.
         case required
     }
 

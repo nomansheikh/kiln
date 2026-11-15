@@ -149,8 +149,9 @@ It has one request:
 | `family` | audio.cpp's name for the kind of model, from the recipe's `speech.family`. |
 | `text` | What to say. |
 | `voice` | A voice name. Some models have voices built in; PocketTTS loads `embeddings/<voice>.safetensors` beside the model file, which is where the recipe's `voice` files are stored. |
+| `voice_audio`, `voice_sample_rate` | Optional. A recording of the voice to speak in, as a file of raw mono 32-bit floats, and its sample rate. It takes the place of `voice`. The helper then opens the model for audio.cpp's `clon` task when the model has one, and for `tts` otherwise; switching between the two reloads the model. The app sends it only for a recipe with `speech.reference`. |
 | `language` | A language code, when the user chose one. Absent lets the model decide. |
-| `options` | Optional object of settings by the names audio.cpp gives them, each a string. The app sends `{"instruct": "…"}` for a recipe whose model takes a description of the voice (`speech.instruction`) or fixed style words (`speech.styles`), and never for another. |
+| `options` | Optional object of settings by the names audio.cpp gives them, each a string. The app sends `{"reference_text": "…"}` with a voice recording for a recipe that has `speech.reference_text`, and `{"instruct": "…"}` for a recipe whose model takes a description of the voice (`speech.instruction`) or fixed style words (`speech.styles`), and never for another. |
 | `backend` | `metal` for the GPU (the default) or `cpu`. Changing it reloads the model. |
 | `output` | File the helper writes the sound to, as raw interleaved 32-bit floats. |
 

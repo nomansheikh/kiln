@@ -93,6 +93,9 @@ extension ModelRecipe {
                     throw .invalidSpeech("\"styles\" needs named groups of words, each word listed once and without commas, and cannot be combined with \"instruction\"")
                 }
             }
+            if speech.referenceText != nil, speech.reference == nil {
+                throw .invalidSpeech("\"reference_text\" needs \"reference\": the words belong to a recording of a voice")
+            }
             if let tags = speech.tags, tags.isEmpty || Set(tags).count != tags.count || !tags.allSatisfy(isTag) {
                 throw .invalidSpeech("\"tags\" needs at least one tag of at most 40 characters, each listed once")
             }

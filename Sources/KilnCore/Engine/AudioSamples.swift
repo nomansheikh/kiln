@@ -5,8 +5,13 @@ public enum AudioSamples {
     /// The sample rate whisper.cpp expects.
     public static let sampleRate: Double = 16_000
 
-    /// Decodes an audio file to mono 32-bit float samples at 16 kHz.
-    public static func decode(_ file: URL) throws(EngineError) -> [Float] {
+    /// The sample rate a recording of a voice is handed over at, and the most of it that is used.
+    /// Models that copy a voice work from a few seconds of it.
+    public static let referenceSampleRate: Double = 24_000
+    public static let referenceSeconds: Double = 15
+
+    /// Decodes an audio file to mono 32-bit float samples, at 16 kHz unless another rate is asked for.
+    public static func decode(_ file: URL, sampleRate: Double = sampleRate) throws(EngineError) -> [Float] {
         do {
             let source = try AVAudioFile(forReading: file)
             guard source.length > 0,
@@ -51,6 +56,29 @@ public enum AudioSamples {
             return samples
         } catch {
             throw .unreadableAudio
+        }
+    }
+
+    /// Writes the start of a recording of a voice as raw little-endian floats at `referenceSampleRate`.
+    static func writeReference(_ file: URL, to destination: URL) throws(EngineError) {
+        do {
+            let samples = try decode(file, sampleRate: referenceSampleRate).prefix(Int(referenceSampleRate * referenceSeconds))
+            try samples.withUnsafeBufferPointer { Data(buffer: $0) }.write(to: destination)
+        } catch {
+            throw .unreadableReference
+        }
+    }
+
+    /// The part of a voice recording that is used, as a sound of its own, so that
+    /// the words in exactly that part can be written down.
+    public static func referenceClip(of file: URL) throws(EngineError) -> GeneratedAudio {
+        do {
+            let samples = try decode(file, sampleRate: referenceSampleRate).prefix(Int(referenceSampleRate * referenceSeconds))
+            return GeneratedAudio(
+                sampleRate: Int(referenceSampleRate), channels: 1, samples: samples.withUnsafeBufferPointer { Data(buffer: $0) }
+            )
+        } catch {
+            throw .unreadableReference
         }
     }
 

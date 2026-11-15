@@ -25,6 +25,11 @@ enum DebugSnapshot {
         ProcessInfo.processInfo.arguments.contains("--open-voices")
     }
 
+    /// `--voices <folder>` uses that folder as the user's own voices instead of the real one.
+    static var voicesDirectory: URL? {
+        directory(after: "--voices")
+    }
+
     /// `--open-style` opens the Speech screen's style editor, so a snapshot can include it.
     static var opensStyleEditor: Bool {
         ProcessInfo.processInfo.arguments.contains("--open-style")
@@ -95,6 +100,8 @@ enum DebugSnapshot {
             NSApp.terminate(nil)
         }
         // `--speech-text <text>` fills the Speech screen's field, to show how marks in it are coloured.
+        // `--add-voice` opens the sheet for adding a voice on the Speech screen.
+        model.speech.isAddingVoice = ProcessInfo.processInfo.arguments.contains("--add-voice")
         let words = ProcessInfo.processInfo.arguments
         if let index = words.firstIndex(of: "--speech-text"), words.indices.contains(index + 1) {
             model.speech.text = words[index + 1]
@@ -107,6 +114,9 @@ enum DebugSnapshot {
                 try? await Task.sleep(for: .seconds(1.5))
             }
             save(window, as: item.rawValue, in: directory)
+            if let sheet = window?.attachedSheet {
+                save(sheet, as: "\(item.rawValue)-sheet", in: directory)
+            }
             // A popover is a window of its own.
             let popovers = NSApp.windows.filter { $0 !== window && $0.isVisible && $0.className.contains("Popover") }
             for (index, popover) in popovers.enumerated() {

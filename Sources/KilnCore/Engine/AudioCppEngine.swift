@@ -109,29 +109,24 @@ public final class AudioCppEngine: InferenceEngine {
                 to: request.prompt.trimmingCharacters(in: .whitespacesAndNewlines), tags: recipe.speech?.tags ?? []
             )
             guard !text.isEmpty else { throw EngineError.missingText }
-            // Only a voice the recipe lists is passed on: some models load a voice
-            // from a file named after it.
-            let voice = request.speech?.voice ?? recipe.defaultVoice
-            if let voice, !recipe.voices.contains(voice) { throw EngineError.unknownVoice(voice) }
-
-            // An instruction goes only to a model that takes one; the others refuse it.
-            // A model with fixed style words gets only the words it knows.
-            let written = request.speech?.instruction?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let instruction: String? = if recipe.speech?.styles != nil {
-                recipe.speech?.instruction(choosing: written.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
-            } else {
-                recipe.speech?.instruction == nil || written.isEmpty ? nil : written
-            }
-            if recipe.speech?.instruction == .required, instruction == nil { throw EngineError.missingInstruction }
+            let direction = try Self.direction(for: request, recipe: recipe)
 
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).f32")
+            var files = [output]
+            var voiceAudio: (file: URL, sampleRate: Int)?
+            if let reference = direction.reference {
+                let samples = scratchDirectory.appendingPathComponent("\(id.uuidString)-voice.f32")
+                try AudioSamples.writeReference(reference, to: samples)
+                files.append(samples)
+                voiceAudio = (samples, Int(AudioSamples.referenceSampleRate))
+            }
             let command = try EngineMessage.speakCommand(
-                model: storage.url(for: model), family: family, text: text,
-                voice: voice, language: request.language(for: recipe), instruction: instruction, onGPU: onGPU, output: output
+                model: storage.url(for: model), family: family, text: text, voice: direction.voice, voiceAudio: voiceAudio,
+                language: request.language(for: recipe), options: direction.options, onGPU: onGPU, output: output
             )
 
-            await session.run(id: id, command: command, files: [output], continuation: continuation) { event in
+            await session.run(id: id, command: command, files: files, continuation: continuation) { event in
                 guard case .audio(let path, let sampleRate, let channels, let frames) = event else { return nil }
                 guard sampleRate > 0, channels > 0, frames > 0,
                       let samples = try? Data(contentsOf: URL(fileURLWithPath: path)),

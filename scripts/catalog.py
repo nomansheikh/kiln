@@ -59,6 +59,15 @@ TAKES_INSTRUCTION = {
     "qwen3_tts": ("customvoice", "voicedesign"),
 }
 
+# Families that need the words spoken in a voice recording although their spec
+# marks `reference_text` as optional. OmniVoice refuses a recording without them
+# ("native voice clone currently requires reference_text").
+NEEDS_REFERENCE_TEXT = {"omnivoice"}
+
+# Families of which only some packages copy a voice: those whose id contains one of the words.
+# Qwen3 TTS copies a voice with its Base models only (docs/models/qwen3_tts.md).
+COPIES_VOICE_ONLY = {"qwen3_tts": ("base",)}
+
 # Families whose `instruct` is not a free description but words from a fixed
 # list, one per group. OmniVoice's are in src/models/omnivoice/prompt_builder.cpp
 # (mutually_exclusive_categories); its Chinese spellings and dialects are left out.
@@ -183,6 +192,10 @@ def audiocpp_recipes(hub):
         languages = languages if takes_language and len(languages) > 1 else []
         instruct = next((option for option in (spec.get("options") or {}).get("request") or []
                          if option.get("name") == "instruct"), None)
+        # A family with a clone task can speak in a voice copied from a recording.
+        copies = "clone" in (spec.get("tasks") or [])
+        words = next((option for option in (spec.get("options") or {}).get("request") or []
+                      if option.get("name") == "reference_text"), None)
         groups = {}
         for package in spec.get("packages") or []:
             download = package.get("download") or defaults
@@ -210,9 +223,15 @@ def audiocpp_recipes(hub):
                 if recipe is None:
                     skipped.extend(package.get("id", "?") for package in group)
                     continue
-                words = TAKES_INSTRUCTION.get(family)
-                if instruct and words is not None and all(
-                        not words or any(word in package.get("id", "") for word in words) for package in group):
+                limited = COPIES_VOICE_ONLY.get(family)
+                if copies and (limited is None or all(any(word in package.get("id", "") for word in limited) for package in group)):
+                    recipe["speech"]["reference"] = "optional"
+                    if words:
+                        needed = words.get("required") or family in NEEDS_REFERENCE_TEXT
+                        recipe["speech"]["reference_text"] = "required" if needed else "optional"
+                only = TAKES_INSTRUCTION.get(family)
+                if instruct and only is not None and all(
+                        not only or any(word in package.get("id", "") for word in only) for package in group):
                     recipe["speech"]["instruction"] = "required" if instruct.get("required") else "optional"
                 if family in STYLES:
                     recipe["speech"]["styles"] = STYLES[family]

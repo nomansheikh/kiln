@@ -6,7 +6,7 @@ import SwiftUI
 struct SpeechStyleChip: View {
     @Environment(AppModel.self) private var model
     /// Whether the model can speak without a description.
-    let kind: ModelRecipe.Instruction
+    let kind: ModelRecipe.Support
     @State private var showsEditor = false
 
     var body: some View {
@@ -45,7 +45,7 @@ struct SpeechStyleChip: View {
 /// The editor the style chip opens: one field, kept until it is cleared.
 private struct SpeechStyleEditor: View {
     @Environment(AppModel.self) private var model
-    let kind: ModelRecipe.Instruction
+    let kind: ModelRecipe.Support
     let dismiss: () -> Void
     @FocusState private var focused: Bool
 

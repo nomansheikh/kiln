@@ -7,24 +7,14 @@ import Observation
 @MainActor
 @Observable
 final class SpeechStore {
-    /// What a running generation is doing.
-    enum Activity: Equatable {
-        case idle
-        case loadingModel
-        case speaking
-
-        var title: String {
-            switch self {
-            case .idle: ""
-            case .loadingModel: "Loading model"
-            case .speaking: "Generating speech"
-            }
-        }
-    }
-
     var text = ""
     private(set) var recipeID: String?
     var voice: String?
+    /// The chosen voice of the user's own, which takes the place of `voice`.
+    var savedVoiceID: UUID?
+    /// True while the sheet for adding or changing a voice is open, and the voice being changed.
+    var isAddingVoice = false
+    var editedVoiceID: UUID?
     /// Code of the language to speak in. Nil lets the model decide.
     var language: String?
     /// A description of the voice or the delivery. Kept across models, and sent
@@ -54,12 +44,14 @@ final class SpeechStore {
 
     let library: ModelLibrary
     let audio: AudioLibrary
+    let voices: VoiceLibrary
     let engine: any InferenceEngine
     private var task: Task<Void, Never>?
 
-    init(library: ModelLibrary, audio: AudioLibrary, engine: any InferenceEngine) {
+    init(library: ModelLibrary, audio: AudioLibrary, voices: VoiceLibrary, engine: any InferenceEngine) {
         self.library = library
         self.audio = audio
+        self.voices = voices
         self.engine = engine
         selectDefaultRecipeIfNeeded()
     }
@@ -86,7 +78,7 @@ final class SpeechStore {
     }
 
     var canGenerate: Bool {
-        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction
+        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction && voiceProblem == nil
             && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -115,7 +107,8 @@ final class SpeechStore {
         guard canGenerate, let recipe = selectedRecipe else { return }
         let sent = text
         let request = GenerationRequest(
-            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: SpeechSettings(voice: voice, instruction: sentInstruction), language: language
+            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: SpeechSettings(voice: sentReference == nil ? voice : nil, instruction: sentInstruction, reference: sentReference),
+            language: language
         )
         text = ""
         errorMessage = nil
@@ -199,9 +192,7 @@ final class SpeechStore {
         text = item.record.request.prompt
         if let recipe = recipes.first(where: { $0.id == item.record.recipeID }) {
             selectRecipe(recipe)
-            if let voice = item.record.request.speech?.voice, recipe.voices.contains(voice) {
-                self.voice = voice
-            }
+            restoreVoice(of: item.record.request.speech, for: recipe)
             restoreStyle(item.record.request.speech?.instruction, for: recipe)
         }
     }
