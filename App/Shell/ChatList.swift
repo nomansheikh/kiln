@@ -41,7 +41,7 @@ struct ChatList: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 sectionTitle("Chats")
-                Text("No chats yet. Each image you create starts one here.")
+                Text("No chats yet. Your first prompt starts one here.")
                     .font(.callout)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

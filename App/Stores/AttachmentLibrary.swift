@@ -43,9 +43,26 @@ struct AttachmentLibrary {
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let fileExtension = file.pathExtension.isEmpty && kind == .image ? "png" : file.pathExtension.lowercased()
-        let copy = directory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
+        // Files other than images are shown by name, so the copy keeps it after the id.
+        let name = kind == .image ? "" : "-" + file.deletingPathExtension().lastPathComponent
+        let copy = directory.appendingPathComponent("\(UUID().uuidString)\(name).\(fileExtension)")
         try FileManager.default.copyItem(at: file, to: copy)
         return copy
+    }
+
+    /// The kind of a file, judged by its type. Nil when it is none Kiln knows.
+    static func kind(of file: URL) -> MediaKind? {
+        MediaKind.allCases.first { Self.file(file, is: $0) }
+    }
+
+    /// The name the user knows an attached file by: the copy's name without its id.
+    static func displayName(of copy: URL) -> String {
+        let name = copy.lastPathComponent
+        let idLength = UUID().uuidString.count
+        guard name.count > idLength + 1, UUID(uuidString: String(name.prefix(idLength))) != nil,
+              name.dropFirst(idLength).first == "-"
+        else { return name }
+        return String(name.dropFirst(idLength + 1))
     }
 
     func url(named fileName: String) -> URL {

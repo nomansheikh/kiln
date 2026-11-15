@@ -4,7 +4,7 @@ Instructions for AI coding agents contributing to Kiln. Follow this file and the
 
 ## 1. The project
 
-Kiln is a native macOS app (Swift 6, SwiftUI, macOS 14 or later, Apple Silicon, MIT licence). It downloads image-generation models from Hugging Face and runs them locally with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) through a separate helper process.
+Kiln is a native macOS app (Swift 6, SwiftUI, macOS 14 or later, Apple Silicon, MIT licence). It downloads models from Hugging Face and runs them locally, each engine in its own helper process: image generation with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) and speech to text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp).
 
 A model is described by a **recipe**: one JSON file in `recipes/` listing every file the model needs (Hugging Face repo, path, pinned commit, byte size, SHA-256, role) and its default settings.
 
@@ -18,8 +18,8 @@ There are two kinds of contribution:
 | Path | What belongs there |
 | --- | --- |
 | `recipes/` | Curated recipes, one `<id>.json` per model. `index.json` (generated list of recipes) and `schema.json` (JSON Schema) are reserved names, not recipes. |
-| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build the helper), `release.sh` and `package-dmg.sh` (release tooling). |
-| `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, helper process, wire format), `Gallery/` (PNG files with embedded settings), `Chats/` (saved chats). |
+| `scripts/` | `recipe.py` (create, check and index recipes), `check-conventions.sh` (file length and generated files), `build-engine.sh` (build both helpers), `release.sh` and `package-dmg.sh` (release tooling). |
+| `Sources/KilnCore/` | UI-free Swift library. Subfolders: `Recipes/` (format, validation, loading, memory fit), `HuggingFace/` (Hub API client, token storage), `Downloads/` (queue, resumable transfers, verification), `Engine/` (generation API, one engine class per helper, audio decoding, wire format), `Gallery/` (PNG files with embedded settings), `Chats/` (saved chats). |
 | `Tests/KilnCoreTests/` | Unit tests for KilnCore, written with Swift Testing. Test doubles and fixtures are in `Support/`. |
 | `App/` | The SwiftUI app. `KilnApp.swift` is the entry point. |
 | `App/Stores/` | Observable state: `AppModel` (the root) and one store per feature. |
@@ -28,7 +28,9 @@ There are two kinds of contribution:
 | `App/DesignSystem/` | Shared views and styles: `Theme`, `Motion`, button styles, `Pill`, `Thumbnail` and others. |
 | `App/Support/` | `AppDelegate`, `KeyboardNavigationMonitor`, `DebugSnapshot`. |
 | `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. |
+| `Engine/whisper/` | `kiln-whisper`: the C++ helper that links whisper.cpp and turns speech into text. |
 | `Vendor/stable-diffusion.cpp/` | Git submodule. Read-only. Its `docs/` folder documents each supported model family. |
+| `Vendor/whisper.cpp/` | Git submodule, pinned to a release tag. Read-only. |
 | `docs/` | `architecture.md` (modules, helper protocol, download flow), `recipes.md` (recipe reference), `releasing.md`. |
 | `.github/` | CI (`workflows/ci.yml`), release workflow, issue and pull request templates. |
 | `Package.swift` | Swift package: the `KilnCore` library and its tests. |
@@ -62,9 +64,9 @@ python3 scripts/recipe.py check
 
 | Command | What it does | Cost |
 | --- | --- | --- |
-| `git submodule update --init --recursive` | Fetches stable-diffusion.cpp into `Vendor/`. | Network |
+| `git submodule update --init --recursive` | Fetches stable-diffusion.cpp and whisper.cpp into `Vendor/`. | Network |
 | `brew install cmake xcodegen` | Installs the two build tools. | Once |
-| `./scripts/build-engine.sh` | Compiles stable-diffusion.cpp and the helper into `build/engine/kiln-engine`. | Slow |
+| `./scripts/build-engine.sh` | Compiles both helpers: `build/engine/kiln-engine` (stable-diffusion.cpp) and `build/whisper/kiln-whisper` (whisper.cpp). The app build runs it only when a helper is missing, so run it again after changing `Engine/`. | Slow |
 | `xcodegen generate` | Writes `Kiln.xcodeproj` from `project.yml`. Run it again after adding, moving or deleting files under `App/`. | Fast |
 | `swift test` | Builds KilnCore and runs its unit tests. Needs no engine, no network and no model. | Fast |
 | `xcodebuild ... build` | Builds the app (the line above is the one CI uses). | Slow |
@@ -138,6 +140,7 @@ ROLE=OWNER/REPO@REVISION:PATH     a specific commit or branch
 | `t5xxl` | T5-XXL text encoder | `--t5xxl` |
 
 - Pick roles from the example command for the model family in `Vendor/stable-diffusion.cpp/docs/`: each flag in the table maps to one role.
+- These seven are the roles of an image recipe. A speech-to-text recipe has one more, `model` (see "Speech-to-text recipes" below).
 - Each role may appear once per install. There are no other roles. If the model needs a file with no role here (a LoRA, a vision projector, or any other flag), it cannot be described yet: stop and say so instead of forcing the file into another role.
 - Prefer `.gguf` or `.safetensors` files.
 
@@ -166,6 +169,22 @@ Use variants when one model is published in several quantizations or precisions 
 - Every variant must be a complete model after merging.
 - All variants share the recipe's settings. A version that needs different steps, sampler or sigmas (a turbo or distilled model) is a separate recipe.
 - The app offers the largest variant that fits comfortably in the Mac's memory and lets the user switch.
+
+### Speech-to-text recipes
+
+A model that turns speech into text runs on the `whisper.cpp` engine and needs one file in whisper.cpp's ggml format (`ggml-*.bin`), with the role `model`. It has no settings:
+
+```sh
+python3 scripts/recipe.py new \
+  --id whisper-large-v3-turbo \
+  --name "Whisper Large v3 Turbo" \
+  --engine whisper.cpp \
+  --variant full "Full precision (best quality)" min_memory_gb=8 model=ggerganov/whisper.cpp:ggml-large-v3-turbo.bin \
+  --variant q5 "Q5 (smallest)" min_memory_gb=8 model=ggerganov/whisper.cpp:ggml-large-v3-turbo-q5_0.bin \
+  --license-note "..."
+```
+
+The script writes `"output": "text"` and `"accepts": ["audio"]` itself and rejects `--steps` and the other image settings. Everything else in this section applies: variants, `min_memory_gb`, `license_note` (check both the converted file's page and the original model's), and the rules about traceable files.
 
 ### `base_model`
 
@@ -217,7 +236,7 @@ Curated recipes are fetched by released apps from this repository (once it is pu
 - **Respect Reduce Motion:** take animations and transitions from `App/DesignSystem/Motion.swift`, which falls back to plain fades. Do not write ad hoc animations in a feature.
 - **Comments** only where something is not obvious from the code. Explain why, not what.
 - **Coupled changes:**
-  - Helper protocol: `Engine/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` and `docs/architecture.md` together.
+  - Helper protocol: `Engine/main.cpp` or `Engine/whisper/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` (and `EngineMessage+Transcribe.swift`) and `docs/architecture.md` together.
   - Recipe format: `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and `docs/recipes.md` together.
 
 ### Tests
@@ -262,6 +281,7 @@ The app writes `generate.png`, `models.png`, `gallery.png` and `settings.png` in
 | `--light` | Force the light appearance. Without it the app follows the system setting. |
 | `--sample-thread` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running turn. |
 | `--sample-downloads` | With `--snapshot`: show the first recipe as a download in progress. |
+| `--sample-speech` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running speech-to-text turn. |
 | `--gallery <folder>` | Show the Kiln images in that folder as the gallery instead of the user's own. With `--sample-thread`, the thread shows two of them as finished turns. |
 
 To capture the light appearance regardless of the system setting, add `--light`.

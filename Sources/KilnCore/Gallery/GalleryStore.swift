@@ -24,18 +24,14 @@ public struct GalleryStore: Sendable {
     }
 
     @discardableResult
-    public func save(_ output: GenerationOutput, record: GenerationRecord) throws -> GalleryItem {
+    public func save(_ image: GeneratedImage, record: GenerationRecord) throws -> GalleryItem {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let stamp = record.createdAt.formatted(
             .iso8601.year().month().day().time(includingFractionalSeconds: false).timeSeparator(.omitted)
         )
-        let name = "\(stamp)-\(record.id.uuidString.prefix(8))"
-        switch output {
-        case .image(let image):
-            let file = directory.appendingPathComponent("\(name).png")
-            try ImageCodec.pngData(for: image, record: record).write(to: file, options: .atomic)
-            return GalleryItem(url: file, record: record)
-        }
+        let file = directory.appendingPathComponent("\(stamp)-\(record.id.uuidString.prefix(8)).png")
+        try ImageCodec.pngData(for: image, record: record).write(to: file, options: .atomic)
+        return GalleryItem(url: file, record: record)
     }
 
     /// Every image Kiln wrote into the folder, newest first.

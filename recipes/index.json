@@ -14,6 +14,7 @@
     "sd-1.5.json",
     "sdxl-base-1.0.json",
     "sdxl-turbo.json",
+    "whisper-large-v3-turbo.json",
     "z-image-turbo.json"
   ]
 }

@@ -59,7 +59,7 @@ import Testing
         """)
         let gallery = GalleryStore(directory: root.appendingPathComponent("gallery"))
         let record = GenerationRecord(recipeID: "r", recipeName: "R", request: request)
-        let source = try gallery.save(.image(GeneratedImage(width: 3, height: 2, channels: 3, pixels: Data(count: 18))), record: record)
+        let source = try gallery.save(GeneratedImage(width: 3, height: 2, channels: 3, pixels: Data(count: 18)), record: record)
         var edit = request
         edit.attachment = source.url
         edit.image?.strength = 0.5

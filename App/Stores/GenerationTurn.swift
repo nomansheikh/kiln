@@ -6,12 +6,16 @@ struct GenerationTurn: Identifiable, Equatable {
     enum State: Equatable {
         case running
         case finished(GalleryItem)
+        /// Text the model wrote, such as a transcript.
+        case text(String)
         case failed(String)
         case cancelled
     }
 
     let id: UUID
     let prompt: String
+    /// What the turn asked the model to make.
+    let kind: MediaKind
     /// Size of the requested image. Nil for other kinds of output.
     let width: Int?
     let height: Int?
@@ -19,10 +23,19 @@ struct GenerationTurn: Identifiable, Equatable {
     let attachment: URL?
     var state: State
 
-    init(id: UUID = UUID(), prompt: String, width: Int?, height: Int?, attachment: URL? = nil, state: State = .running) {
+    init(
+        id: UUID = UUID(),
+        prompt: String,
+        kind: MediaKind = .image,
+        width: Int?,
+        height: Int?,
+        attachment: URL? = nil,
+        state: State = .running
+    ) {
         self.attachment = attachment
         self.id = id
         self.prompt = prompt
+        self.kind = kind
         self.width = width
         self.height = height
         self.state = state

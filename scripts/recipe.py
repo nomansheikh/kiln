@@ -26,6 +26,12 @@ DEFAULT_DIRECTORY = os.path.join(ROOT, "recipes")
 VENDOR_SOURCE = os.path.join(ROOT, "Vendor", "stable-diffusion.cpp", "src", "stable-diffusion.cpp")
 
 HUB_HOST = "huggingface.co"
+# Engines Kiln includes, with the kind of output each one makes and the kinds of
+# attachment its recipes declare (None: the app's default for that output).
+ENGINES = {
+    "sd.cpp": {"output": "image", "accepts": None},
+    "whisper.cpp": {"output": "text", "accepts": ["audio"]},
+}
 ENGINE = "sd.cpp"
 SCHEMA_REFERENCE = "./schema.json"
 INDEX_NAME = "index.json"
@@ -33,7 +39,7 @@ INDEX_NAME = "index.json"
 RESERVED_NAMES = {"index.json", "schema.json"}
 
 # ModelRecipe.ComponentRole
-ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl"]
+ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model"]
 
 RECIPE_KEYS = {
     "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults",
@@ -274,8 +280,8 @@ def validate_recipe(recipe, curated=True, file_name=None):
     engine = recipe.get("engine")
     if not isinstance(engine, str):
         problems.append("engine is missing.")
-    elif curated and engine != ENGINE:
-        problems.append('engine must be "%s" (found "%s").' % (ENGINE, engine))
+    elif curated and engine not in ENGINES:
+        problems.append('engine must be one of: %s (found "%s").' % (", ".join(sorted(ENGINES)), engine))
     if recipe.get("license_note") is not None and not isinstance(recipe["license_note"], str):
         problems.append("license_note must be a string.")
     if recipe.get("min_memory_gb") is not None and not is_number(recipe["min_memory_gb"]):
@@ -292,11 +298,13 @@ def validate_recipe(recipe, curated=True, file_name=None):
     output = recipe.get("output", "image")
     if output not in KINDS:
         problems.append("output %s must be one of: %s." % (json.dumps(output), ", ".join(KINDS)))
-    elif curated and output != "image":
-        problems.append('output must be "image": the %s engine only makes images (found "%s").' % (ENGINE, output))
+    elif curated and engine in ENGINES and output != ENGINES[engine]["output"]:
+        problems.append('output must be "%s" for the %s engine (found "%s").' % (ENGINES[engine]["output"], engine, output))
     accepts = recipe.get("accepts")
     if accepts is not None and (not isinstance(accepts, list) or any(kind not in KINDS for kind in accepts)):
         problems.append("accepts must be an array of: %s." % ", ".join(KINDS))
+    elif curated and engine in ENGINES and ENGINES[engine]["accepts"] is not None and accepts != ENGINES[engine]["accepts"]:
+        problems.append("accepts must be %s for the %s engine." % (json.dumps(ENGINES[engine]["accepts"]), engine))
     # Only image models have image settings; the app requires them there.
     if output == "image" or recipe.get("defaults") is not None:
         validate_defaults(recipe.get("defaults"), problems, curated)
@@ -510,6 +518,14 @@ def command_new(args):
     if not shared and not variants:
         raise UsageError("Give at least one --component or --variant.")
 
+    image = ENGINES[args.engine]["output"] == "image"
+    required = ["steps", "cfg", "sampler", "width", "height"]
+    given = [name for name in required + ["sigmas", "scheduler", "guidance", "flow_shift"] if getattr(args, name) is not None]
+    if image and any(getattr(args, name) is None for name in required):
+        raise UsageError("An image recipe needs --steps, --cfg, --sampler, --width and --height.")
+    if not image and (given or args.flash_attention or args.base_model):
+        raise UsageError("The default settings and --base-model are for image recipes; the %s engine takes none." % args.engine)
+
     defaults = {"steps": args.steps, "cfg": args.cfg, "sampler": args.sampler, "width": args.width, "height": args.height}
     if args.sigmas:
         defaults["sigmas"] = parse_sigmas(args.sigmas)
@@ -522,9 +538,13 @@ def command_new(args):
     if args.flow_shift is not None:
         defaults["flow_shift"] = args.flow_shift
 
-    recipe = {"$schema": SCHEMA_REFERENCE, "id": args.id, "name": args.name, "engine": ENGINE}
+    recipe = {"$schema": SCHEMA_REFERENCE, "id": args.id, "name": args.name, "engine": args.engine}
     recipe["components"] = [component for component, _ in shared]
-    recipe["defaults"] = defaults
+    if image:
+        recipe["defaults"] = defaults
+    else:
+        recipe["output"] = ENGINES[args.engine]["output"]
+        recipe["accepts"] = ENGINES[args.engine]["accepts"]
     if args.license_note:
         recipe["license_note"] = args.license_note
     if args.min_memory_gb is not None:
@@ -817,12 +837,14 @@ def build_parser():
                      help="a file every install needs; repeat for each file")
     new.add_argument("--variant", action="append", nargs="+", metavar="ARG",
                      help='ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...; repeat for each variant')
-    settings = new.add_argument_group("default settings (take them from the model card)")
-    settings.add_argument("--steps", required=True, type=int, help="sampling steps")
-    settings.add_argument("--cfg", required=True, type=float, help="classifier-free guidance scale")
-    settings.add_argument("--sampler", required=True, help="stable-diffusion.cpp sampler name, for example euler")
-    settings.add_argument("--width", required=True, type=int, help="image width in pixels")
-    settings.add_argument("--height", required=True, type=int, help="image height in pixels")
+    new.add_argument("--engine", default=ENGINE, choices=sorted(ENGINES),
+                     help="engine that runs the model (default: %s). whisper.cpp is speech to text" % ENGINE)
+    settings = new.add_argument_group("default settings of an image recipe (take them from the model card)")
+    settings.add_argument("--steps", type=int, help="sampling steps (required)")
+    settings.add_argument("--cfg", type=float, help="classifier-free guidance scale (required)")
+    settings.add_argument("--sampler", help="stable-diffusion.cpp sampler name, for example euler (required)")
+    settings.add_argument("--width", type=int, help="image width in pixels (required)")
+    settings.add_argument("--height", type=int, help="image height in pixels (required)")
     settings.add_argument("--sigmas", nargs="+", metavar="N", help="explicit noise schedule, steps + 1 numbers, comma or space separated")
     settings.add_argument("--flash-attention", action="store_true", help="enable flash attention for the diffusion model")
     settings.add_argument("--scheduler", help="stable-diffusion.cpp scheduler name (default: the engine's choice)")

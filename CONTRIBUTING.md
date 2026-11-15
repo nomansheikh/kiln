@@ -21,6 +21,7 @@ Find the model on Hugging Face, decide which files it needs, and give each one a
 | `llm` | A language model used as the text encoder (Qwen-Image and similar) |
 | `vae` | A standalone VAE |
 | `clip_l`, `clip_g`, `t5xxl` | CLIP and T5 text encoders (Flux and SD3 families) |
+| `model` | The one file of a speech-to-text model, with `--engine whisper.cpp` (see [docs/recipes.md](docs/recipes.md#kinds-of-model)) |
 
 Then run `new`, writing each file as `ROLE=OWNER/REPO:PATH`:
 
@@ -57,7 +58,7 @@ This validates every recipe and verifies each file against Hugging Face at its p
 swift test
 ```
 
-`everyCuratedRecipeIsValid` decodes every file in `recipes/` with the app's own code and fails if a file name does not match its id, if `engine` is not `sd.cpp`, if any file of any variant is missing `revision`, `size_bytes` or `sha256`, or if `index.json` does not list exactly the recipe files.
+`everyCuratedRecipeIsValid` decodes every file in `recipes/` with the app's own code and fails if a file name does not match its id, if `engine` is not `sd.cpp` or `whisper.cpp`, if any file of any variant is missing `revision`, `size_bytes` or `sha256`, or if `index.json` does not list exactly the recipe files.
 
 ### 4. Try it in the app, if you can
 
@@ -96,9 +97,9 @@ Build instructions are in the [README](README.md#build-from-source). The structu
 - **`KilnCore` stays free of UI.** It must not import SwiftUI or AppKit; views and app state belong in `App/`.
 - **Swift 6 strict concurrency.** The package and the app build in Swift 6 language mode. Do not silence concurrency diagnostics without a comment explaining why the code is safe.
 - **`swift test` must pass.** New behaviour in `KilnCore` needs tests. Network and process boundaries are behind protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`) so they can be tested without the network or real weights. The SwiftUI app has no tests, so keep logic that can be tested in `KilnCore`.
-- Changes to the helper protocol must update `Engine/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
+- Changes to a helper protocol must update the helper (`Engine/main.cpp` or `Engine/whisper/main.cpp`), `Sources/KilnCore/Engine/EngineProtocol.swift` and [docs/architecture.md](docs/architecture.md) together.
 - Changes to the recipe format must update `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and [docs/recipes.md](docs/recipes.md) together.
-- Do not edit `Vendor/stable-diffusion.cpp`; it is a git submodule.
+- Do not edit `Vendor/stable-diffusion.cpp` or `Vendor/whisper.cpp`; they are git submodules.
 
 ### Screenshots for a pull request
 
@@ -116,6 +117,7 @@ Other debug-only flags, which can be combined with `--snapshot`:
 | --- | --- |
 | `--light` | Forces the light appearance. Without it the app follows the system setting. Works on its own, without `--snapshot`. |
 | `--sample-thread` | Fills the Generate screen with a finished turn, a failed turn and a running turn with a step preview and an attached image, so every thread state is visible without a model. It writes one sample image to the temporary directory and one copy to the attachments folder. Only applies together with `--snapshot`. |
+| `--sample-speech` | Fills the Generate screen with a finished, a failed and a running speech-to-text turn, each with an attached audio file shown by name. The files do not exist; only their names are shown. Only applies together with `--snapshot`. |
 | `--sample-downloads` | Shows the first recipe as a download in progress with a sample speed and time left. Only applies together with `--snapshot`. |
 | `--gallery <folder>` | Shows the Kiln images in that folder as the gallery instead of your own, so a screenshot does not publish your generations. Combined with `--sample-thread`, the thread shows the two oldest of them as finished turns instead of the sample states. Works on its own, without `--snapshot`. |
 

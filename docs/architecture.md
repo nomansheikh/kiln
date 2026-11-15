@@ -4,7 +4,8 @@ Kiln has three parts:
 
 - the **app** (`App/`), a SwiftUI front end
 - **KilnCore** (`Sources/KilnCore/`), a UI-free Swift library with the logic that can be tested without a window
-- **kiln-engine** (`Engine/`), a C++ helper process that runs stable-diffusion.cpp with the Metal backend
+- **kiln-engine** (`Engine/`), a C++ helper process that runs stable-diffusion.cpp with the Metal backend and makes images
+- **kiln-whisper** (`Engine/whisper/`), a second helper process that runs whisper.cpp and turns speech into text
 
 ```
 +--------------------------- Kiln.app ----------------------------+
@@ -19,15 +20,16 @@ Kiln has three parts:
 |    Recipes      RecipeStore, ModelRecipe, MemoryFitEstimator    |
 |    HuggingFace  HFClient, KeychainTokenStore  ----HTTPS----> huggingface.co
 |    Downloads    DownloadManager, FileDownloader, ModelStorage   |
-|    Engine       StableDiffusionCppEngine, HelperProcess         |
+|    Engine       EngineRouter, StableDiffusionCppEngine,         |
+|                 WhisperCppEngine, HelperProcess                 |
 |    Gallery      GalleryStore, ImageCodec, PNGText               |
 |    Chats        ChatStore, Chat                                 |
 +--------|---------------------------^----------------------------+
          | stdin: JSON requests      | stdout: JSON events
          v                           | stderr: logs
 +-----------------------------------------------------------------+
-|  kiln-engine (separate process)                                 |
-|  stable-diffusion.cpp + ggml (Metal)                            |
+|  kiln-engine (separate process)    kiln-whisper (separate       |
+|  stable-diffusion.cpp + ggml       process) whisper.cpp + ggml  |
 +-----------------------------------------------------------------+
 
 ~/Library/Application Support/Kiln/
@@ -35,10 +37,12 @@ Kiln has three parts:
     recipes/<id>.json                imported and single-file recipes
     gallery/*.png                    generated images
     chats/<uuid>.json                saved chats
-    attachments/<uuid>.<ext>         images attached to prompts
+    attachments/<uuid>[-<name>].<ext>   files attached to prompts
 
 <temporary directory>/kiln-engine/
-    <uuid>.raw, <uuid>.preview, <uuid>.init    files exchanged with the helper
+    <uuid>.raw, <uuid>.preview, <uuid>.init    files exchanged with kiln-engine
+<temporary directory>/kiln-whisper/
+    <uuid>.f32, <uuid>.txt                     files exchanged with kiln-whisper
 ```
 
 ## KilnCore modules
@@ -50,7 +54,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 | `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
 | `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator` | Download queue, resumable transfers, verification, on-disk layout, speed estimate. |
-| `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `StableDiffusionCppEngine`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, wire format. |
+| `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format. |
 | `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
 | `Chats/` | `Chat`, `ChatTurn`, `ChatStore` | Saved chats as JSON files. |
 
@@ -70,9 +74,9 @@ The access token is optional. `KeychainTokenStore` keeps it as a generic passwor
 
 ### Engines and kinds
 
-A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`, which the gallery saves.
+A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`: an image, which the gallery saves, or text, which is kept in the chat turn.
 
-The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Only `sd.cpp` (`StableDiffusionCppEngine`) is registered today. Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
+The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Two are registered: `sd.cpp` (`StableDiffusionCppEngine`, images) and `whisper.cpp` (`WhisperCppEngine`, speech to text). Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
 
 ## The helper process
 
@@ -96,9 +100,30 @@ The helper stays alive between generations so the model stays loaded.
 - One reader thread parses requests; one worker thread runs generations in order.
 - Closing stdin ends the helper. If writing an event fails because the app is gone, the helper exits.
 
+## The speech helper
+
+`kiln-whisper` is [`Engine/whisper/main.cpp`](../Engine/whisper/main.cpp), linked statically against whisper.cpp (`Vendor/whisper.cpp`, a submodule pinned to a release tag) with Metal on and its examples, tests and server off. It is a separate program from `kiln-engine` because both libraries bundle their own copy of ggml, which cannot be linked into one binary. `scripts/build-engine.sh` builds both helpers and the post-build script bundles and signs both.
+
+It follows the same lifecycle and line protocol as `kiln-engine`, with one request of its own:
+
+```json
+{"type":"transcribe","model":"/…/ggml-large-v3-turbo.bin","audio":"/tmp/kiln-whisper/<uuid>.f32","prompt":"","output":"/tmp/kiln-whisper/<uuid>.txt"}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `model` | Path of the model file. The helper keeps it loaded and reloads only when the path changes. |
+| `audio` | File of raw 32-bit little-endian float samples, mono, 16 kHz. The app decodes the attached file with AVFoundation (`AudioSamples`), so the helper needs no audio codecs. |
+| `prompt` | Optional words to expect, such as names. Passed to whisper.cpp as the initial prompt. |
+| `output` | File the helper writes the transcript to, as UTF-8. |
+
+The spoken language is detected automatically and timestamps are not produced. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), then one of `text` (`{"type":"text","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
+
+`WhisperCppEngine` requires an attachment (`missingAudio` otherwise), writes the samples and reads the transcript in its scratch folder, and removes both files when the job ends. A file AVFoundation cannot decode fails with `unreadableAudio` before the helper is started.
+
 ## Helper protocol
 
-One JSON object per line, UTF-8, newline-terminated. Requests go to the helper's stdin, events come back on its stdout. Empty lines are ignored. The Swift side is [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift).
+The protocol of `kiln-engine`. One JSON object per line, UTF-8, newline-terminated. Requests go to the helper's stdin, events come back on its stdout. Empty lines are ignored. The Swift side is [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift).
 
 There are two requests (`generate`, `cancel`) and eight events (`ready`, `loading`, `progress`, `preview`, `image`, `cancelled`, `error`, `idle`).
 
@@ -344,8 +369,11 @@ Listing the gallery reads only the chunks before the pixel data of each `.png` f
 A `Chat` has an `id`, a `title`, `createdAt`, `updatedAt`, an `isArchived` flag and a list of turns. The title defaults to the first prompt, shortened to a single line of about 48 characters. A `ChatTurn` stores the prompt, the requested width and height (for an image; absent for other kinds), an optional `attachmentFileName`, and an outcome:
 
 - `image`: the file name of the result inside the gallery folder
+- `text`: the text the model wrote, such as a transcript, stored in the chat itself
 - `failed`: the error message
 - `cancelled`
+
+A turn also stores its `kind` (what it asked the model to make; image when absent).
 
 A turn does not copy the image or its settings; it points at the gallery file by name. When a chat is opened and the file is no longer in the gallery, the turn is shown as failed with "This image is no longer in the Gallery." A turn that is still running is saved as cancelled, which is what it will be if the app quits before it finishes.
 
@@ -353,7 +381,7 @@ The chat is created when its first prompt is sent and saved again when each turn
 
 ### Attachments
 
-`AttachmentLibrary` (in `App/Stores/`) copies every attached file into `attachments/<uuid>.<ext>`, so a chat keeps it after the original file is moved or deleted. A file is accepted only as one of the kinds in the selected recipe's `accepts`: an image when ImageIO can open it, another kind when its file type conforms to that kind. Switching to a model that cannot take the attached file removes the attachment from the draft. Chat turns refer to the copy by file name. Kiln does not currently delete attachment copies.
+`AttachmentLibrary` (in `App/Stores/`) copies every attached file into `attachments/`, so a chat keeps it after the original file is moved or deleted. An image is stored as `<uuid>.<ext>`; any other file as `<uuid>-<original name>.<ext>`, because it is shown in the thread by name. A file is accepted only as one of the kinds in the selected recipe's `accepts`: an image when ImageIO can open it, another kind when its file type conforms to that kind. Switching to a model that cannot take the attached file removes the attachment from the draft. Chat turns refer to the copy by file name. Kiln does not currently delete attachment copies.
 
 ## The app layer
 

@@ -16,9 +16,9 @@ struct Sidebar: View {
 
             VStack(spacing: 1) {
                 // A saved chat highlights its own row in the list instead.
-                SidebarRow(title: "New image", symbol: "plus.bubble", shortcut: "\u{2318}N",
+                SidebarRow(title: "New chat", symbol: "plus.bubble", shortcut: "\u{2318}N",
                            selected: model.selection == .generate && model.generation.chatID == nil) {
-                    model.newImage()
+                    model.newChat()
                 }
                 SidebarRow(title: "Models", symbol: "square.grid.2x2", shortcut: "\u{2318}2", selected: model.selection == .models,
                            badge: model.library.activeDownloads.count) {

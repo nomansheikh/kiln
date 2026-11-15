@@ -1,6 +1,6 @@
 import Foundation
 
-/// A running `kiln-engine` helper with its pipes.
+/// A running helper, such as `kiln-engine`, with its pipes.
 struct HelperProcess {
     let process: Process
     /// Where requests are written.
@@ -12,7 +12,7 @@ struct HelperProcess {
 
     static func launch(_ executable: URL) throws(EngineError) -> HelperProcess {
         guard FileManager.default.isExecutableFile(atPath: executable.path) else {
-            throw .helperUnavailable("kiln-engine is missing from the app.")
+            throw .helperUnavailable("\(executable.lastPathComponent) is missing from the app.")
         }
         let process = Process()
         let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()

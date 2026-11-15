@@ -8,13 +8,17 @@ struct ModelsRecipeList: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let showsDownloadedOnly: Bool
+    /// Only models for this task are listed. Nil lists every model.
+    var task: ModelTask?
 
     @AppStorage("models.recommendedExpanded") private var recommendedExpanded = true
     @AppStorage("models.addedExpanded") private var addedExpanded = true
 
     private var visibleRecipes: [ModelRecipe] {
         let library = model.library
-        return showsDownloadedOnly ? library.recipes.filter { library.isInstalled($0) } : library.recipes
+        return library.recipes.filter { recipe in
+            (task == nil || recipe.task == task) && (!showsDownloadedOnly || library.isInstalled(recipe))
+        }
     }
 
     var body: some View {

@@ -15,6 +15,7 @@ import Testing
             == .preview(path: "/tmp/a.preview", width: 8, height: 8, channels: 3))
         #expect(EngineMessage.decodeEvent(#"{"code":"load_failed","message":"nope","type":"error"}"#)
             == .error(code: "load_failed", message: "nope"))
+        #expect(EngineMessage.decodeEvent(#"{"path":"/tmp/a.txt","type":"text"}"#) == .text(path: "/tmp/a.txt"))
         #expect(EngineMessage.decodeEvent(#"{"type":"cancelled"}"#) == .cancelled)
         #expect(EngineMessage.decodeEvent(#"{"type":"idle"}"#) == .idle)
     }
@@ -23,6 +24,22 @@ import Testing
         #expect(EngineMessage.decodeEvent("ggml_metal_init: found device") == nil)
         #expect(EngineMessage.decodeEvent(#"{"type":"something_new"}"#) == nil)
         #expect(EngineMessage.decodeEvent(#"{"type":"image","path":"/tmp/a.raw"}"#) == nil)
+        #expect(EngineMessage.decodeEvent(#"{"type":"text"}"#) == nil)
+    }
+
+    @Test func transcribeCommandCarriesThePathsAndThePrompt() throws {
+        let data = try EngineMessage.transcribeCommand(
+            model: URL(fileURLWithPath: "/models/ggml-model.bin"), audio: URL(fileURLWithPath: "/tmp/a.f32"),
+            prompt: "Names: \"Kiln\"", output: URL(fileURLWithPath: "/tmp/a.txt")
+        )
+
+        #expect(data.last == 0x0A)
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: String])
+        #expect(object == [
+            "type": "transcribe", "model": "/models/ggml-model.bin", "audio": "/tmp/a.f32",
+            "prompt": "Names: \"Kiln\"", "output": "/tmp/a.txt",
+        ])
+        #expect(EngineMessage.stage("transcribing") == .transcribing)
     }
 
     @Test func generateCommandMapsRolesToPathsAndSettings() throws {

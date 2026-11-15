@@ -79,7 +79,8 @@ final class GenerationStore {
     /// Picks an installed model when the current choice is missing or was deleted.
     func selectDefaultRecipeIfNeeded() {
         if let id = draft.recipeID, library.installedIDs.contains(id) { return }
-        selectRecipe(library.installedRecipes.first)
+        let installed = library.installedRecipes
+        selectRecipe(installed.first { $0.outputKind == .image } ?? installed.first)
     }
 
     // MARK: - Generating
@@ -93,6 +94,7 @@ final class GenerationStore {
         let request = draft.request(for: recipe)
         let turn = GenerationTurn(
             prompt: request.prompt,
+            kind: recipe.outputKind,
             width: request.image?.width,
             height: request.image?.height,
             attachment: draft.attachment
@@ -152,14 +154,16 @@ final class GenerationStore {
                     phase = .running(progress)
                 case .preview(let image):
                     preview = image
-                case .finished(let output):
+                case .finished(.text(let text)):
+                    return .text(text)
+                case .finished(.image(let image)):
                     let record = GenerationRecord(
                         recipeID: recipe.id,
                         recipeName: recipe.name,
                         request: request,
                         durationSeconds: Date().timeIntervalSince(started)
                     )
-                    return .finished(try gallery.add(output, record: record))
+                    return .finished(try gallery.add(image, record: record))
                 }
             }
             return .failed("The engine finished without producing an image.")
@@ -185,7 +189,8 @@ final class GenerationStore {
         guard let first = turns.first else { return }
         let id = chatID ?? UUID()
         chatID = id
-        var chat = chats.chat(id) ?? Chat(id: id, title: Chat.defaultTitle(for: first.prompt))
+        let attachmentName = first.attachment.map(AttachmentLibrary.displayName(of:))
+        var chat = chats.chat(id) ?? Chat(id: id, title: Chat.defaultTitle(for: first.prompt, attachmentName: attachmentName))
         chat.turns = turns.map(\.saved)
         chat.updatedAt = Date()
         chats.save(chat)

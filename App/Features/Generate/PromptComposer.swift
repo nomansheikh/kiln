@@ -112,7 +112,10 @@ struct PromptComposer: View {
     private func placeholder(output: MediaKind, hasAttachment: Bool) -> String {
         switch (output, hasAttachment) {
         case (.image, true): "Describe how to change it"
+        case (.text, true): "Add names or words to expect, or just send it"
         case (_, true): "Add instructions, or send the file as it is"
+        case (.text, false) where model.generation.selectedRecipe?.inputKinds == [.audio]:
+            "Attach an audio file to turn into text"
         default: output.promptPlaceholder
         }
     }

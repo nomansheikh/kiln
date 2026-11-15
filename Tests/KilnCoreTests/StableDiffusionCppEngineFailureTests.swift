@@ -110,7 +110,7 @@ import Testing
     }
 
     @Test func missingHelperIsReportedPlainly() async throws {
-        let engine = StableDiffusionCppEngine(helperURL: root.appendingPathComponent("nope"), storage: storage)
+        let engine = StableDiffusionCppEngine(helperURL: root.appendingPathComponent("kiln-engine"), storage: storage)
 
         await #expect(throws: EngineError.helperUnavailable("kiln-engine is missing from the app.")) {
             _ = try await collect(engine.generate(recipe: recipe, request: request))
