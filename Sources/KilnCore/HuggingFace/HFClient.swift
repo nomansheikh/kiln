@@ -55,7 +55,45 @@ public struct HFClient: Sendable {
     }
 
     /// Text-to-image models matching `query`, most downloaded first.
+    ///
+    /// A query that is a repo id (`owner/name`) or a link to a repo also finds that
+    /// repo itself, first in the list, whatever kind of model it holds.
     public func searchModels(query: String, limit: Int = 30) async throws -> [HFModelSummary] {
+        guard let repo = Self.repoID(in: query) else {
+            return try await searchTextToImage(query: query, limit: limit)
+        }
+        let exact = try? await modelSummary(repo: repo)
+        do {
+            let others = try await searchTextToImage(query: repo, limit: limit)
+            return (exact.map { [$0] } ?? []) + others.filter { $0.id != exact?.id }
+        } catch {
+            // The repo itself was found, so the wider search failing is not a failure.
+            guard let exact else { throw error }
+            return [exact]
+        }
+    }
+
+    /// One repo by its id, whatever kind of model it holds.
+    public func modelSummary(repo: String) async throws -> HFModelSummary {
+        try await get(baseURL.appendingPathComponent("api/models").appendingPathComponent(repo), repo: repo)
+    }
+
+    /// The repo a search names: `owner/name`, or a link to its page. Nil for ordinary words.
+    public static func repoID(in query: String) -> String? {
+        var text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        for prefix in ["https://huggingface.co/", "http://huggingface.co/", "huggingface.co/"] where text.hasPrefix(prefix) {
+            text.removeFirst(prefix.count)
+        }
+        // A link may go on past the repo, to a file or a branch.
+        let parts = text.split(separator: "/", omittingEmptySubsequences: false).prefix(2)
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+        guard parts.count == 2,
+              parts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && $0.unicodeScalars.allSatisfy(allowed.contains) })
+        else { return nil }
+        return parts.joined(separator: "/")
+    }
+
+    private func searchTextToImage(query: String, limit: Int) async throws -> [HFModelSummary] {
         var components = URLComponents(url: baseURL.appendingPathComponent("api/models"), resolvingAgainstBaseURL: false)!
         components.queryItems = [
             URLQueryItem(name: "pipeline_tag", value: "text-to-image"),

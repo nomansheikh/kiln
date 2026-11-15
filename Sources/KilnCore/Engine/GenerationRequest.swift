@@ -9,12 +9,22 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     public var image: ImageSettings?
     /// Settings for a model that speaks. Nil for other kinds.
     public var speech: SpeechSettings?
+    /// Code of the language to work in, such as `en`. Nil lets the model decide.
+    public var language: String?
 
-    public init(prompt: String, attachment: URL? = nil, image: ImageSettings? = nil, speech: SpeechSettings? = nil) {
+    public init(
+        prompt: String, attachment: URL? = nil, image: ImageSettings? = nil, speech: SpeechSettings? = nil, language: String? = nil
+    ) {
         self.prompt = prompt
         self.attachment = attachment
         self.image = image
         self.speech = speech
+        self.language = language
+    }
+
+    /// The language to give the engine: the chosen one, if the recipe offers it.
+    func language(for recipe: ModelRecipe) -> String? {
+        language.flatMap { recipe.languages?.contains($0) == true ? $0 : nil }
     }
 
     /// An image request using the recipe's recommended settings.
@@ -27,7 +37,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case prompt, attachment, image, speech
+        case prompt, attachment, image, speech, language
         /// Records written before requests had kinds kept the image settings at the
         /// top level and called the attachment `sourceImage`.
         case sourceImage, width
@@ -44,6 +54,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
             image = try ImageSettings(from: decoder)
         }
         speech = try container.decodeIfPresent(SpeechSettings.self, forKey: .speech)
+        language = try container.decodeIfPresent(String.self, forKey: .language)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -52,6 +63,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
         try container.encodeIfPresent(attachment, forKey: .attachment)
         try container.encodeIfPresent(image, forKey: .image)
         try container.encodeIfPresent(speech, forKey: .speech)
+        try container.encodeIfPresent(language, forKey: .language)
     }
 }
 
@@ -59,9 +71,32 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
 public struct SpeechSettings: Codable, Sendable, Equatable {
     /// The voice to speak in, by the name the model knows it by.
     public var voice: String?
+    /// A description of the voice or the delivery, for a model that takes one.
+    public var instruction: String?
+    /// A recording of the voice to speak in, for a model that can copy one.
+    /// It takes the place of `voice`.
+    public var reference: VoiceReference?
 
-    public init(voice: String? = nil) {
+    public init(voice: String? = nil, instruction: String? = nil, reference: VoiceReference? = nil) {
         self.voice = voice
+        self.instruction = instruction
+        self.reference = reference
+    }
+}
+
+/// A recording of a voice for a model to copy.
+public struct VoiceReference: Codable, Sendable, Equatable {
+    /// An audio file of the voice speaking.
+    public var file: URL
+    /// The words spoken in it, which some models need.
+    public var transcript: String?
+    /// What the user calls the voice, for showing with a clip made in it.
+    public var name: String?
+
+    public init(file: URL, transcript: String? = nil, name: String? = nil) {
+        self.file = file
+        self.transcript = transcript
+        self.name = name
     }
 }
 

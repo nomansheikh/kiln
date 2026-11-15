@@ -118,13 +118,19 @@ Other debug-only flags, which can be combined with `--snapshot`:
 | --- | --- |
 | `--light` | Forces the light appearance. Without it the app follows the system setting. Works on its own, without `--snapshot`. |
 | `--sample-thread` | Fills the Generate screen with a finished turn, a failed turn and a running turn with a step preview and an attached image, so every thread state is visible without a model. It writes one sample image to the temporary directory and one copy to the attachments folder. Only applies together with `--snapshot`. |
+| `--model <recipe id>` | Selects an installed model by its recipe id before the screens are captured, so the controls that depend on the model, such as the voice and language chips, can be seen. Ignored when the model is not installed. Only applies together with `--snapshot`. |
 | `--only <screen>` | Captures one screen instead of all five: `generate`, `speech`, `models`, `gallery` or `settings`. Only applies together with `--snapshot`. |
 | `--open-voices` | Opens the Speech screen's voice list and saves it as `speech-popover.png`. A popover is a window of its own, so it is a separate image; the colours outside its rounded shape are not part of the app. Only applies together with `--snapshot`. |
+| `--voices <folder>` | Uses the voices in that folder as your own voices on the Speech screen instead of the real ones. Works on its own, without `--snapshot`. |
+| `--add-voice` | Opens the Speech screen's sheet for adding a voice and saves it as `speech-sheet.png`. Only applies together with `--snapshot`. |
+| `--open-style` | Opens the Speech screen's style editor, for a selected model that takes a description of the voice (pick one with `--model`), and saves it as `speech-popover.png`. Only applies together with `--snapshot`. |
+| `--speech-text <text>` | Puts that text in the Speech screen's field, to show how marks such as `[laughs]` are coloured for the selected model. Only applies together with `--snapshot`. |
 | `--sample-working` | Shows the Speech screen as it is while a clip is being made, and saves a second frame, `speech-later.png`, 0.4 seconds after `speech.png`, so the two can be compared to see that the placeholder is moving. Only applies together with `--snapshot`. |
 | `--audio <folder>` | Shows the clips in that folder on the Speech screen instead of your own. An empty folder shows the screen's greeting and starter texts. Works on its own, without `--snapshot`. |
 | `--sample-clips` | Uses a temporary folder of four sample clips as the Speech screen's clips instead of your own, with one part-way through playback. The sample sound is a shaped tone, not speech. The voice chip shows the voices of an installed voice model; without one the composer is disabled and points to Models. Works on its own, without `--snapshot`. |
 | `--sample-speech` | Fills the Generate screen with a finished, a failed and a running speech-to-text turn, each with an attached audio file shown by name. The files do not exist; only their names are shown. Only applies together with `--snapshot`. |
-| `--sample-downloads` | Shows the first recipe as a download in progress with a sample speed and time left. Only applies together with `--snapshot`. |
+| `--sample-downloads` | Shows the first three recipes as a download in progress (with a sample speed and time left), a finished one and a failed one. Only applies together with `--snapshot`. |
+| `--open-downloads` | Opens the downloads list, which is saved as `<screen>-popover.png`. Only applies together with `--snapshot`. |
 | `--gallery <folder>` | Shows the Kiln images in that folder as the gallery instead of your own, so a screenshot does not publish your generations. Combined with `--sample-thread`, the thread shows the two oldest of them as finished turns instead of the sample states. Works on its own, without `--snapshot`. |
 
 None of these exist in release builds. The implementation is in [`App/Support/DebugSnapshot.swift`](App/Support/DebugSnapshot.swift).

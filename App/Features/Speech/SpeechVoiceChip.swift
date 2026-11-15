@@ -9,11 +9,13 @@ struct SpeechVoiceChip: View {
     var body: some View {
         let speech = model.speech
         let current = speech.voice.flatMap { voices.contains($0) ? $0 : nil } ?? voices.first ?? ""
+        // One of the user's own voices, the model's named voice, or the voice the model picks by itself.
+        let title = speech.savedVoice?.name ?? (current.isEmpty ? "Voice" : GenerationVoiceMenu.title(current))
 
         Button { showsVoices.toggle() } label: {
             HStack(spacing: 6) {
-                VoiceAvatar(name: current, size: 18)
-                Text(verbatim: GenerationVoiceMenu.title(current))
+                VoiceAvatar(name: speech.savedVoice?.name ?? (current.isEmpty ? "Voice" : current), size: 18)
+                Text(verbatim: title)
                     .font(.callout)
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
@@ -31,7 +33,7 @@ struct SpeechVoiceChip: View {
         .focusable(false)
         .help("Voice")
         .accessibilityLabel("Voice")
-        .accessibilityValue(GenerationVoiceMenu.title(current))
+        .accessibilityValue(title)
         #if DEBUG
         .task {
             guard DebugSnapshot.opensVoiceList else { return }

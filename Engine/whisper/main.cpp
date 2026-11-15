@@ -126,13 +126,14 @@ void transcribe(const json& request) {
     }
 
     const std::string prompt   = request.value("prompt", std::string());
+    // "auto" makes whisper.cpp detect the spoken language.
+    const std::string language = request.value("language", std::string("auto"));
     whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     params.print_progress      = false;
     params.print_realtime      = false;
     params.print_timestamps    = false;
     params.no_timestamps       = true;
-    // "auto" makes whisper.cpp detect the spoken language.
-    params.language            = "auto";
+    params.language            = language.c_str();
     params.initial_prompt      = prompt.empty() ? nullptr : prompt.c_str();
     params.progress_callback   = on_progress;
     params.abort_callback      = should_abort;

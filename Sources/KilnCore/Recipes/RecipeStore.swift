@@ -1,6 +1,7 @@
 import Foundation
 
-/// Loads recipes shipped with the app and recipes the user imported.
+/// Loads recipes shipped with the app, the generated catalogue of other models
+/// the engines can run, and recipes the user imported.
 public struct RecipeStore: Sendable {
     public struct LoadFailure: Sendable {
         public let file: URL
@@ -12,6 +13,9 @@ public struct RecipeStore: Sendable {
         public var failures: [LoadFailure] = []
         /// Ids of the recipes that came from the user's folder rather than the app.
         public var userRecipeIDs: Set<String> = []
+        /// Ids of the entries that came from the catalogue: generated from the
+        /// engines' own model lists, not written or tested by a person.
+        public var catalogIDs: Set<String> = []
     }
 
     public enum ImportError: Error, Equatable, LocalizedError {
@@ -32,11 +36,14 @@ public struct RecipeStore: Sendable {
     /// Curated recipes fetched after the app was built. One of these replaces
     /// the bundled recipe with the same id.
     public let remoteDirectory: URL?
+    /// Folder of catalogue files, each holding many generated entries. See `RecipeStore+Catalog.swift`.
+    public let catalogDirectory: URL?
 
-    public init(bundledDirectory: URL, userDirectory: URL, remoteDirectory: URL? = nil) {
+    public init(bundledDirectory: URL, userDirectory: URL, remoteDirectory: URL? = nil, catalogDirectory: URL? = nil) {
         self.bundledDirectory = bundledDirectory
         self.userDirectory = userDirectory
         self.remoteDirectory = remoteDirectory
+        self.catalogDirectory = catalogDirectory
     }
 
     public static func decode(_ data: Data) throws -> ModelRecipe {
@@ -67,6 +74,10 @@ public struct RecipeStore: Sendable {
                 result.failures.append(LoadFailure(file: file, message: Self.describe(error)))
             }
         }
+        for recipe in catalogRecipes(notCoveredBy: result.recipes) where seenIDs.insert(recipe.id).inserted {
+            result.recipes.append(recipe)
+            result.catalogIDs.insert(recipe.id)
+        }
         for file in Self.recipeFiles(in: userDirectory) {
             do {
                 let recipe = try Self.decode(Data(contentsOf: file))
@@ -80,10 +91,14 @@ public struct RecipeStore: Sendable {
                 result.failures.append(LoadFailure(file: file, message: Self.describe(error)))
             }
         }
+        // Copies, because the sort below holds `result` for writing.
+        let userIDs = result.userRecipeIDs, catalogIDs = result.catalogIDs
+        func rank(_ recipe: ModelRecipe) -> Int {
+            userIDs.contains(recipe.id) ? 2 : catalogIDs.contains(recipe.id) ? 1 : 0
+        }
         result.recipes.sort { lhs, rhs in
-            // Curated before user-added, each group by name.
-            let lhsUser = result.userRecipeIDs.contains(lhs.id), rhsUser = result.userRecipeIDs.contains(rhs.id)
-            guard lhsUser == rhsUser else { return !lhsUser }
+            // Curated, then the catalogue, then user-added, each group by name.
+            guard rank(lhs) == rank(rhs) else { return rank(lhs) < rank(rhs) }
             let order = lhs.name.localizedStandardCompare(rhs.name)
             return order == .orderedSame ? lhs.id < rhs.id : order == .orderedAscending
         }
@@ -105,7 +120,7 @@ public struct RecipeStore: Sendable {
         return recipe
     }
 
-    private static func recipeFiles(in directory: URL) -> [URL] {
+    static func recipeFiles(in directory: URL) -> [URL] {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         return files
             .filter { $0.pathExtension.lowercased() == "json" && !reservedFileNames.contains($0.lastPathComponent) }

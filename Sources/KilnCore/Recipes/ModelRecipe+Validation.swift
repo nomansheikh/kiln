@@ -12,6 +12,7 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
     case invalidDefaults(String)
     case missingDefaults
     case invalidSpeech(String)
+    case invalidLanguages
     case invalidVariant(String)
 
     public var errorDescription: String? {
@@ -36,6 +37,8 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
             "The default settings are invalid: \(reason)."
         case .invalidSpeech(let reason):
             "The speech settings are invalid: \(reason)."
+        case .invalidLanguages:
+            "\"languages\" needs at least one language code, such as \"en\", each listed once."
         case .missingDefaults:
             "An image model needs default settings: steps, CFG, sampler, width and height."
         case .invalidVariant(let id):
@@ -53,6 +56,15 @@ extension ModelRecipe {
         } else if outputKind == .image {
             throw .missingDefaults
         }
+        if let languages {
+            // A code is handed to the engine as it is, so it must look like one.
+            let isCode: (String) -> Bool = { code in
+                (2...12).contains(code.count) && code.allSatisfy { $0.isASCII && ($0.isLetter || $0 == "-" || $0 == "_") }
+            }
+            guard !languages.isEmpty, Set(languages).count == languages.count, languages.allSatisfy(isCode) else {
+                throw .invalidLanguages
+            }
+        }
         if outputKind == .audio {
             guard let speech, Self.isSafeName(speech.family) else {
                 throw .invalidSpeech("a model that makes audio needs \"speech\" with a \"family\" of letters, digits, dashes and underscores")
@@ -64,6 +76,28 @@ extension ModelRecipe {
             // name must not be able to point anywhere else.
             if let unsafe = self.voices.first(where: { !Self.isSafeName($0) }) {
                 throw .invalidSpeech("the voice name \"\(unsafe)\" may use only letters, digits, dots, dashes and underscores")
+            }
+            // A tag is typed into the text, so it must be short and on one line.
+            let isTag: (String) -> Bool = { tag in
+                (1...40).contains(tag.count) && tag == tag.trimmingCharacters(in: .whitespacesAndNewlines)
+                    && !tag.unicodeScalars.contains(where: CharacterSet.controlCharacters.union(.newlines).contains)
+            }
+            if let styles = speech.styles {
+                // The words are joined with commas for the engine, so none may hold one.
+                let words = styles.flatMap(\.options)
+                let isWord: (String) -> Bool = { isTag($0) && !$0.contains(",") }
+                guard !styles.isEmpty, speech.instruction == nil, Set(styles.map(\.name)).count == styles.count,
+                      styles.allSatisfy({ isTag($0.name) && !$0.options.isEmpty }),
+                      Set(words).count == words.count, words.allSatisfy(isWord)
+                else {
+                    throw .invalidSpeech("\"styles\" needs named groups of words, each word listed once and without commas, and cannot be combined with \"instruction\"")
+                }
+            }
+            if speech.referenceText != nil, speech.reference == nil {
+                throw .invalidSpeech("\"reference_text\" needs \"reference\": the words belong to a recording of a voice")
+            }
+            if let tags = speech.tags, tags.isEmpty || Set(tags).count != tags.count || !tags.allSatisfy(isTag) {
+                throw .invalidSpeech("\"tags\" needs at least one tag of at most 40 characters, each listed once")
             }
         }
         if let baseModel, !Component.isValidRepo(baseModel) { throw .invalidRepo(baseModel) }
@@ -105,8 +139,9 @@ extension ModelRecipe {
         var seenVoices: Set<String> = []
         for component in components {
             if component.role.mayRepeat {
-                // Voices are told apart by name, so two files may not share one.
-                guard seenVoices.insert(component.voiceName).inserted else { throw .duplicateRole(component.role) }
+                // Voices are told apart by name and other files by path, so no two may share one.
+                let key = component.role == .voice ? "voice:" + component.voiceName : "file:" + component.file
+                guard seenVoices.insert(key).inserted else { throw .duplicateRole(component.role) }
             } else {
                 guard seenRoles.insert(component.role).inserted else { throw .duplicateRole(component.role) }
             }

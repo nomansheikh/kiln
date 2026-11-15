@@ -18,6 +18,9 @@ final class ModelLibrary {
     private(set) var recipes: [ModelRecipe] = []
     /// Ids of recipes the user added, as opposed to the ones shipped with the app.
     private(set) var userRecipeIDs: Set<String> = []
+    /// Ids of the entries from the catalogue: models an engine can run that have no
+    /// recipe written and tested for them.
+    private(set) var catalogIDs: Set<String> = []
     private(set) var recipeProblems: [RecipeStore.LoadFailure] = []
     private(set) var installedIDs: Set<String> = []
     private(set) var downloadStatuses: [String: DownloadStatus] = [:]
@@ -49,7 +52,8 @@ final class ModelLibrary {
     /// The recipe shipped with the app that includes files from this Hugging Face repo, if any.
     func curatedRecipe(forRepo repo: String) -> ModelRecipe? {
         recipes.first { recipe in
-            !userRecipeIDs.contains(recipe.id) && recipe.components.contains { $0.repo == repo }
+            !userRecipeIDs.contains(recipe.id) && !catalogIDs.contains(recipe.id)
+                && recipe.components.contains { $0.repo == repo }
         }
     }
 
@@ -87,6 +91,7 @@ final class ModelLibrary {
         sourceRecipes = Dictionary(uniqueKeysWithValues: result.recipes.map { ($0.id, $0) })
         recipes = result.recipes.map(variantSelection.resolve)
         userRecipeIDs = result.userRecipeIDs
+        catalogIDs = result.catalogIDs
         recipeProblems = result.failures
         refreshInstalled()
     }

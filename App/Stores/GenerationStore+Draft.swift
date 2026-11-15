@@ -15,6 +15,10 @@ extension GenerationStore {
         if let recipe, draft.voice.map({ !recipe.voices.contains($0) }) ?? true {
             draft.voice = recipe.defaultVoice
         }
+        // A language the new model does not offer goes back to "Auto".
+        if let language = draft.language, recipe?.languages?.contains(language) != true {
+            draft.language = nil
+        }
         // An attachment the new model cannot take would only make the next prompt fail.
         if let attachment = draft.attachment, let recipe,
            !recipe.inputKinds.contains(where: { AttachmentLibrary.accepts(attachment, as: $0) }) {

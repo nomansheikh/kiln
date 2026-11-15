@@ -25,6 +25,16 @@ enum DebugSnapshot {
         ProcessInfo.processInfo.arguments.contains("--open-voices")
     }
 
+    /// `--voices <folder>` uses that folder as the user's own voices instead of the real one.
+    static var voicesDirectory: URL? {
+        directory(after: "--voices")
+    }
+
+    /// `--open-style` opens the Speech screen's style editor, so a snapshot can include it.
+    static var opensStyleEditor: Bool {
+        ProcessInfo.processInfo.arguments.contains("--open-style")
+    }
+
     /// `--only <screen>` limits a snapshot to one screen, named as in `SidebarItem`.
     private static var onlyItem: SidebarItem? {
         let arguments = ProcessInfo.processInfo.arguments
@@ -43,11 +53,31 @@ enum DebugSnapshot {
         try? await Task.sleep(for: .seconds(1.5))
         if ProcessInfo.processInfo.arguments.contains("--sample-downloads"), let recipe = model.library.recipes.first {
             let total = recipe.totalSizeBytes ?? 1_000
+            var statuses = [recipe.id: DownloadStatus(state: .downloading, receivedBytes: total * 35 / 100, totalBytes: total,
+                                                      currentFile: recipe.components.first?.file)]
+            // One of each ended state too, since those rows are laid out differently.
+            let others = model.library.recipes.dropFirst().prefix(2)
+            if let done = others.first {
+                statuses[done.id] = DownloadStatus(state: .completed, receivedBytes: done.totalSizeBytes ?? 1_000,
+                                                   totalBytes: done.totalSizeBytes, currentFile: nil)
+            }
+            if let failed = others.last, failed.id != others.first?.id {
+                statuses[failed.id] = DownloadStatus(
+                    state: .failed("The download stopped because the connection was lost. Try again."),
+                    receivedBytes: 0, totalBytes: failed.totalSizeBytes, currentFile: nil
+                )
+            }
             model.library.loadPreview(
-                statuses: [recipe.id: DownloadStatus(state: .downloading, receivedBytes: total * 35 / 100, totalBytes: total,
-                                                     currentFile: recipe.components.first?.file)],
+                statuses: statuses,
                 speeds: [recipe.id: DownloadSpeed(bytesPerSecond: 12_400_000, secondsRemaining: 487)]
             )
+        }
+        // `--model <recipe id>` selects an installed model, so its controls can be seen.
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "--model"), arguments.indices.contains(index + 1),
+           let recipe = model.library.installedRecipes.first(where: { $0.id == arguments[index + 1] }) {
+            model.generation.selectRecipe(recipe)
+            if recipe.task == .textToSpeech { model.speech.selectRecipe(recipe) }
         }
         if ProcessInfo.processInfo.arguments.contains("--sample-thread") {
             loadSampleThread(into: model)
@@ -69,14 +99,24 @@ enum DebugSnapshot {
             if let savedFrame { window?.setFrame(savedFrame, display: false) }
             NSApp.terminate(nil)
         }
+        // `--speech-text <text>` fills the Speech screen's field, to show how marks in it are coloured.
+        // `--add-voice` opens the sheet for adding a voice on the Speech screen.
+        model.speech.isAddingVoice = ProcessInfo.processInfo.arguments.contains("--add-voice")
+        let words = ProcessInfo.processInfo.arguments
+        if let index = words.firstIndex(of: "--speech-text"), words.indices.contains(index + 1) {
+            model.speech.text = words[index + 1]
+        }
         for item in SidebarItem.allCases where onlyItem == nil || item == onlyItem {
             model.selection = item
             try? await Task.sleep(for: .seconds(item == .models ? 4 : 1.2))
-            if item == .speech, opensVoiceList {
+            if item == .speech, opensVoiceList || opensStyleEditor {
                 // The list opens a moment after the screen appears.
                 try? await Task.sleep(for: .seconds(1.5))
             }
             save(window, as: item.rawValue, in: directory)
+            if let sheet = window?.attachedSheet {
+                save(sheet, as: "\(item.rawValue)-sheet", in: directory)
+            }
             // A popover is a window of its own.
             let popovers = NSApp.windows.filter { $0 !== window && $0.isVisible && $0.className.contains("Popover") }
             for (index, popover) in popovers.enumerated() {

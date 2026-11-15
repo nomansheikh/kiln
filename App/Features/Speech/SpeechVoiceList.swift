@@ -8,25 +8,33 @@ struct SpeechVoiceList: View {
     let dismiss: () -> Void
 
     var body: some View {
+        let speech = model.speech
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Voice")
                     .font(.headline)
-                Text("Press play to hear a voice before you choose it.")
+                Text(voices.isEmpty
+                    ? "This model can speak in a voice it copies from a recording."
+                    : "Press play to hear a voice before you choose it.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 14)
             .padding(.top, 14)
             .padding(.bottom, 10)
 
             ScrollView {
-                VStack(spacing: 2) {
+                VStack(alignment: .leading, spacing: 2) {
                     ForEach(voices, id: \.self) { voice in
-                        SpeechVoiceRow(voice: voice, isSelected: voice == current) {
-                            model.speech.voice = voice
+                        SpeechVoiceRow(voice: voice, isSelected: speech.savedVoice == nil && voice == current) {
+                            speech.voice = voice
+                            speech.savedVoiceID = nil
                             dismiss()
                         }
+                    }
+                    if speech.copiesVoices {
+                        SpeechSavedVoices(hasModelVoices: !voices.isEmpty, dismiss: dismiss)
                     }
                 }
                 .padding(.horizontal, 8)

@@ -40,12 +40,12 @@ INDEX_NAME = "index.json"
 RESERVED_NAMES = {"index.json", "schema.json"}
 
 # ModelRecipe.ComponentRole
-ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice"]
+ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice", "support"]
 # ComponentRole.mayRepeat: a recipe may list several files with these roles.
-REPEATABLE_ROLES = {"voice"}
+REPEATABLE_ROLES = {"voice", "support"}
 
 RECIPE_KEYS = {
-    "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults", "speech",
+    "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults", "speech", "languages",
     "license_note", "min_memory_gb", "variants", "tested", "base_model",
 }
 # MediaKind
@@ -55,7 +55,8 @@ DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
     "sigmas", "flash_attention", "scheduler", "guidance", "flow_shift",
 }
-SPEECH_KEYS = {"family", "voices", "voice"}
+SPEECH_KEYS = {"family", "voices", "voice", "instruction", "styles", "tags", "reference", "reference_text"}
+INSTRUCTIONS = ("optional", "required")
 VARIANT_KEYS = {"id", "name", "components", "min_memory_gb"}
 
 # Used only when the stable-diffusion.cpp submodule is not checked out.
@@ -197,12 +198,17 @@ def validate_components(components, where, problems, curated, allow_empty=False)
         role = validate_component(component, "%s[%d]: " % (where, index), problems, curated)
         if role is None:
             continue
-        if role in REPEATABLE_ROLES:
+        if role == "voice":
             # Voices are told apart by name, so two files may not share one.
             name = voice_name(component.get("file"))
             if ("voice", name) in roles:
                 problems.append('%s lists the voice "%s" more than once.' % (where, name))
             roles.append(("voice", name))
+            continue
+        if role in REPEATABLE_ROLES:
+            if (role, component.get("file")) in roles:
+                problems.append('%s lists the file "%s" more than once.' % (where, component.get("file")))
+            roles.append((role, component.get("file")))
             continue
         if role in roles:
             problems.append('%s lists more than one "%s" component. Each role may appear once.' % (where, role))
@@ -210,6 +216,7 @@ def validate_components(components, where, problems, curated, allow_empty=False)
     return roles
 
 
+LANGUAGE = re.compile(r"[A-Za-z_-]{2,12}\Z")
 SAFE_NAME = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9._-]*\Z")
 
 
@@ -256,8 +263,40 @@ def validate_speech(recipe, problems, curated):
         problems.append("speech.voice must be a string.")
     elif curated and voice is not None and voice not in names:
         problems.append('speech.voice "%s" is not one of the recipe\'s voices: %s.' % (voice, ", ".join(names) or "none"))
-    if curated and not names:
-        problems.append('The recipe has no voices: add "voice" components or list speech.voices.')
+    for key in ("reference", "reference_text"):
+        if speech.get(key) is not None and speech.get(key) not in INSTRUCTIONS:
+            problems.append("speech.%s must be one of: %s." % (key, ", ".join(INSTRUCTIONS)))
+    if speech.get("reference_text") is not None and speech.get("reference") is None:
+        problems.append("speech.reference_text needs speech.reference: the words belong to a recording of a voice.")
+    # A model that only copies voices has none of its own.
+    if curated and not names and speech.get("reference") != "required":
+        problems.append('The recipe has no voices: add "voice" components, list speech.voices, or set speech.reference to "required".')
+    instruction = speech.get("instruction")
+    if instruction is not None and instruction not in INSTRUCTIONS:
+        problems.append("speech.instruction must be one of: %s." % ", ".join(INSTRUCTIONS))
+    styles = speech.get("styles")
+    if styles is not None:
+        groups = styles if isinstance(styles, list) else []
+        well_formed = bool(groups) and all(
+            isinstance(group, dict) and set(group) == {"name", "options"} and isinstance(group["name"], str)
+            and group["name"].strip() == group["name"] != "" and isinstance(group["options"], list) and group["options"]
+            and all(isinstance(word, str) and 1 <= len(word) <= 40 and word == word.strip() and word.isprintable()
+                    and "," not in word for word in group["options"])
+            for group in groups
+        )
+        words = [word for group in groups if isinstance(group, dict) for word in group.get("options") or []] if well_formed else []
+        names = [group["name"] for group in groups] if well_formed else []
+        if not well_formed or len(set(words)) != len(words) or len(set(names)) != len(names):
+            problems.append('speech.styles must be an array of {"name", "options"} groups, each word listed once and without commas.')
+        if instruction is not None:
+            problems.append("speech.styles and speech.instruction cannot be combined: a model takes fixed words or a free description.")
+    tags = speech.get("tags")
+    if tags is not None and (
+        not isinstance(tags, list) or not tags or any(not isinstance(tag, str) for tag in tags)
+        or len(set(tags)) != len(tags)
+        or any(not 1 <= len(tag) <= 40 or tag != tag.strip() or not tag.isprintable() for tag in tags)
+    ):
+        problems.append("speech.tags must be an array of at least one tag of at most 40 characters, each listed once.")
 
 
 def validate_defaults(defaults, problems, curated):
@@ -371,6 +410,12 @@ def validate_recipe(recipe, curated=True, file_name=None):
         validate_defaults(recipe.get("defaults"), problems, curated)
     if output == "audio" or recipe.get("speech") is not None:
         validate_speech(recipe, problems, curated)
+    languages = recipe.get("languages")
+    if languages is not None and (
+        not isinstance(languages, list) or not languages or len(set(map(str, languages))) != len(languages)
+        or any(not isinstance(code, str) or not LANGUAGE.match(code) for code in languages)
+    ):
+        problems.append('languages must be an array of at least one language code, such as "en", each listed once.')
 
     variants = recipe.get("variants")
     if variants is not None and not isinstance(variants, list):
@@ -591,8 +636,10 @@ def command_new(args):
     speaks = ENGINES[args.engine]["output"] == "audio"
     if speaks and not args.family:
         raise UsageError("A recipe for the %s engine needs --family, the engine's name for the model." % args.engine)
-    if not speaks and (args.family or args.voice or args.voices):
-        raise UsageError("--family, --voice and --voices are for recipes of an engine that makes audio.")
+    if not speaks and (args.family or args.voice or args.voices or args.instruction or args.style or args.tags
+                       or args.reference or args.reference_text):
+        raise UsageError("--family, --voice, --voices, --instruction, --style, --tags, --reference and --reference-text "
+                         "are for recipes of an engine that makes audio.")
 
     defaults = {"steps": args.steps, "cfg": args.cfg, "sampler": args.sampler, "width": args.width, "height": args.height}
     if args.sigmas:
@@ -614,12 +661,29 @@ def command_new(args):
         recipe["output"] = ENGINES[args.engine]["output"]
         if ENGINES[args.engine]["accepts"] is not None:
             recipe["accepts"] = ENGINES[args.engine]["accepts"]
+    if args.languages:
+        recipe["languages"] = [code for value in args.languages for code in value.split(",") if code]
     if speaks:
         recipe["speech"] = {"family": args.family}
         if args.voices:
             recipe["speech"]["voices"] = [name for value in args.voices for name in value.split(",") if name]
         if args.voice:
             recipe["speech"]["voice"] = args.voice
+        if args.instruction:
+            recipe["speech"]["instruction"] = args.instruction
+        if args.style:
+            recipe["speech"]["styles"] = []
+            for value in args.style:
+                name, separator, words = value.partition("=")
+                if not separator:
+                    raise UsageError('--style takes NAME=WORD,WORD, for example "Age=child,elderly".')
+                recipe["speech"]["styles"].append({"name": name.strip(), "options": [w.strip() for w in words.split(",") if w.strip()]})
+        if args.tags:
+            recipe["speech"]["tags"] = args.tags
+        if args.reference:
+            recipe["speech"]["reference"] = args.reference
+        if args.reference_text:
+            recipe["speech"]["reference_text"] = args.reference_text
     if args.license_note:
         recipe["license_note"] = args.license_note
     if args.min_memory_gb is not None:
@@ -919,6 +983,19 @@ def build_parser():
     speech.add_argument("--voice", help="the voice used until the user picks one (default: the first)")
     speech.add_argument("--voices", nargs="+", metavar="NAME",
                         help="voices built into the model file; leave out when the voices are voice= components")
+    speech.add_argument("--instruction", choices=INSTRUCTIONS,
+                        help="the model takes a description of the voice or the delivery: optional, or required to speak at all")
+    speech.add_argument("--style", action="append", metavar="NAME=WORD,WORD",
+                        help='for a model that takes fixed words instead of a description: one group of them, for example '
+                             '"Age=child,elderly"; repeat for each group')
+    speech.add_argument("--tags", nargs="+", metavar="TAG",
+                        help='marks the model understands inside the text, as they are typed, for example "[laughter]"')
+    speech.add_argument("--reference", choices=INSTRUCTIONS,
+                        help="the model can speak in a voice copied from a recording: optional, or required when it has no voice of its own")
+    speech.add_argument("--reference-text", choices=INSTRUCTIONS,
+                        help="whether the model also wants the words spoken in that recording")
+    new.add_argument("--languages", nargs="+", metavar="CODE",
+                     help="language codes the user may choose between, for a speech model that works in several")
     settings = new.add_argument_group("default settings of an image recipe (take them from the model card)")
     settings.add_argument("--steps", type=int, help="sampling steps (required)")
     settings.add_argument("--cfg", type=float, help="classifier-free guidance scale (required)")

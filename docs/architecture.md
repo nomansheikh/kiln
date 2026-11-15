@@ -58,7 +58,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 
 | Module | Main types | Responsibility |
 | --- | --- | --- |
-| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
+| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes and the generated catalogue of models without a recipe, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
 | `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator` | Download queue, resumable transfers, verification, on-disk layout, speed estimate. |
 | `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `HelperSession`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format. |
@@ -72,6 +72,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 
 - `GET /api/models?pipeline_tag=text-to-image&sort=downloads&direction=-1&limit=<n>[&search=<query>]` for search (the limit defaults to 30; an empty query lists the most downloaded models)
 - `GET /api/models/<owner>/<repo>?blobs=true` for a repo's files with sizes and SHA-256 checksums
+- `GET /api/models/<owner>/<repo>` for one repo's summary. A search that is a repo id (`owner/name`) or a link to a repo page asks for that repo first and puts it at the top of the results, so a model outside the text-to-image list can be found by its id
 - `GET /api/whoami-v2` to check a token
 
 Files are downloaded from `https://huggingface.co/<repo>/resolve/<revision>/<file>`, with `main` as the revision when a recipe does not pin one.
@@ -117,7 +118,7 @@ The helper stays alive between generations so the model stays loaded.
 It follows the same lifecycle and line protocol as `kiln-engine`, with one request of its own:
 
 ```json
-{"type":"transcribe","model":"/…/ggml-large-v3-turbo.bin","audio":"/tmp/kiln-whisper/<uuid>.f32","prompt":"","output":"/tmp/kiln-whisper/<uuid>.txt"}
+{"type":"transcribe","model":"/…/ggml-large-v3-turbo.bin","audio":"/tmp/kiln-whisper/<uuid>.f32","prompt":"","language":"auto","output":"/tmp/kiln-whisper/<uuid>.txt"}
 ```
 
 | Field | Meaning |
@@ -125,20 +126,21 @@ It follows the same lifecycle and line protocol as `kiln-engine`, with one reque
 | `model` | Path of the model file. The helper keeps it loaded and reloads only when the path changes. |
 | `audio` | File of raw 32-bit little-endian float samples, mono, 16 kHz. The app decodes the attached file with AVFoundation (`AudioSamples`), so the helper needs no audio codecs. |
 | `prompt` | Optional words to expect, such as names. Passed to whisper.cpp as the initial prompt. |
+| `language` | Code of the spoken language, or `auto` to detect it. |
 | `output` | File the helper writes the transcript to, as UTF-8. |
 
-The spoken language is detected automatically and timestamps are not produced. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), then one of `text` (`{"type":"text","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
+Timestamps are not produced. The language is detected unless the user picks one: a recipe's `languages` field lists what the model supports, the composer offers them in a menu with "Auto" first, and an engine passes the choice on only when the recipe lists it. `kiln-audio`'s `speak` request takes the same optional `language` field. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), then one of `text` (`{"type":"text","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
 
 `WhisperCppEngine` requires an attachment (`missingAudio` otherwise), writes the samples and reads the transcript in its scratch folder, and removes both files when the job ends. A file AVFoundation cannot decode fails with `unreadableAudio` before the helper is started.
 
 ## The text-to-speech helper
 
-`kiln-audio` is [`Engine/audio/main.cpp`](../Engine/audio/main.cpp), linked statically against audio.cpp (`Vendor/audio.cpp`, a submodule pinned to a release tag) with Metal on. [`Engine/audio/CMakeLists.txt`](../Engine/audio/CMakeLists.txt) compiles in only the model families Kiln has recipes for (`AUDIOCPP_MODELS`), compiles the model descriptions into the binary so it needs no files beside it, and builds for any Apple Silicon chip rather than the build machine's. audio.cpp offers its C interface only as a shared library, so the helper compiles that one source file (`src/capi/audiocpp.cpp`) into itself. Adding a model family means adding it to `AUDIOCPP_MODELS` and writing a recipe.
+`kiln-audio` is [`Engine/audio/main.cpp`](../Engine/audio/main.cpp), linked statically against audio.cpp (`Vendor/audio.cpp`, a submodule pinned to a release tag) with Metal on. [`Engine/audio/CMakeLists.txt`](../Engine/audio/CMakeLists.txt) compiles in every model family audio.cpp supports, so that any model in the catalogue can run, compiles the model descriptions into the binary so it needs no files beside it, and builds for any Apple Silicon chip rather than the build machine's. audio.cpp offers its C interface only as a shared library, so the helper compiles that one source file (`src/capi/audiocpp.cpp`) into itself. With every family compiled in the helper is about 38 MB, against 7 MB with one.
 
 It has one request:
 
 ```json
-{"type":"speak","model":"/…/pocket-tts-english-bf16.gguf","family":"pocket_tts","text":"Hello.","voice":"alba","output":"/tmp/kiln-audio/<uuid>.f32"}
+{"type":"speak","model":"/…/pocket-tts-english-bf16.gguf","family":"pocket_tts","text":"Hello.","voice":"alba","backend":"metal","output":"/tmp/kiln-audio/<uuid>.f32"}
 ```
 
 | Field | Meaning |
@@ -147,9 +149,15 @@ It has one request:
 | `family` | audio.cpp's name for the kind of model, from the recipe's `speech.family`. |
 | `text` | What to say. |
 | `voice` | A voice name. Some models have voices built in; PocketTTS loads `embeddings/<voice>.safetensors` beside the model file, which is where the recipe's `voice` files are stored. |
+| `voice_audio`, `voice_sample_rate` | Optional. A recording of the voice to speak in, as a file of raw mono 32-bit floats, and its sample rate. It takes the place of `voice`. The helper then opens the model for audio.cpp's `clon` task when the model has one, and for `tts` otherwise; switching between the two reloads the model. The app sends it only for a recipe with `speech.reference`. |
+| `language` | A language code, when the user chose one. Absent lets the model decide. |
+| `options` | Optional object of settings by the names audio.cpp gives them, each a string. The app sends `{"reference_text": "…"}` with a voice recording for a recipe that has `speech.reference_text`, and `{"instruct": "…"}` for a recipe whose model takes a description of the voice (`speech.instruction`) or fixed style words (`speech.styles`), and never for another. |
+| `backend` | `metal` for the GPU (the default) or `cpu`. Changing it reloads the model. |
 | `output` | File the helper writes the sound to, as raw interleaved 32-bit floats. |
 
 Events are `ready`, `loading`, `progress` (stage `speaking`, no measurable total), then `audio` (`{"type":"audio","path":…,"sample_rate":24000,"channels":1,"frames":…}`) or `error`, then `idle`. audio.cpp cannot stop a run in progress, so `cancel` is accepted and ignored: a cancelled job ends for the app at once, and the helper is killed only if the run has not finished within the grace period.
+
+Not every audio.cpp model works on Metal yet: Soprano, for one, brings the helper down on the GPU and runs correctly on the CPU. So when the helper crashes during a GPU run, `AudioCppEngine` runs the same request once more with `"backend":"cpu"`, and keeps that model on the CPU for as long as the app is open. A crash on the CPU is reported as a crash.
 
 `AudioCppEngine` refuses an empty text (`missingText`) and a voice the recipe does not list (`unknownVoice`), checks that the output file holds exactly `frames * channels` floats, and yields a `GeneratedAudio`. Recipe validation restricts `speech.family` and voice names to letters, digits, dots, dashes and underscores, because the engine builds a file path from a voice name.
 
@@ -466,7 +474,7 @@ Each screen has a folder under `App/Features/` with one primary view per file.
 
 - **Generate:** the thread (`GenerationThread`, `GenerationTurnView`), the composer (`PromptComposer`) with attachment, size menu and advanced settings, the progress placeholder that shows step previews (`GenerationPlaceholder`), and the actions under a finished image.
 - **Speech:** a screen for text to speech, laid out like Generate: the model capsule (`SpeechModelMenu`), a centred greeting and composer with starter texts while there are no clips, then the composer at the top with every clip under it, newest first (`SpeechClipList`). Sending empties the composer (`SpeechComposer`), as in a chat; the text comes back if the clip fails or is stopped, and any clip's text can be put back with "Use this text again". Its chips choose the voice (`SpeechVoiceChip`, opening `SpeechVoiceList`) and the playback speed. Each clip is a card (`SpeechClipCard`) with a play button, a waveform to scrub through (`WaveformView`, drawn from `AudioWaveform.peaks`), the text it was made from and its actions; the clip being made is a `SpeechWorkingCard`. A new clip plays as soon as it is ready. In the voice list each voice has a play button: the first time, a short sample is generated and kept in `~/Library/Caches/Kiln/voice-samples/`, so later auditions are instant. Speech models can also be used from the chat thread; both write to the same audio folder.
-- **Models:** recipe cards with download controls and the memory-fit label, the "Import Recipe" button, and under `Hub/` the Hugging Face list and search. `HubSearchModel` is a view-local observable that holds the debounced search and the file lists of opened repos.
+- **Models:** recipe cards with download controls and the memory-fit label, a "More models" section for the catalogue (folded until opened, with a note that its entries are untested), a search field that filters Kiln's own models by name before showing Hugging Face results, the "Import Recipe" button, and under `Hub/` the Hugging Face list and search. `HubSearchModel` is a view-local observable that holds the debounced search and the file lists of opened repos.
 - **Gallery:** the grid, the detail panel and the item actions.
 - **Settings:** cards for the Hugging Face token, hardware, storage folders and app information.
 

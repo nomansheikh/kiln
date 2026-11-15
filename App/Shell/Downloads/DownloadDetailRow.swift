@@ -1,8 +1,9 @@
 import KilnCore
 import SwiftUI
 
-/// One download in the downloads popover: its name, a progress bar with
-/// its controls, and a single line saying where it stands.
+/// One download in the downloads popover. While it is transferring: its name,
+/// a progress bar with its controls, and a line saying where it stands. Once
+/// it has ended there is no bar, so the name and the line sit beside the buttons.
 struct DownloadDetailRow: View {
     let name: String
     let status: DownloadStatus
@@ -16,24 +17,26 @@ struct DownloadDetailRow: View {
     let use: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(name)
-                .font(.callout.weight(.medium))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .help(name)
-
-            HStack(spacing: 6) {
-                progress
-                controls
+        Group {
+            if hasEnded {
+                HStack(alignment: .center, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        title
+                        detailLine
+                    }
+                    Spacer(minLength: 4)
+                    HStack(spacing: 6) { controls }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    title
+                    HStack(spacing: 6) {
+                        progress
+                        controls
+                    }
+                    detailLine
+                }
             }
-
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(isFailed ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
-                .monospacedDigit()
-                .lineLimit(isFailed ? 3 : 1)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -43,6 +46,34 @@ struct DownloadDetailRow: View {
 
     private var isFailed: Bool {
         if case .failed = status.state { true } else { false }
+    }
+
+    /// Finished or failed: nothing is transferring, so there is no progress to show.
+    private var hasEnded: Bool {
+        status.state == .completed || isFailed
+    }
+
+    private var title: some View {
+        Text(name)
+            .font(.callout.weight(.medium))
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .help(name)
+    }
+
+    private var detailLine: some View {
+        HStack(spacing: 4) {
+            if status.state == .completed {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            }
+            Text(detail)
+                .foregroundStyle(isFailed ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .monospacedDigit()
+                .lineLimit(isFailed ? 3 : 1)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.caption)
     }
 
     @ViewBuilder
@@ -57,7 +88,7 @@ struct DownloadDetailRow: View {
                 .progressViewStyle(.linear)
                 .tint(Theme.accent)
         case .completed, .failed:
-            Spacer(minLength: 0)
+            EmptyView()
         }
     }
 

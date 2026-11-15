@@ -25,9 +25,9 @@ set(ENGINE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(AUDIOCPP_BUILD_NATIVE_MODEL_MANAGER OFF CACHE BOOL "" FORCE)
 # Compile the model descriptions in, so the helper needs no files beside it.
 set(AUDIOCPP_DEPLOYMENT_BUILD ON CACHE BOOL "" FORCE)
-# Only the model families Kiln has recipes for are compiled in.
-set(AUDIOCPP_MODEL_SET "custom" CACHE STRING "" FORCE)
-set(AUDIOCPP_MODELS "pocket_tts" CACHE STRING "" FORCE)
+# Every model family audio.cpp supports is compiled in, so the app can run any
+# model in audio.cpp's catalogue, not only those with a hand-written recipe.
+set(AUDIOCPP_MODEL_SET "full" CACHE STRING "" FORCE)
 
 add_subdirectory(${AUDIOCPP_DIR} audiocpp EXCLUDE_FROM_ALL)
 

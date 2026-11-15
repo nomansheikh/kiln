@@ -9,11 +9,15 @@ extension EngineMessage {
         var audio: String
         /// Words to expect, such as names. Empty for none.
         var prompt: String
+        /// Code of the spoken language, or `auto` to detect it.
+        var language: String
         /// File the helper writes the transcript to.
         var output: String
     }
 
-    static func transcribeCommand(model: URL, audio: URL, prompt: String, output: URL) throws -> Data {
-        try line(TranscribeCommand(model: model.path, audio: audio.path, prompt: prompt, output: output.path))
+    static func transcribeCommand(model: URL, audio: URL, prompt: String, language: String? = nil, output: URL) throws -> Data {
+        try line(TranscribeCommand(
+            model: model.path, audio: audio.path, prompt: prompt, language: language ?? "auto", output: output.path
+        ))
     }
 }

@@ -1,8 +1,22 @@
 import Foundation
 
 /// Turns text into speech with audio.cpp, through the `kiln-audio` helper process.
+///
+/// Models run on the GPU. A model that brings the helper down there is run
+/// again on the CPU, and stays on the CPU for as long as the app is open:
+/// some of audio.cpp's models do not work on Metal yet.
 public final class AudioCppEngine: InferenceEngine {
     public static let engineID = "audio.cpp"
+
+    /// The models that failed on the GPU.
+    private actor Fallbacks {
+        private var recipeIDs: Set<String> = []
+
+        func contains(_ id: String) -> Bool { recipeIDs.contains(id) }
+        func insert(_ id: String) { recipeIDs.insert(id) }
+    }
+
+    private let fallbacks = Fallbacks()
 
     private let storage: ModelStorage
     private let scratchDirectory: URL
@@ -29,12 +43,44 @@ public final class AudioCppEngine: InferenceEngine {
         request: GenerationRequest
     ) -> AsyncThrowingStream<GenerationEvent, Error> {
         AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let onGPU = await !fallbacks.contains(recipe.id)
+                    do {
+                        try await forward(attempt(recipe: recipe, request: request, onGPU: onGPU), to: continuation)
+                    } catch EngineError.crashed where onGPU {
+                        await fallbacks.insert(recipe.id)
+                        continuation.yield(.loadingModel)
+                        try await forward(attempt(recipe: recipe, request: request, onGPU: false), to: continuation)
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            // Cancelling the task ends the attempt's stream, which cancels its job.
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func forward(
+        _ events: AsyncThrowingStream<GenerationEvent, Error>,
+        to continuation: AsyncThrowingStream<GenerationEvent, Error>.Continuation
+    ) async throws {
+        for try await event in events {
+            continuation.yield(event)
+        }
+    }
+
+    /// One run of the request, on the GPU or on the CPU.
+    private func attempt(recipe: ModelRecipe, request: GenerationRequest, onGPU: Bool) -> AsyncThrowingStream<GenerationEvent, Error> {
+        AsyncThrowingStream { continuation in
             let id = UUID()
             continuation.onTermination = { [session] reason in
                 guard case .cancelled = reason else { return }
                 Task { await session.cancel(id) }
             }
-            Task { await self.start(id: id, recipe: recipe, request: request, continuation: continuation) }
+            Task { await self.start(id: id, recipe: recipe, request: request, onGPU: onGPU, continuation: continuation) }
         }
     }
 
@@ -46,6 +92,7 @@ public final class AudioCppEngine: InferenceEngine {
         id: UUID,
         recipe: ModelRecipe,
         request: GenerationRequest,
+        onGPU: Bool,
         continuation: AsyncThrowingStream<GenerationEvent, Error>.Continuation
     ) async {
         do {
@@ -57,21 +104,29 @@ public final class AudioCppEngine: InferenceEngine {
             else {
                 throw EngineError.missingComponents(missing.isEmpty ? ["the model file"] : missing)
             }
-            let text = request.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Marks such as "[laughs]" reach the model in its own spelling, or not at all.
+            let text = SpeechMarks.apply(
+                to: request.prompt.trimmingCharacters(in: .whitespacesAndNewlines), tags: recipe.speech?.tags ?? []
+            )
             guard !text.isEmpty else { throw EngineError.missingText }
-            // Only a voice the recipe lists is passed on: some models load a voice
-            // from a file named after it.
-            let voice = request.speech?.voice ?? recipe.defaultVoice
-            if let voice, !recipe.voices.contains(voice) { throw EngineError.unknownVoice(voice) }
+            let direction = try Self.direction(for: request, recipe: recipe)
 
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).f32")
+            var files = [output]
+            var voiceAudio: (file: URL, sampleRate: Int)?
+            if let reference = direction.reference {
+                let samples = scratchDirectory.appendingPathComponent("\(id.uuidString)-voice.f32")
+                try AudioSamples.writeReference(reference, to: samples)
+                files.append(samples)
+                voiceAudio = (samples, Int(AudioSamples.referenceSampleRate))
+            }
             let command = try EngineMessage.speakCommand(
-                model: storage.url(for: model), family: family, text: text,
-                voice: voice, output: output
+                model: storage.url(for: model), family: family, text: text, voice: direction.voice, voiceAudio: voiceAudio,
+                language: request.language(for: recipe), options: direction.options, onGPU: onGPU, output: output
             )
 
-            await session.run(id: id, command: command, files: [output], continuation: continuation) { event in
+            await session.run(id: id, command: command, files: files, continuation: continuation) { event in
                 guard case .audio(let path, let sampleRate, let channels, let frames) = event else { return nil }
                 guard sampleRate > 0, channels > 0, frames > 0,
                       let samples = try? Data(contentsOf: URL(fileURLWithPath: path)),

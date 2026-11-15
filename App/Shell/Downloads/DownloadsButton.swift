@@ -38,6 +38,14 @@ struct DownloadsButton: View {
         .focusable(false)
         .onHover { hovering = $0 }
         .help("Show downloads")
+        #if DEBUG
+        .task {
+            // `--open-downloads` opens the list, so a snapshot can include it.
+            guard ProcessInfo.processInfo.arguments.contains("--open-downloads") else { return }
+            try? await Task.sleep(for: .milliseconds(700))
+            showsDetails = true
+        }
+        #endif
         .popover(isPresented: $showsDetails, arrowEdge: .trailing) {
             DownloadsPopover()
                 .environment(model)

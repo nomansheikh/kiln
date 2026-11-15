@@ -18,6 +18,8 @@ struct GenerationDraft: Equatable {
     var editStrength = EditStrength.balanced
     /// The voice a speech model speaks in. Nil uses the model's own default.
     var voice: String?
+    /// Code of the language a speech model works in. Nil lets the model decide.
+    var language: String?
 
     /// Applies a recipe's recommended settings, keeping the prompt.
     mutating func apply(_ defaults: ModelRecipe.ImageDefaults) {
@@ -45,7 +47,9 @@ struct GenerationDraft: Equatable {
     /// The request to send to a model: the prompt, the attachment, and the
     /// settings of the model's kind.
     func request(for recipe: ModelRecipe) -> GenerationRequest {
-        var request = GenerationRequest(prompt: prompt.trimmingCharacters(in: .whitespacesAndNewlines), attachment: attachment)
+        var request = GenerationRequest(
+            prompt: prompt.trimmingCharacters(in: .whitespacesAndNewlines), attachment: attachment, language: language
+        )
         if recipe.outputKind == .image {
             request.image = ImageSettings(
                 negativePrompt: negativePrompt,

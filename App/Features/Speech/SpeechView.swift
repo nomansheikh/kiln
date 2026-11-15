@@ -58,6 +58,10 @@ struct SpeechView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(Motion.layout(reduced: reduceMotion), value: isEmpty)
+        .sheet(isPresented: Bindable(speech).isAddingVoice) {
+            SpeechVoiceEditor()
+                .environment(model)
+        }
         .alert("Could Not Generate Speech", isPresented: Binding(isPresenting: Bindable(speech).errorMessage)) {
             Button("OK", role: .cancel) {}
         } message: {

@@ -1,0 +1,69 @@
+{
+  "$schema": "./schema.json",
+  "id": "qwen3-tts-1.7b-customvoice",
+  "name": "Qwen3-TTS 1.7B CustomVoice",
+  "engine": "audio.cpp",
+  "components": [],
+  "output": "audio",
+  "languages": [
+    "en",
+    "zh",
+    "ja",
+    "ko",
+    "de",
+    "fr",
+    "ru",
+    "pt",
+    "es",
+    "it"
+  ],
+  "speech": {
+    "family": "qwen3_tts",
+    "instruction": "optional",
+    "voices": [
+      "ryan",
+      "aiden",
+      "vivian",
+      "serena",
+      "uncle_fu",
+      "dylan",
+      "eric",
+      "ono_anna",
+      "sohee"
+    ],
+    "voice": "ryan"
+  },
+  "license_note": "Apache-2.0, by Alibaba Cloud (Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice). The nine speakers are built into the model; Ryan and Aiden are native English voices and the others are Chinese, Japanese and Korean, though each can speak the model's ten languages. The files are the GGUF conversion published for audio.cpp (audio-cpp/audio.cpp-gguf).",
+  "variants": [
+    {
+      "id": "bf16",
+      "name": "BF16 (best quality)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-bf16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 4179155488,
+          "sha256": "5be0742e196ea9cd9ce0d7d8b69b0fc4fa8181b06cb0bd0591fb1dcdfce6c5a5"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "Q8 (smaller)",
+      "min_memory_gb": 8,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 2817055200,
+          "sha256": "c8ac3f94b6e73f137c0e7ecc9270bc8faec7a476ff799b87e48844d1d0987ac3"
+        }
+      ]
+    }
+  ]
+}

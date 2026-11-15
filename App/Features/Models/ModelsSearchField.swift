@@ -13,7 +13,7 @@ struct ModelsSearchField: View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search Hugging Face", text: $text)
+            TextField("Search models", text: $text)
                 .textFieldStyle(.plain)
                 .focused($isFocused)
                 .onExitCommand { text = "" }

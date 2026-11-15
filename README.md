@@ -17,6 +17,7 @@ Kiln is early. Read this before relying on it.
 
 - **Tested:** text-to-image with the Stable Diffusion XL Base 1.0 recipe has been downloaded and run end to end through the app on one machine, an Apple M5 Ultra with 96 GB of memory. No other machine has been tested.
 - **Not run yet:** the Qwen-Image 2.1 Turbo recipe.
+- **Models without a recipe:** of the generated entries, MOSS-TTS-Nano, Soprano (on the CPU, after crashing on the GPU), Qwen3-TTS CustomVoice, VibeVoice 1.5B and Whisper Tiny were downloaded and run on the same machine, and their output transcribes back to the input. The other entries have not been run; ones that clone a voice need a reference recording, which Kiln cannot supply yet.
 - **Text to speech:** the engine, the helper and the PocketTTS English recipe's files have generated speech on the same machine (about 50 seconds of audio in 1.5 seconds), and the result transcribes back to the input text. The recipe has also been downloaded and used through the app. audio.cpp is a young library, and stopping a generation midway and long texts have not been tried.
 - **Speech to text:** the Whisper Large v3 Turbo recipe has been downloaded and has transcribed a recording through the app on the same machine. Cancelling a transcription and long recordings have not been tried.
 - **Implemented but not confirmed with a real model:** image-to-image (attaching an image) and the live step preview. Both are unit-tested at the protocol level only.
@@ -31,11 +32,17 @@ Kiln is early. Read this before relying on it.
 
 - **Chat-style generation.** Each prompt and its image form a turn in a thread. Chats are saved and listed in the sidebar, where they can be renamed, archived and deleted.
 - **Live step preview.** While an image is sampling, a rough preview is shown when the model can provide one.
-- **Speech to text.** Pick a Whisper model, attach an audio file (WAV, MP3, M4A and other formats macOS can read) and send it; the transcript appears in the thread. An optional prompt lists names or words to expect. The language is detected automatically.
+- **Speech to text.** Pick a Whisper model, attach an audio file (WAV, MP3, M4A and other formats macOS can read) and send it; the transcript appears in the thread. An optional prompt lists names or words to expect. The language is detected automatically, or chosen from the languages the model supports.
 - **Text to speech.** The Speech screen works like Generate: type or paste text, choose a voice (you can hear each one first) and send. Every clip appears as a card with a waveform to scrub through, the text it came from, a playback speed, and save, share and delete. A clip's text can be put back in the composer to change the wording or the voice and try again. Each clip is saved as a WAV file. Voice models also work from a chat.
 - **Image-to-image.** Attach an image with the plus button, by dropping a file on the composer, or with "Edit this image" on a result. Three strengths: Subtle, Balanced and Strong.
+- **Your own voices.** With a model that can copy a voice, add a short recording of someone speaking and the model reads in that voice. Recordings stay on your Mac. Only add a voice you have the right to use.
+- **Expression.** A voice model that can be directed gets the controls it supports and no others: a Style field for a description such as "Very happy.", a Style menu when the model only knows fixed words (age, pitch, accent), and a Sounds menu for laughs, sighs and other marks it understands in the text. A sound can be written in the text the same way for every model, as in `Well [laughs] that worked`: Kiln turns it into the model's own spelling and leaves it out for a model that has no such sound. The Speech screen colours each mark as you type and strikes through the ones the selected model will skip.
+- **Language choice.** A speech model that works in several languages gets a language menu listing what it supports, with "Auto" first.
+- **Falls back to the CPU.** A speech model that crashes on the GPU is run again on the CPU instead of failing.
+- **Models without a recipe.** Beyond the curated recipes, the Models screen lists every text-to-speech model audio.cpp publishes in a form Kiln can run, and every Whisper model, under "More models". They are generated from the engines' own lists, pinned and checksummed like recipes, but not tested.
 - **Model recipes.** A JSON manifest lists every file a model needs and its recommended settings, so a model is one click to download. Two recipes ship with the app: Stable Diffusion XL Base 1.0 and Qwen-Image 2.1 Turbo.
 - **Filter by task.** Once the recipes cover more than one task, chips above the list narrow it to Images, Speech to text or Text to speech. The Hugging Face list holds image models only, so it is shown for All and Images.
+- **Search by name, repo or link.** The search field matches Kiln's own models by name or by the Hugging Face repo their files come from, and a repo id such as `owner/name`, or a pasted link to its page, finds that repo whatever kind of model it holds.
 - **Hugging Face browsing and search.** The Models screen lists the most downloaded text-to-image repos and searches the Hub. Each repo shows its `.safetensors` and `.gguf` files, which can be downloaded one at a time.
 - **Downloads.** Resumable, checked against the pinned size and SHA-256, with pause and cancel. A downloads panel in the sidebar shows progress, speed and time left.
 - **Memory-fit label.** Each recipe and Hub file is marked as fitting, tight or too large for this Mac.
@@ -86,6 +93,7 @@ swift test
 | `App/` | SwiftUI app: `Stores/`, `Features/`, `Shell/`, `DesignSystem/`, `Support/` |
 | `Sources/KilnCore/` | UI-free core library: recipes, Hugging Face client, downloads, engine client, gallery, chats |
 | `Engine/` | `kiln-engine`, the C++ helper that runs stable-diffusion.cpp, `kiln-whisper` (in `whisper/`), the one that runs whisper.cpp, and `kiln-audio` (in `audio/`), the one that runs audio.cpp |
+| `catalog/` | Generated lists of models that have no recipe (`scripts/catalog.py`) |
 | `recipes/` | Curated recipe manifests bundled into the app |
 | `Tests/` | Unit tests for KilnCore |
 | `docs/` | Architecture and recipe reference |

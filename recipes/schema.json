@@ -62,8 +62,54 @@
         "voice": {
           "description": "The voice used until the user picks one. The first voice when absent.",
           "type": "string"
+        },
+        "instruction": {
+          "description": "Whether the model takes a description of the voice or the delivery, such as \"Very happy.\": \"optional\", or \"required\" for a model that cannot speak without one. Leave out for a model that takes none.",
+          "enum": ["optional", "required"]
+        },
+        "styles": {
+          "description": "For a model that takes fixed words instead of a free description: the words, in groups of which one may be chosen. The chosen words are sent joined with commas. Cannot be combined with \"instruction\".",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "options"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "description": "What the words describe, for example \"Age\".", "type": "string", "minLength": 1, "maxLength": 40 },
+              "options": {
+                "description": "The words as the engine takes them, for example \"young adult\".",
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^,]+$" }
+              }
+            }
+          }
+        },
+        "reference": {
+          "description": "Whether the model can speak in a voice copied from a recording: \"optional\", or \"required\" for a model with no voice of its own. Leave out for a model that cannot copy a voice.",
+          "enum": ["optional", "required"]
+        },
+        "reference_text": {
+          "description": "Whether the model also wants the words spoken in that recording: \"optional\" or \"required\". Needs \"reference\".",
+          "enum": ["optional", "required"]
+        },
+        "tags": {
+          "description": "Marks the model understands inside the text, written as they are typed, for example \"[laughter]\". The app offers them in a menu.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 }
         }
       }
+    },
+    "languages": {
+      "description": "Codes of the languages the user may choose between, such as \"en\", for a speech model that works in several. The app offers them with \"Auto\" first. Leave out for a model that works in one language or decides by itself.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z_-]{2,12}$" }
     },
     "license_note": {
       "description": "Short, accurate summary of the licence of every file, including restrictions such as non-commercial use. When components have different licences, name each one.",
@@ -136,8 +182,8 @@
       "additionalProperties": false,
       "properties": {
         "role": {
-          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). model: the main file of a model whose engine needs no other kind of file (whisper.cpp, audio.cpp). voice: a voice a speech model can speak in, named after the file. Each role may appear once in a list, except voice.",
-          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice"]
+          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). model: the main file of a model whose engine needs no other kind of file (whisper.cpp, audio.cpp). voice: a voice a speech model can speak in, named after the file. support: another file the engine finds beside the model, such as a tokenizer. Each role may appear once in a list, except voice and support.",
+          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice", "support"]
         },
         "repo": {
           "description": "Hugging Face repo id in the form owner/name, for example \"stabilityai/stable-diffusion-xl-base-1.0\".",

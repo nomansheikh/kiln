@@ -15,6 +15,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "audiocpp.h"
 #include "json.hpp"
@@ -73,8 +74,9 @@ void unload() {
     g_loaded_key.clear();
 }
 
-bool load_model(const std::string& path, const std::string& family) {
-    const std::string key = family + "\n" + path;
+// `copies_voice` is true for a request that brings a recording of the voice to speak in.
+bool load_model(const std::string& path, const std::string& family, const std::string& backend_name, bool copies_voice) {
+    const std::string key = family + "\n" + path + "\n" + backend_name + (copies_voice ? "\nclone" : "");
     if (g_session != nullptr && key == g_loaded_key) {
         return true;
     }
@@ -91,8 +93,11 @@ bool load_model(const std::string& path, const std::string& family) {
         unload();
         return false;
     }
-    const audiocpp_backend_config backend = {"metal", 0, 4};
-    if (failed(audiocpp_session_create(g_model, "tts", "offline", &backend, nullptr, &g_session), "load_failed",
+    const audiocpp_backend_config backend = {backend_name.c_str(), 0, 4};
+    // Copying a voice is a task of its own in the models that have one; the others
+    // take the recording on an ordinary request.
+    const char* task = copies_voice && audiocpp_model_supports(g_model, "clon", "offline") == 1 ? "clon" : "tts";
+    if (failed(audiocpp_session_create(g_model, task, "offline", &backend, nullptr, &g_session), "load_failed",
                "The model could not be loaded.")) {
         unload();
         return false;
@@ -102,7 +107,26 @@ bool load_model(const std::string& path, const std::string& family) {
 }
 
 void speak(const json& request) {
-    if (!load_model(request.at("model").get<std::string>(), request.value("family", std::string()))) {
+    // The GPU unless the app asks for the CPU, which it does for a model that fails on the GPU.
+    // A recording of the voice to speak in: raw mono 32-bit floats, as the app decodes them.
+    std::vector<float> voice_samples;
+    const std::string voice_audio = request.value("voice_audio", std::string());
+    const int voice_rate          = request.value("voice_sample_rate", 0);
+    if (!voice_audio.empty()) {
+        std::ifstream file(voice_audio, std::ios::binary | std::ios::ate);
+        const std::streamoff size = file ? static_cast<std::streamoff>(file.tellg()) : 0;
+        if (size < static_cast<std::streamoff>(sizeof(float)) || voice_rate <= 0) {
+            emit_error("invalid_request", "The voice recording could not be read.");
+            return;
+        }
+        voice_samples.resize(static_cast<size_t>(size) / sizeof(float));
+        file.seekg(0);
+        file.read(reinterpret_cast<char*>(voice_samples.data()),
+                  static_cast<std::streamsize>(voice_samples.size() * sizeof(float)));
+    }
+
+    if (!load_model(request.at("model").get<std::string>(), request.value("family", std::string()),
+                    request.value("backend", std::string("metal")), !voice_samples.empty())) {
         return;
     }
 
@@ -112,7 +136,9 @@ void speak(const json& request) {
 
     audiocpp_request* speech = audiocpp_request_create();
     audiocpp_status status   = audiocpp_request_set_text(speech, text.c_str(), language.empty() ? nullptr : language.c_str());
-    if (status == AUDIOCPP_OK && !voice.empty()) {
+    if (status == AUDIOCPP_OK && !voice_samples.empty()) {
+        status = audiocpp_request_set_voice_audio(speech, voice_samples.data(), voice_samples.size(), voice_rate, 1);
+    } else if (status == AUDIOCPP_OK && !voice.empty()) {
         status = audiocpp_request_set_voice_id(speech, voice.c_str());
     }
     // Model-specific settings, such as a seed, by the names audio.cpp gives them.
