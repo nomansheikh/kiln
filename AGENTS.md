@@ -28,7 +28,7 @@ There are two kinds of contribution:
 | `App/Shell/` | Window, sidebar, chat list, and `Downloads/` (the downloads popover). |
 | `App/DesignSystem/` | Shared views and styles: `Theme`, `Motion`, button styles, `Pill`, `Thumbnail` and others. |
 | `App/Support/` | `AppDelegate`, `KeyboardNavigationMonitor`, `DebugSnapshot`. |
-| `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. |
+| `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. Also `sandbox.h`, which all three helpers include to confine themselves at start. |
 | `Engine/whisper/` | `kiln-whisper`: the C++ helper that links whisper.cpp and turns speech into text. |
 | `Engine/audio/` | `kiln-audio`: the C++ helper that links audio.cpp, with every model family compiled in, and turns text into speech. |
 | `Vendor/stable-diffusion.cpp/` | Git submodule. Read-only. Its `docs/` folder documents each supported model family. |
@@ -273,6 +273,7 @@ Curated recipes are fetched by released apps from this repository (once it is pu
 - **Comments** only where something is not obvious from the code. Explain why, not what.
 - **Coupled changes:**
   - Helper protocol: `Engine/main.cpp`, `Engine/whisper/main.cpp` or `Engine/audio/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` (and `EngineMessage+Transcribe.swift`, `EngineMessage+Speak.swift`) and `docs/architecture.md` together.
+  - Helper sandbox: a helper may only touch the models folder and its engine's scratch folder. A change that makes a helper read or write anywhere else needs `Engine/sandbox.h`, `SECURITY.md` and `docs/architecture.md` changed with it, and a real run of all three helpers.
   - Recipe format: `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and `docs/recipes.md` together.
 
 ### Tests
