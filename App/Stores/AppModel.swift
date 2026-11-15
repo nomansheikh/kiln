@@ -55,7 +55,12 @@ final class AppModel {
         let audioDirectory = AudioStore.defaultDirectory
         #endif
         let audio = AudioLibrary(store: AudioStore(directory: audioDirectory))
-        let chats = ChatLibrary(store: ChatStore(directory: ChatStore.defaultDirectory))
+        #if DEBUG
+        let chatsDirectory = DebugSnapshot.chatsDirectory ?? ChatStore.defaultDirectory
+        #else
+        let chatsDirectory = ChatStore.defaultDirectory
+        #endif
+        let chats = ChatLibrary(store: ChatStore(directory: chatsDirectory))
         let engine = EngineRouter(Self.engines(storage: storage))
         let generation = GenerationStore(
             library: library,

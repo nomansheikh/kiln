@@ -15,6 +15,12 @@ enum DebugSnapshot {
         directory(after: "--gallery")
     }
 
+    /// `--chats <folder>` shows that folder's chats in the sidebar instead of the user's own,
+    /// so a screenshot does not publish what they wrote. An empty folder shows no chats.
+    static var chatsDirectory: URL? {
+        directory(after: "--chats")
+    }
+
     /// `--audio <folder>` shows that folder's clips on the Speech screen instead of the user's own.
     static var audioDirectory: URL? {
         directory(after: "--audio")
