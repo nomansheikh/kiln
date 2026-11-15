@@ -1,6 +1,7 @@
 import AppKit
 import KilnCore
 import Observation
+import os
 
 /// Generated sound on disk.
 @MainActor
@@ -12,6 +13,9 @@ final class AudioLibrary {
     init(store: AudioStore) {
         self.store = store
         reload()
+        // A record of what was there at launch, for when clips go missing.
+        Logger(subsystem: "codes.noman.kiln", category: "files")
+            .notice("\(self.items.count) clips in \(store.directory.path, privacy: .public)")
     }
 
     var directory: URL { store.directory }
