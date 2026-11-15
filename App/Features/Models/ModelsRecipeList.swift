@@ -69,7 +69,10 @@ struct ModelsRecipeList: View {
         // Animate on state changes only; byte counts tick far too often to animate.
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.downloadStatuses.mapValues(\.state))
         .animation(Motion.layout(reduced: reduceMotion), value: model.library.installedIDs)
-        .animation(Motion.layout(reduced: reduceMotion), value: recipes.map(\.id))
+        // A recipe added or removed is animated; a filter or a search is not. Those
+        // change dozens of tall cards at once, and animating that inside the lazy
+        // list made the cards and the sections below them move at different times.
+        .animation(Motion.layout(reduced: reduceMotion), value: model.library.recipes.map(\.id))
         // Collapsing and expanding are instant. Animating them moved the cards
         // and the sections below at different times inside the lazy list.
         .transaction(value: recommendedExpanded) { $0.animation = nil }
