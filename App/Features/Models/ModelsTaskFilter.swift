@@ -47,6 +47,7 @@ struct ModelsTaskFilter: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

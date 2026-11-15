@@ -27,6 +27,9 @@ final class GenerationStore {
 
     let library: ModelLibrary
     let attachments: AttachmentLibrary
+    /// True while another screen is using the engine. Only one model runs at a time.
+    var isEngineBusyElsewhere: () -> Bool = { false }
+
     private let gallery: GalleryLibrary
     private let audio: AudioLibrary
     private let chats: ChatLibrary
@@ -55,7 +58,7 @@ final class GenerationStore {
     }
 
     var canGenerate: Bool {
-        guard !phase.isBusy, let recipe = selectedRecipe else { return false }
+        guard !phase.isBusy, !isEngineBusyElsewhere(), let recipe = selectedRecipe else { return false }
         return recipe.canRun(prompt: draft.prompt, hasAttachment: draft.attachment != nil)
     }
 

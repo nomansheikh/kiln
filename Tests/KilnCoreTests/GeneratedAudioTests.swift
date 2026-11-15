@@ -43,6 +43,30 @@ import Testing
         #expect(throws: AudioCodecError.invalidSamples) { try audio([]).wavData() }
     }
 
+    @Test func aWaveformFollowsTheLoudnessOfTheFile() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("kiln-wave-\(UUID().uuidString).wav")
+        // Silence, then quiet, then loud: eight samples in each part.
+        let samples = [Float32](repeating: 0, count: 8) + [Float32](repeating: 0.25, count: 8) + [Float32](repeating: -0.5, count: 8)
+        try audio(samples).wavData().write(to: file)
+
+        let peaks = AudioWaveform.peaks(of: file, count: 3)
+
+        #expect(peaks.count == 3)
+        #expect(peaks[0] == 0)
+        // Scaled to the loudest part, so the shape fills its height whatever the volume.
+        #expect(abs(peaks[1] - 0.5) < 0.01)
+        #expect(peaks[2] == 1)
+    }
+
+    @Test func aFileThatIsNotAWAVHasNoWaveform() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("kiln-wave-\(UUID().uuidString).wav")
+        try Data("RIFFnope".utf8).write(to: file)
+
+        #expect(AudioWaveform.peaks(of: file, count: 8).isEmpty)
+        #expect(AudioWaveform.peaks(of: file.appendingPathExtension("missing"), count: 8).isEmpty)
+        #expect(AudioWaveform.peaks(of: file, count: 0).isEmpty)
+    }
+
     @Test func savedSoundsLoadBackWithTheirSettingsNewestFirst() throws {
         let store = AudioStore(directory: FileManager.default.temporaryDirectory.appendingPathComponent("kiln-audio-\(UUID().uuidString)"))
         let old = try store.save(audio([0, 0.5, 0, -0.5]), record: record(createdAt: 1_000))

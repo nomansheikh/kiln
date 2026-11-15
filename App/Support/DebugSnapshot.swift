@@ -15,6 +15,23 @@ enum DebugSnapshot {
         directory(after: "--gallery")
     }
 
+    /// `--audio <folder>` shows that folder's clips on the Speech screen instead of the user's own.
+    static var audioDirectory: URL? {
+        directory(after: "--audio")
+    }
+
+    /// `--open-voices` opens the Speech screen's voice list, so a snapshot can include it.
+    static var opensVoiceList: Bool {
+        ProcessInfo.processInfo.arguments.contains("--open-voices")
+    }
+
+    /// `--only <screen>` limits a snapshot to one screen, named as in `SidebarItem`.
+    private static var onlyItem: SidebarItem? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--only"), arguments.indices.contains(index + 1) else { return nil }
+        return SidebarItem(rawValue: arguments[index + 1])
+    }
+
     private static func directory(after flag: String) -> URL? {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
@@ -38,6 +55,12 @@ enum DebugSnapshot {
         if ProcessInfo.processInfo.arguments.contains("--sample-speech") {
             loadSampleSpeech(into: model)
         }
+        if ProcessInfo.processInfo.arguments.contains("--sample-clips") {
+            loadSampleClips(into: model)
+        }
+        if ProcessInfo.processInfo.arguments.contains("--sample-working") {
+            model.speech.loadPreview(activity: .speaking)
+        }
         // Every snapshot has the default window size, whatever size the window was left at.
         let window = NSApp.windows.first { $0.isVisible && $0.contentView != nil }
         let savedFrame = window?.frame
@@ -46,16 +69,34 @@ enum DebugSnapshot {
             if let savedFrame { window?.setFrame(savedFrame, display: false) }
             NSApp.terminate(nil)
         }
-        for item in SidebarItem.allCases {
+        for item in SidebarItem.allCases where onlyItem == nil || item == onlyItem {
             model.selection = item
             try? await Task.sleep(for: .seconds(item == .models ? 4 : 1.2))
-            guard let view = window?.contentView?.superview,
-                  let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
-            else { continue }
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            try? bitmap.representation(using: .png, properties: [:])?
-                .write(to: directory.appendingPathComponent("\(item.rawValue).png"))
+            if item == .speech, opensVoiceList {
+                // The list opens a moment after the screen appears.
+                try? await Task.sleep(for: .seconds(1.5))
+            }
+            save(window, as: item.rawValue, in: directory)
+            // A popover is a window of its own.
+            let popovers = NSApp.windows.filter { $0 !== window && $0.isVisible && $0.className.contains("Popover") }
+            for (index, popover) in popovers.enumerated() {
+                save(popover, as: "\(item.rawValue)-popover\(index == 0 ? "" : "-\(index + 1)")", in: directory)
+            }
+            if item == .speech, model.speech.isGenerating {
+                // A second frame shows whether the waveform is moving.
+                try? await Task.sleep(for: .seconds(0.4))
+                save(window, as: "\(item.rawValue)-later", in: directory)
+            }
         }
+    }
+
+    private static func save(_ window: NSWindow?, as name: String, in directory: URL) {
+        guard let view = window?.contentView?.superview ?? window?.contentView,
+              let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+        else { return }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        try? bitmap.representation(using: .png, properties: [:])?
+            .write(to: directory.appendingPathComponent("\(name).png"))
     }
 
     /// A finished, a failed and a running turn, so every thread state can be seen without a model.

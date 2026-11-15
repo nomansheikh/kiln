@@ -34,6 +34,7 @@ struct DownloadsButton: View {
             )
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .focusable(false)
         .onHover { hovering = $0 }
         .help("Show downloads")

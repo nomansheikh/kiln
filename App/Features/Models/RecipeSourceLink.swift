@@ -25,6 +25,7 @@ struct RecipeSourceLink: View {
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
+            .pointerCursor()
             .menuIndicator(.hidden)
             .fixedSize()
             .foregroundStyle(.secondary)

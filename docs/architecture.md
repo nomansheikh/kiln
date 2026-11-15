@@ -428,7 +428,7 @@ The app target is `App/`. It contains no engine, network or file-format logic of
 App/
   KilnApp.swift     scene, menu commands, debug launch arguments
   Stores/           observable state, one store per feature
-  Features/         Generate/, Models/ (+ Hub/), Gallery/, Settings/
+  Features/         Generate/, Speech/, Models/ (+ Hub/), Gallery/, Settings/
   Shell/            window, sidebar, chat list, Downloads/
   DesignSystem/     Theme, Motion, button styles, shared small views
   Support/          AppDelegate, KeyboardNavigationMonitor, DebugSnapshot
@@ -442,11 +442,15 @@ App/
 | --- | --- |
 | `ModelLibrary` | Recipes and recipe load problems, the set of installed recipes, download statuses and speeds; import, download of a file from the Hub, delete. Wraps `RecipeStore`, `ModelStorage`, `DownloadManager`, `HFClient` and `MemoryFitEstimator`. |
 | `GenerationStore` | The draft being edited (`GenerationDraft`), the thread on screen (`GenerationTurn`), the running phase and step preview, and which recipe is loaded in memory. Runs generations through `InferenceEngine`, saves results to the gallery and the thread to its chat. |
+| `SpeechStore` | The Speech screen: the text, the voice model and voice, what a running generation is doing, the clip being played, each clip's waveform, the playback speed and voice samples. Runs text to speech through `InferenceEngine` and saves results to `AudioLibrary`. |
+| `AudioLibrary` | Generated sound; add, delete, reveal in Finder. Wraps `AudioStore`. |
 | `GalleryLibrary` | The gallery items; add, delete, copy to the pasteboard, reveal in Finder. Wraps `GalleryStore`. |
 | `ChatLibrary` | The saved chats; save, rename, archive, delete. Wraps `ChatStore`. |
 | `HubAccount` | Whether a token is saved; save, remove, verify. Wraps `TokenStore` and `HFClient`. |
 
 Smaller value types live beside them: `GenerationDraft` and `GenerationPhase`, `GenerationTurn`, `EditStrength` (Subtle 0.35, Balanced 0.6, Strong 0.8, sent as `strength`), `DownloadSpeed`, `SidebarItem` and `AttachmentLibrary`.
+
+The engines hold one model in memory, so only one screen generates at a time: `GenerationStore` and `SpeechStore` each refuse to start while the other is busy (`isEngineBusyElsewhere`, wired in `AppModel`). The Generate menu's commands act on the screen in front.
 
 Some behaviour worth knowing when reading `GenerationStore`:
 
@@ -461,6 +465,7 @@ Some behaviour worth knowing when reading `GenerationStore`:
 Each screen has a folder under `App/Features/` with one primary view per file.
 
 - **Generate:** the thread (`GenerationThread`, `GenerationTurnView`), the composer (`PromptComposer`) with attachment, size menu and advanced settings, the progress placeholder that shows step previews (`GenerationPlaceholder`), and the actions under a finished image.
+- **Speech:** a screen for text to speech, laid out like Generate: the model capsule (`SpeechModelMenu`), a centred greeting and composer with starter texts while there are no clips, then the composer at the top with every clip under it, newest first (`SpeechClipList`). Sending empties the composer (`SpeechComposer`), as in a chat; the text comes back if the clip fails or is stopped, and any clip's text can be put back with "Use this text again". Its chips choose the voice (`SpeechVoiceChip`, opening `SpeechVoiceList`) and the playback speed. Each clip is a card (`SpeechClipCard`) with a play button, a waveform to scrub through (`WaveformView`, drawn from `AudioWaveform.peaks`), the text it was made from and its actions; the clip being made is a `SpeechWorkingCard`. A new clip plays as soon as it is ready. In the voice list each voice has a play button: the first time, a short sample is generated and kept in `~/Library/Caches/Kiln/voice-samples/`, so later auditions are instant. Speech models can also be used from the chat thread; both write to the same audio folder.
 - **Models:** recipe cards with download controls and the memory-fit label, the "Import Recipe" button, and under `Hub/` the Hugging Face list and search. `HubSearchModel` is a view-local observable that holds the debounced search and the file lists of opened repos.
 - **Gallery:** the grid, the detail panel and the item actions.
 - **Settings:** cards for the Hugging Face token, hardware, storage folders and app information.

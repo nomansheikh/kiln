@@ -110,7 +110,7 @@ If a change affects what the app looks like, attach screenshots. Debug builds ca
 open -n /path/to/Kiln.app --args --snapshot /absolute/path/to/folder
 ```
 
-The app waits for the window to settle, switches to each screen in turn, writes `generate.png`, `models.png`, `gallery.png` and `settings.png` into the folder (creating it if needed), and quits. It draws its own window into the images, so no screen-recording permission is needed. The Models screenshot is taken after a few seconds so the Hugging Face list has time to load; that part needs a network connection.
+The app waits for the window to settle, switches to each screen in turn, writes `generate.png`, `speech.png`, `models.png`, `gallery.png` and `settings.png` into the folder (creating it if needed), and quits. It draws its own window into the images, so no screen-recording permission is needed. The Models screenshot is taken after a few seconds so the Hugging Face list has time to load; that part needs a network connection.
 
 Other debug-only flags, which can be combined with `--snapshot`:
 
@@ -118,6 +118,11 @@ Other debug-only flags, which can be combined with `--snapshot`:
 | --- | --- |
 | `--light` | Forces the light appearance. Without it the app follows the system setting. Works on its own, without `--snapshot`. |
 | `--sample-thread` | Fills the Generate screen with a finished turn, a failed turn and a running turn with a step preview and an attached image, so every thread state is visible without a model. It writes one sample image to the temporary directory and one copy to the attachments folder. Only applies together with `--snapshot`. |
+| `--only <screen>` | Captures one screen instead of all five: `generate`, `speech`, `models`, `gallery` or `settings`. Only applies together with `--snapshot`. |
+| `--open-voices` | Opens the Speech screen's voice list and saves it as `speech-popover.png`. A popover is a window of its own, so it is a separate image; the colours outside its rounded shape are not part of the app. Only applies together with `--snapshot`. |
+| `--sample-working` | Shows the Speech screen as it is while a clip is being made, and saves a second frame, `speech-later.png`, 0.4 seconds after `speech.png`, so the two can be compared to see that the placeholder is moving. Only applies together with `--snapshot`. |
+| `--audio <folder>` | Shows the clips in that folder on the Speech screen instead of your own. An empty folder shows the screen's greeting and starter texts. Works on its own, without `--snapshot`. |
+| `--sample-clips` | Uses a temporary folder of four sample clips as the Speech screen's clips instead of your own, with one part-way through playback. The sample sound is a shaped tone, not speech. The voice chip shows the voices of an installed voice model; without one the composer is disabled and points to Models. Works on its own, without `--snapshot`. |
 | `--sample-speech` | Fills the Generate screen with a finished, a failed and a running speech-to-text turn, each with an attached audio file shown by name. The files do not exist; only their names are shown. Only applies together with `--snapshot`. |
 | `--sample-downloads` | Shows the first recipe as a download in progress with a sample speed and time left. Only applies together with `--snapshot`. |
 | `--gallery <folder>` | Shows the Kiln images in that folder as the gallery instead of your own, so a screenshot does not publish your generations. Combined with `--sample-thread`, the thread shows the two oldest of them as finished turns instead of the sample states. Works on its own, without `--snapshot`. |

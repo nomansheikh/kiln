@@ -32,7 +32,7 @@ Kiln is early. Read this before relying on it.
 - **Chat-style generation.** Each prompt and its image form a turn in a thread. Chats are saved and listed in the sidebar, where they can be renamed, archived and deleted.
 - **Live step preview.** While an image is sampling, a rough preview is shown when the model can provide one.
 - **Speech to text.** Pick a Whisper model, attach an audio file (WAV, MP3, M4A and other formats macOS can read) and send it; the transcript appears in the thread. An optional prompt lists names or words to expect. The language is detected automatically.
-- **Text to speech.** Pick a voice model, choose a voice, type what to say and send; the speech appears in the thread with a player, and is saved as a WAV file.
+- **Text to speech.** The Speech screen works like Generate: type or paste text, choose a voice (you can hear each one first) and send. Every clip appears as a card with a waveform to scrub through, the text it came from, a playback speed, and save, share and delete. A clip's text can be put back in the composer to change the wording or the voice and try again. Each clip is saved as a WAV file. Voice models also work from a chat.
 - **Image-to-image.** Attach an image with the plus button, by dropping a file on the composer, or with "Edit this image" on a result. Three strengths: Subtle, Balanced and Strong.
 - **Model recipes.** A JSON manifest lists every file a model needs and its recommended settings, so a model is one click to download. Two recipes ship with the app: Stable Diffusion XL Base 1.0 and Qwen-Image 2.1 Turbo.
 - **Filter by task.** Once the recipes cover more than one task, chips above the list narrow it to Images, Speech to text or Text to speech. The Hugging Face list holds image models only, so it is shown for All and Images.
@@ -40,7 +40,7 @@ Kiln is early. Read this before relying on it.
 - **Downloads.** Resumable, checked against the pinned size and SHA-256, with pause and cancel. A downloads panel in the sidebar shows progress, speed and time left.
 - **Memory-fit label.** Each recipe and Hub file is marked as fitting, tight or too large for this Mac.
 - **Gallery.** Every image is a plain PNG with its prompt and settings embedded. "Reuse Settings" loads them back into the composer, including the seed.
-- **Unload the model.** Frees the memory held by the loaded model from the Image menu, the model menu or Settings.
+- **Unload the model.** Frees the memory held by the loaded model from the Generate menu, the model menu or Settings.
 - **Optional Hugging Face token** for gated models, stored in the macOS Keychain and sent only to `huggingface.co`.
 
 ## Requirements

@@ -84,6 +84,7 @@ struct ModelsSearchField: View {
                 .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .help("Clear search")
         .accessibilityLabel("Clear search")
     }

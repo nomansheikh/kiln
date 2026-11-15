@@ -51,6 +51,7 @@ struct GalleryDetailActionBar: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .pointerCursor()
             }
         }
         .padding(16)

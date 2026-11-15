@@ -76,6 +76,7 @@ struct GalleryCell: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .help(help)
         .accessibilityLabel(help)
     }

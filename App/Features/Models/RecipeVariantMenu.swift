@@ -29,6 +29,7 @@ struct RecipeVariantMenu: View {
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
+        .pointerCursor()
         .menuIndicator(.visible)
         .fixedSize()
         // Switching mid-download would abandon the files already fetched.

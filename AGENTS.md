@@ -23,7 +23,7 @@ There are two kinds of contribution:
 | `Tests/KilnCoreTests/` | Unit tests for KilnCore, written with Swift Testing. Test doubles and fixtures are in `Support/`. |
 | `App/` | The SwiftUI app. `KilnApp.swift` is the entry point. |
 | `App/Stores/` | Observable state: `AppModel` (the root) and one store per feature. |
-| `App/Features/` | One folder per screen: `Generate/`, `Models/` (with `Hub/`), `Gallery/`, `Settings/`. |
+| `App/Features/` | One folder per screen: `Generate/`, `Speech/`, `Models/` (with `Hub/`), `Gallery/`, `Settings/`. |
 | `App/Shell/` | Window, sidebar, chat list, and `Downloads/` (the downloads popover). |
 | `App/DesignSystem/` | Shared views and styles: `Theme`, `Motion`, button styles, `Pill`, `Thumbnail` and others. |
 | `App/Support/` | `AppDelegate`, `KeyboardNavigationMonitor`, `DebugSnapshot`. |
@@ -295,7 +295,7 @@ Debug builds can save a PNG of each screen without a model installed. The flags 
    open -n build/xcode/Build/Products/Debug/Kiln.app --args --snapshot /absolute/path/to/folder
    ```
 
-The app writes `generate.png`, `models.png`, `gallery.png` and `settings.png` into the folder and quits. The Models screenshot needs network for the Hugging Face list.
+The app writes `generate.png`, `speech.png`, `models.png`, `gallery.png` and `settings.png` into the folder and quits. The Models screenshot needs network for the Hugging Face list.
 
 | Flag | Effect |
 | --- | --- |
@@ -303,6 +303,11 @@ The app writes `generate.png`, `models.png`, `gallery.png` and `settings.png` in
 | `--light` | Force the light appearance. Without it the app follows the system setting. |
 | `--sample-thread` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running turn. |
 | `--sample-downloads` | With `--snapshot`: show the first recipe as a download in progress. |
+| `--only <screen>` | With `--snapshot`: capture one screen only (`generate`, `speech`, `models`, `gallery` or `settings`). |
+| `--open-voices` | With `--snapshot`: open the Speech screen's voice list and save it as `speech-popover.png`. |
+| `--sample-working` | With `--snapshot`: show the Speech screen while a clip is being made. A second frame, `speech-later.png`, is saved 0.4 seconds after the first. |
+| `--audio <folder>` | Show the clips in that folder on the Speech screen instead of the user's own. An empty folder shows the screen's greeting. |
+| `--sample-clips` | Show sample clips on the Speech screen instead of the user's own, with one loaded in the player. The voices shown are those of an installed voice model, if there is one. |
 | `--sample-speech` | With `--snapshot`: fill the Generate screen with a finished, a failed and a running speech-to-text turn. |
 | `--gallery <folder>` | Show the Kiln images in that folder as the gallery instead of the user's own. With `--sample-thread`, the thread shows two of them as finished turns. |
 
