@@ -220,7 +220,7 @@ python3 scripts/recipe.py new \
 
 `catalog/` holds models that have no recipe: `audio.cpp.json` is generated from audio.cpp's own model list (`Vendor/audio.cpp/model_specs/`) and `whisper.cpp.json` from the files of the `ggerganov/whisper.cpp` repo. The app lists them under "More models" and says they are untested.
 
-- Never edit these files by hand. Regenerate them with `python3 scripts/catalog.py` (needs network, downloads nothing) after updating `Vendor/audio.cpp`, and commit the result.
+- Never edit these files by hand. Regenerate them with `python3 scripts/catalog.py` after updating `Vendor/audio.cpp`, and commit the result. It needs network and downloads no weights; it does fetch the few small text files a model needs beside its weights (vocabularies, voice manifests), to work out their checksums, because the app refuses a file without one.
 - The generator leaves out families that need eSpeak, families audio.cpp marks as experimental, packages that are not GGUF, and models split over several weight files. To leave another one out, add it to the lists at the top of the script with the reason.
 - A catalogue entry needs no pull request of its own. To promote a model, write a curated recipe for it.
 
