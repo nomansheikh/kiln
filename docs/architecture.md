@@ -27,6 +27,7 @@ Kiln has three parts:
 |    Gallery      GalleryStore, ImageCodec, PNGText               |
 |    Files        UserFile                                        |
 |    Chats        ChatStore, Chat                                 |
+|    Updates      ReleaseCheck, AppVersion  ----HTTPS----> api.github.com
 +--------|---------------------------^----------------------------+
          | stdin: JSON requests      | stdout: JSON events
          v                           | stderr: logs
@@ -67,6 +68,7 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 | `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
 | `Files/` | `UserFile` | Deleting something the user made (a clip, a voice, an image) moves it to the Trash, so it can be put back from the Finder. Each move and each saved clip is written to the system log under the subsystem `codes.noman.kiln`, category `files`. |
 | `Chats/` | `Chat`, `ChatTurn`, `ChatStore` | Saved chats as JSON files. |
+| `Updates/` | `ReleaseCheck`, `PublishedRelease`, `AppVersion` | Asking GitHub for the latest release of Kiln and comparing its version with the running app's. See [New versions](#new-versions). |
 
 ### Hugging Face client
 
@@ -383,6 +385,17 @@ Status per recipe is one of queued, downloading, verifying, paused, completed or
 
 `TransferRateEstimator` averages the bytes received over a sliding window (8 seconds by default). It gives no speed until its samples span at least one second, or while no bytes are arriving, and starts over when the byte count drops. In the app, `ModelLibrary` keeps one estimator per transferring download and publishes a `DownloadSpeed` (bytes per second and, when the total size is known, seconds remaining) at most once a second.
 
+## New versions
+
+Kiln has no updater. It only tells the user that a newer version exists, so that a fix reaches people who installed from a disk image.
+
+- **The request.** `ReleaseCheck` sends `GET https://api.github.com/repos/nomansheikh/kiln/releases/latest` with the headers `Accept: application/vnd.github+json` and `User-Agent: Kiln`, no token and no body. It reads `tag_name`, `html_url`, `draft` and `prerelease` from the answer and nothing else.
+- **What counts as a release.** A draft or a prerelease is ignored. So is a tag that is not a version, and a release whose page is not an `https` address on `github.com` (`PublishedRelease`), because that page is what the notice opens in the browser.
+- **Versions.** `AppVersion` is dotted numbers with an optional leading `v`, compared number by number: `0.10.0` is newer than `0.9.2`, and `0.1` equals `0.1.0`. Anything else, such as `0.2.0-beta`, does not parse.
+- **How often.** At most once every 24 hours (`ReleaseCheck.isDue`). `UpdateStore` (in `App/Stores/`) checks at launch and looks again every hour while the app is open. The time of the last successful check is kept in `UserDefaults` (`updates.checkedAt`), next to the recipe catalogue's. A failed check (offline, rate limited, no release published yet, an unreadable answer) shows nothing and is tried again a day later or at the next launch.
+- **The notice.** When the latest release is newer than `CFBundleShortVersionString`, the sidebar shows `UpdateNotice` above the downloads button: the version, "View release", which opens the release page, and a button that hides the notice for that version (`updates.dismissedVersion`). The latest version found is kept in `UserDefaults` too, so the notice is still there after a relaunch on the same day. Nothing is downloaded or installed.
+- **The setting.** "Check for new versions" in Settings, under About, turns the request and the notice off (`updates.checkEnabled`, on by default).
+
 ## Chats, attachments and gallery storage
 
 There is no database. Each of the three folders is its own source of truth.
@@ -459,6 +472,7 @@ App/
 | `GalleryLibrary` | The gallery items; add, delete, copy to the pasteboard, reveal in Finder. Wraps `GalleryStore`. |
 | `ChatLibrary` | The saved chats; save, rename, archive, delete. Wraps `ChatStore`. |
 | `HubAccount` | Whether a token is saved; save, remove, verify. Wraps `TokenStore` and `HFClient`. |
+| `UpdateStore` | Whether a newer version of Kiln exists, the version the user dismissed, and the setting that turns the check off. Wraps `ReleaseCheck`. |
 
 Smaller value types live beside them: `GenerationDraft` and `GenerationPhase`, `GenerationTurn`, `EditStrength` (Subtle 0.35, Balanced 0.6, Strong 0.8, sent as `strength`), `DownloadSpeed`, `SidebarItem` and `AttachmentLibrary`.
 
@@ -480,11 +494,11 @@ Each screen has a folder under `App/Features/` with one primary view per file.
 - **Speech:** a screen for text to speech, laid out like Generate: the model capsule (`SpeechModelMenu`), a centred greeting and composer with starter texts while there are no clips, then the composer at the top with every clip under it, newest first (`SpeechClipList`). Sending empties the composer (`SpeechComposer`), as in a chat; the text comes back if the clip fails or is stopped, and any clip's text can be put back with "Use this text again". Its chips choose the voice (`SpeechVoiceChip`, opening `SpeechVoiceList`) and the playback speed. Each clip is a card (`SpeechClipCard`) with a play button, a waveform to scrub through (`WaveformView`, drawn from `AudioWaveform.peaks`), the text it was made from and its actions; the clip being made is a `SpeechWorkingCard`. A new clip plays as soon as it is ready. In the voice list each voice has a play button: the first time, a short sample is generated and kept in `~/Library/Caches/Kiln/voice-samples/`, so later auditions are instant. Speech models can also be used from the chat thread; both write to the same audio folder.
 - **Models:** recipe cards with download controls and the memory-fit label, a "More models" section for the catalogue (folded until opened, with a note that its entries are untested), a search field that filters Kiln's own models by name before showing Hugging Face results, the "Import Recipe" button, and under `Hub/` the Hugging Face list and search. `HubSearchModel` is a view-local observable that holds the debounced search and the file lists of opened repos.
 - **Gallery:** the grid, the detail panel and the item actions.
-- **Settings:** cards for the Hugging Face token, hardware, storage folders and app information.
+- **Settings:** cards for the Hugging Face token, hardware, storage folders and app information, which holds the switch for the check for new versions.
 
 ### Shell
 
-`ContentView` places a floating sidebar beside the selected screen. The sidebar holds the navigation rows, the chat list (`ChatList`, `ChatRow`, with archived chats under a toggle) and, while there is anything to show, the downloads button (`Shell/Downloads/`), whose popover lists each download with its progress, speed, time left and controls.
+`ContentView` places a floating sidebar beside the selected screen. The sidebar holds the navigation rows, the chat list (`ChatList`, `ChatRow`, with archived chats under a toggle), the notice of a new version (`UpdateNotice`) when there is one and, while there is anything to show, the downloads button (`Shell/Downloads/`), whose popover lists each download with its progress, speed, time left and controls.
 
 `AppDelegate` quits the app when its last window closes, unless a generation or download is running. The helper exits with the app.
 

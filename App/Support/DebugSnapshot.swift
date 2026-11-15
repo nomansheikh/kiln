@@ -40,6 +40,11 @@ enum DebugSnapshot {
         ProcessInfo.processInfo.arguments.contains("--open-style")
     }
 
+    /// `--sample-update` shows the sidebar's notice of a new version without asking GitHub.
+    static var showsSampleUpdate: Bool {
+        ProcessInfo.processInfo.arguments.contains("--sample-update")
+    }
+
     /// `--only <screen>` limits a snapshot to one screen, named as in `SidebarItem`.
     private static var onlyItem: SidebarItem? {
         let arguments = ProcessInfo.processInfo.arguments
