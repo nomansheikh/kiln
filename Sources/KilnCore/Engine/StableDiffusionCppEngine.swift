@@ -18,7 +18,11 @@ public final class StableDiffusionCppEngine: InferenceEngine {
     ) {
         self.storage = storage
         self.scratchDirectory = scratchDirectory
-        session = HelperSession(helperURL: helperURL, cancelGracePeriod: cancelGracePeriod) { log in
+        session = HelperSession(
+            helperURL: helperURL,
+            arguments: HelperProcess.sandboxArguments(models: storage.root, scratch: scratchDirectory),
+            cancelGracePeriod: cancelGracePeriod
+        ) { log in
             let errors = log.filter { $0.contains("[error]") }
             return (errors.isEmpty ? log : errors).suffix(3).joined(separator: "\n")
         }

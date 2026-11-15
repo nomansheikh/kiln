@@ -21,6 +21,7 @@
 
 #include "json.hpp"
 #include "stable-diffusion.h"
+#include "sandbox.h"
 
 using json = nlohmann::json;
 
@@ -296,7 +297,14 @@ void cancel() {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    // Before anything else: give up every right this helper does not need.
+    std::string sandbox_error;
+    if (!kiln::enter_sandbox(argc, argv, sandbox_error)) {
+        std::fprintf(stderr, "[error] could not enter the sandbox: %s\n", sandbox_error.c_str());
+        return 1;
+    }
+
     // Anything the libraries print to stdout would corrupt the event stream,
     // so events keep the real stdout and fd 1 is pointed at stderr.
     g_event_fd = dup(STDOUT_FILENO);

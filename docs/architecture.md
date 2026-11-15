@@ -105,6 +105,8 @@ The helper stays alive between generations so the model stays loaded.
 ### Process lifecycle
 
 - The helper is launched lazily on the first generation (`HelperProcess.launch`), with pipes for stdin, stdout and stderr.
+- It is started with `--sandbox <models folder> <scratch folder>` and a short list of environment variables instead of the app's own. The first thing a helper does is enter a sandbox built from those two folders ([`Engine/sandbox.h`](../Engine/sandbox.h), shared by the three helpers): no network, no new processes, no reading under `/Users` or `/Volumes` outside the models and scratch folders, no writing outside the scratch folder and the system's per-user cache. A helper that cannot enter it exits. Run by hand without the argument, a helper is not confined. [SECURITY.md](../SECURITY.md) states what this does and does not protect.
+- Every file a helper is given or asked to write is in the engine's scratch folder, which is why the sandbox can be that narrow: the app decodes attached audio and images itself and writes them there. `HelperSession` reads a result only from a file that belongs to the job; an event naming another file fails the job and stops the helper (a preview naming one is skipped).
 - At startup it duplicates the real stdout for events and points file descriptor 1 at stderr, so anything a library prints to stdout cannot corrupt the event stream.
 - It registers a log callback, and a preview callback that asks the library for a latent-to-RGB projection (`PREVIEW_PROJ`) of the denoised image after every step.
 - Library log lines at level info and above go to stderr as `[level] text`. The app keeps the last 40 lines to describe failures and to detect out-of-memory conditions.

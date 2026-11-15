@@ -16,7 +16,11 @@ public final class WhisperCppEngine: InferenceEngine {
     ) {
         self.storage = storage
         self.scratchDirectory = scratchDirectory
-        session = HelperSession(helperURL: helperURL, cancelGracePeriod: cancelGracePeriod) { log in
+        session = HelperSession(
+            helperURL: helperURL,
+            arguments: HelperProcess.sandboxArguments(models: storage.root, scratch: scratchDirectory),
+            cancelGracePeriod: cancelGracePeriod
+        ) { log in
             log.filter { $0.localizedCaseInsensitiveContains("error") || $0.contains("failed") }
                 .suffix(3).joined(separator: "\n")
         }

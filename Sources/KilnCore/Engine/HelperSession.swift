@@ -27,6 +27,8 @@ actor HelperSession {
     }
 
     private let helperURL: URL
+    /// What the helper is started with: the folders it confines itself to.
+    private let arguments: [String]
     private let cancelGracePeriod: Duration
     private let logTail: @Sendable ([String]) -> String
 
@@ -39,11 +41,16 @@ actor HelperSession {
     private var pendingIdleEvents = 0
 
     /// - Parameters:
+    ///   - arguments: Passed to the helper when it is started.
     ///   - cancelGracePeriod: How long a cancelled job may take to stop before the
     ///     helper is killed. Loading a model cannot be interrupted any other way.
     ///   - logTail: Picks the lines of the helper's recent log that describe a failure.
-    init(helperURL: URL, cancelGracePeriod: Duration, logTail: @escaping @Sendable ([String]) -> String) {
+    init(
+        helperURL: URL, arguments: [String] = [], cancelGracePeriod: Duration,
+        logTail: @escaping @Sendable ([String]) -> String
+    ) {
         self.helperURL = helperURL
+        self.arguments = arguments
         self.cancelGracePeriod = cancelGracePeriod
         self.logTail = logTail
     }
@@ -98,7 +105,7 @@ actor HelperSession {
 
     private func launchHelperIfNeeded() throws {
         if let process, process.isRunning { return }
-        let helper = try HelperProcess.launch(helperURL)
+        let helper = try HelperProcess.launch(helperURL, arguments: arguments)
         let id = UUID()
         launchID = id
         pendingIdleEvents = 0
@@ -130,6 +137,13 @@ actor HelperSession {
             return
         }
         guard let job else { return }
+        // A helper taken over by a hostile model file must not get the app to read a
+        // file the job never gave it. A preview is a nicety, so such a one is skipped.
+        if let path = event.path, !job.files.contains(where: { Self.isSameFile($0, path) }) {
+            if case .preview = event { return }
+            finish(throwing: EngineError.invalidOutput)
+            return stopHelper()
+        }
         if let step = job.interpret(event) {
             switch step {
             case .yield(let event):
@@ -221,6 +235,10 @@ actor HelperSession {
         process?.terminate()
         process = nil
         input = nil
+    }
+
+    private static func isSameFile(_ file: URL, _ path: String) -> Bool {
+        file.resolvingSymlinksInPath().path == URL(fileURLWithPath: path).resolvingSymlinksInPath().path
     }
 
     private static func remove(_ files: [URL]) {
