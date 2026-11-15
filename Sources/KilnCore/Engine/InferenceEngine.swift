@@ -70,6 +70,7 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case unreadableReference
     case tooManySpeakers(Int)
     case missingSpeakerVoice(String)
+    case scriptStopped(finished: Int, total: Int, detail: String)
     case unknownVoice(String)
     case unreadableAudio
     case helperUnavailable(String)
@@ -105,6 +106,11 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "This model speaks in at most \(most) voices at once. Use fewer speakers in the text."
         case .missingSpeakerVoice(let speaker):
             "\(speaker) has no voice yet. Give each speaker a voice under Speakers first."
+        case .scriptStopped(let finished, let total, let detail):
+            Self.join(
+                "Only the first \(finished) of \(total) lines were read; the clip holds those. Line \(finished + 1) could not be read.",
+                detail
+            )
         case .unknownVoice(let voice):
             "This model has no voice called \"\(voice)\". Pick another voice."
         case .unreadableAudio:

@@ -17,28 +17,30 @@ actor HelperSession {
     /// into a step. Nil leaves the event to the session.
     typealias Interpreter = @Sendable (EngineMessage.Event) -> Step?
 
-    private struct Job {
+    struct Job {
         let id: UUID
         let continuation: AsyncThrowingStream<GenerationEvent, Error>.Continuation
         /// Scratch files exchanged with the helper, removed when the job ends.
         let files: [URL]
         let interpret: Interpreter
         var cancelRequested = false
+        /// An error the helper reported whose reason has not been logged yet.
+        var pendingError: (code: String, message: String)?
     }
 
     private let helperURL: URL
     /// What the helper is started with: the folders it confines itself to.
     private let arguments: [String]
     private let cancelGracePeriod: Duration
-    private let logTail: @Sendable ([String]) -> String
+    let logTail: @Sendable ([String]) -> String
 
-    private var process: Process?
-    private var input: FileHandle?
-    private var launchID = UUID()
-    private var job: Job?
-    private var recentLog: [String] = []
+    var process: Process?
+    var input: FileHandle?
+    var launchID = UUID()
+    var job: Job?
+    var recentLog: [String] = []
     /// The helper reports `idle` after every job. Jobs that already ended still have one on the way.
-    private var pendingIdleEvents = 0
+    var pendingIdleEvents = 0
 
     /// - Parameters:
     ///   - arguments: Passed to the helper when it is started.
@@ -165,49 +167,13 @@ actor HelperSession {
         case .cancelled:
             finish(throwing: CancellationError())
         case .error(let code, let message):
-            finish(throwing: failure(code: code, message: message))
+            fail(code: code, message: message)
         case .idle:
             // A job that reaches idle without a result or an error produced nothing.
             finish(throwing: EngineError.generationFailed(detail: ""), idleStillExpected: false)
         default:
             // Results of another kind of helper, and `ready`.
             break
-        }
-    }
-
-    private func log(_ line: String, from id: UUID) {
-        guard id == launchID else { return }
-        recentLog.append(line)
-        if recentLog.count > 40 {
-            recentLog.removeFirst(recentLog.count - 40)
-        }
-    }
-
-    private func helperExited(_ id: UUID) async {
-        guard id == launchID else { return }
-        // Give the last log lines a moment to arrive before classifying the crash.
-        try? await Task.sleep(for: .milliseconds(100))
-        guard id == launchID else { return }
-        process = nil
-        input = nil
-        guard let job else { return }
-        if job.cancelRequested {
-            finish(throwing: CancellationError())
-        } else if EngineMessage.indicatesOutOfMemory(recentLog) {
-            finish(throwing: EngineError.outOfMemory)
-        } else {
-            finish(throwing: EngineError.crashed(detail: logTail(recentLog)))
-        }
-    }
-
-    private func failure(code: String, message: String) -> EngineError {
-        if EngineMessage.indicatesOutOfMemory(recentLog) {
-            return .outOfMemory
-        }
-        let tail = logTail(recentLog)
-        switch code {
-        case "load_failed": return .modelLoadFailed(detail: tail)
-        default: return .generationFailed(detail: tail.isEmpty ? message : tail)
         }
     }
 
@@ -219,7 +185,7 @@ actor HelperSession {
         stopHelper()
     }
 
-    private func finish(throwing error: Error? = nil, idleStillExpected: Bool = true) {
+    func finish(throwing error: Error? = nil, idleStillExpected: Bool = true) {
         guard let job else { return }
         self.job = nil
         Self.remove(job.files)

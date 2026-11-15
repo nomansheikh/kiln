@@ -6,6 +6,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Returns true while work is running that closing the window should not interrupt.
     @MainActor static var hasWorkInProgress: () -> Bool = { false }
 
+    #if DEBUG
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DebugSnapshot.openWindowIfMissing()
+    }
+    #endif
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         !Self.hasWorkInProgress()
     }

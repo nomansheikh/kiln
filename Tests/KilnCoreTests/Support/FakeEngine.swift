@@ -9,8 +9,12 @@ final class FakeEngine: InferenceEngine, @unchecked Sendable {
     private var requests: [GenerationRequest] = []
     private var shutdowns = 0
 
-    init(events: [GenerationEvent] = []) {
+    /// The request, counted from 1, that fails instead of replying, and what it fails with.
+    private let failure: (request: Int, error: EngineError)?
+
+    init(events: [GenerationEvent] = [], failingOn failure: (request: Int, error: EngineError)? = nil) {
         self.events = events
+        self.failure = failure
     }
 
     /// Ids of the recipes it generated with, in order.
@@ -23,6 +27,10 @@ final class FakeEngine: InferenceEngine, @unchecked Sendable {
         lock.withLock {
             generated.append(recipe.id)
             requests.append(request)
+        }
+        let count = lock.withLock { requests.count }
+        if let failure, failure.request == count {
+            return AsyncThrowingStream { $0.finish(throwing: failure.error) }
         }
         return AsyncThrowingStream { continuation in
             for event in events {
