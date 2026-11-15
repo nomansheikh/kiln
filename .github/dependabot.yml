@@ -1,0 +1,14 @@
+# Keeps the pinned GitHub Actions current. Each action in the workflows is pinned to a
+# commit, with its version in a comment; Dependabot updates both in a pull request.
+#
+# The engine submodules under Vendor/ are deliberately not listed: Dependabot moves a
+# submodule to the tip of its default branch, and the engines are pinned to releases
+# and re-tested by hand when they are updated.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
