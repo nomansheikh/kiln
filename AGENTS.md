@@ -80,7 +80,7 @@ CI (`.github/workflows/ci.yml`) runs on every pull request and on every push to 
 
 - `conventions`: `./scripts/check-conventions.sh`.
 - `recipes`: the recipe check. It also runs every Monday, because files on Hugging Face can change or disappear.
-- `build`: `swift test`, the engine build, `xcodegen generate`, the `xcodebuild` line. It is skipped for a pull request that changes only Markdown files or issue templates.
+- `build`: `swift test`, the engine build, `xcodegen generate`, the `xcodebuild` line. It is skipped for a pull request that changes only Markdown files or issue templates. The three built helpers are cached, so the engine build (about ten minutes) runs only when `Vendor/`, `Engine/`, `scripts/build-engine.sh` or the runner's compiler changes.
 
 A new push to a pull request cancels the run in progress.
 
