@@ -11,6 +11,7 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
     case invalidSize(file: String)
     case invalidDefaults(String)
     case missingDefaults
+    case invalidSpeech(String)
     case invalidVariant(String)
 
     public var errorDescription: String? {
@@ -33,6 +34,8 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
             "The size for \(file) must be greater than zero."
         case .invalidDefaults(let reason):
             "The default settings are invalid: \(reason)."
+        case .invalidSpeech(let reason):
+            "The speech settings are invalid: \(reason)."
         case .missingDefaults:
             "An image model needs default settings: steps, CFG, sampler, width and height."
         case .invalidVariant(let id):
@@ -49,6 +52,19 @@ extension ModelRecipe {
             try defaults.validate()
         } else if outputKind == .image {
             throw .missingDefaults
+        }
+        if outputKind == .audio {
+            guard let speech, Self.isSafeName(speech.family) else {
+                throw .invalidSpeech("a model that makes audio needs \"speech\" with a \"family\" of letters, digits, dashes and underscores")
+            }
+            if let voices = speech.voices, voices.isEmpty || Set(voices).count != voices.count {
+                throw .invalidSpeech("\"voices\" needs at least one name, each listed once")
+            }
+            // The engine looks a voice up by name, in some models as a file, so a
+            // name must not be able to point anywhere else.
+            if let unsafe = self.voices.first(where: { !Self.isSafeName($0) }) {
+                throw .invalidSpeech("the voice name \"\(unsafe)\" may use only letters, digits, dots, dashes and underscores")
+            }
         }
         if let baseModel, !Component.isValidRepo(baseModel) { throw .invalidRepo(baseModel) }
 
@@ -71,6 +87,13 @@ extension ModelRecipe {
         }
     }
 
+    /// A name that is safe to hand to an engine: no path separators and nothing
+    /// that could be read as a parent folder.
+    static func isSafeName(_ text: String) -> Bool {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_")
+        return !text.isEmpty && !text.hasPrefix(".") && text.unicodeScalars.allSatisfy(allowed.contains)
+    }
+
     private static func isValidSlug(_ text: String) -> Bool {
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789.-_")
         return !text.isEmpty && !text.hasPrefix(".") && text.unicodeScalars.allSatisfy(allowed.contains)
@@ -79,8 +102,14 @@ extension ModelRecipe {
     private static func validate(_ components: [Component], allowEmpty: Bool = false) throws(RecipeValidationError) {
         guard allowEmpty || !components.isEmpty else { throw .noComponents }
         var seenRoles: Set<ComponentRole> = []
+        var seenVoices: Set<String> = []
         for component in components {
-            guard seenRoles.insert(component.role).inserted else { throw .duplicateRole(component.role) }
+            if component.role.mayRepeat {
+                // Voices are told apart by name, so two files may not share one.
+                guard seenVoices.insert(component.voiceName).inserted else { throw .duplicateRole(component.role) }
+            } else {
+                guard seenRoles.insert(component.role).inserted else { throw .duplicateRole(component.role) }
+            }
             try component.validate()
         }
     }

@@ -20,6 +20,7 @@ extension GenerationPhase {
             case .sampling: "Creating image"
             case .decoding: "Finishing up"
             case .transcribing: "Transcribing"
+            case .speaking: "Generating speech"
             case .other(let name): name
             }
         }

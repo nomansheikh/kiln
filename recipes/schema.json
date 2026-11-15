@@ -22,8 +22,8 @@
       "pattern": "[^ \\t]"
     },
     "engine": {
-      "description": "Inference engine. Kiln includes \"sd.cpp\" (stable-diffusion.cpp, makes images) and \"whisper.cpp\" (speech to text), and curated recipes must use one of them.",
-      "enum": ["sd.cpp", "whisper.cpp"]
+      "description": "Inference engine. Kiln includes \"sd.cpp\" (stable-diffusion.cpp, makes images), \"whisper.cpp\" (speech to text) and \"audio.cpp\" (text to speech), and curated recipes must use one of them.",
+      "enum": ["sd.cpp", "whisper.cpp", "audio.cpp"]
     },
     "components": {
       "description": "Files every install of the model needs, one per role. With \"variants\", these are the files shared by all variants and the list may be empty; without variants it needs at least one entry.",
@@ -31,7 +31,7 @@
       "items": { "$ref": "#/$defs/component" }
     },
     "output": {
-      "description": "What the model produces: image, audio or text. Image when absent. It must match the engine: image for sd.cpp, text for whisper.cpp.",
+      "description": "What the model produces: image, audio or text. Image when absent. It must match the engine: image for sd.cpp, text for whisper.cpp, audio for audio.cpp.",
       "enum": ["image", "audio", "text"]
     },
     "accepts": {
@@ -41,6 +41,30 @@
       "items": { "enum": ["image", "audio", "text"] }
     },
     "defaults": { "$ref": "#/$defs/defaults" },
+    "speech": {
+      "description": "How a model that speaks is run. Required for audio.cpp recipes.",
+      "type": "object",
+      "required": ["family"],
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "description": "The engine's name for the kind of model, for example \"pocket_tts\".",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*$"
+        },
+        "voices": {
+          "description": "Names of the voices built into the model file. Leave out when the voices are the recipe's \"voice\" files: each of those is a voice named after its file.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*$" }
+        },
+        "voice": {
+          "description": "The voice used until the user picks one. The first voice when absent.",
+          "type": "string"
+        }
+      }
+    },
     "license_note": {
       "description": "Short, accurate summary of the licence of every file, including restrictions such as non-commercial use. When components have different licences, name each one.",
       "type": "string"
@@ -81,10 +105,26 @@
           "accepts": { "const": ["audio"] },
           "defaults": false
         }
-      },
-      "else": {
+      }
+    },
+    {
+      "if": { "properties": { "engine": { "const": "audio.cpp" } }, "required": ["engine"] },
+      "then": {
+        "required": ["output", "speech"],
+        "properties": {
+          "output": { "const": "audio" },
+          "defaults": false
+        }
+      }
+    },
+    {
+      "if": { "properties": { "engine": { "const": "sd.cpp" } }, "required": ["engine"] },
+      "then": {
         "required": ["defaults"],
-        "properties": { "output": { "const": "image" } }
+        "properties": {
+          "output": { "const": "image" },
+          "speech": false
+        }
       }
     }
   ],
@@ -96,8 +136,8 @@
       "additionalProperties": false,
       "properties": {
         "role": {
-          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). model: the one file of a model whose engine loads nothing else (whisper.cpp). Each role may appear once in a list.",
-          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model"]
+          "description": "What the engine loads the file as. checkpoint: a single file that carries everything (SD 1.x, SDXL). diffusion_model: a standalone denoiser. llm: a language model used as the text encoder (Qwen-Image and similar). vae: a standalone VAE. clip_l, clip_g, t5xxl: CLIP and T5 text encoders (Flux and SD3 families). model: the main file of a model whose engine needs no other kind of file (whisper.cpp, audio.cpp). voice: a voice a speech model can speak in, named after the file. Each role may appear once in a list, except voice.",
+          "enum": ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice"]
         },
         "repo": {
           "description": "Hugging Face repo id in the form owner/name, for example \"stabilityai/stable-diffusion-xl-base-1.0\".",

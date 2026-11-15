@@ -6,6 +6,7 @@ Kiln has three parts:
 - **KilnCore** (`Sources/KilnCore/`), a UI-free Swift library with the logic that can be tested without a window
 - **kiln-engine** (`Engine/`), a C++ helper process that runs stable-diffusion.cpp with the Metal backend and makes images
 - **kiln-whisper** (`Engine/whisper/`), a second helper process that runs whisper.cpp and turns speech into text
+- **kiln-audio** (`Engine/audio/`), a third helper process that runs audio.cpp and turns text into speech
 
 ```
 +--------------------------- Kiln.app ----------------------------+
@@ -20,22 +21,26 @@ Kiln has three parts:
 |    Recipes      RecipeStore, ModelRecipe, MemoryFitEstimator    |
 |    HuggingFace  HFClient, KeychainTokenStore  ----HTTPS----> huggingface.co
 |    Downloads    DownloadManager, FileDownloader, ModelStorage   |
-|    Engine       EngineRouter, StableDiffusionCppEngine,         |
-|                 WhisperCppEngine, HelperProcess                 |
+|    Engine       EngineRouter, HelperSession, and one engine     |
+|                 class per helper                                |
+|    Audio        GeneratedAudio, AudioStore                      |
 |    Gallery      GalleryStore, ImageCodec, PNGText               |
 |    Chats        ChatStore, Chat                                 |
 +--------|---------------------------^----------------------------+
          | stdin: JSON requests      | stdout: JSON events
          v                           | stderr: logs
 +-----------------------------------------------------------------+
-|  kiln-engine (separate process)    kiln-whisper (separate       |
-|  stable-diffusion.cpp + ggml       process) whisper.cpp + ggml  |
+|  Three separate helper processes, each with its own ggml:      |
+|  kiln-engine   stable-diffusion.cpp   images                    |
+|  kiln-whisper  whisper.cpp            speech to text            |
+|  kiln-audio    audio.cpp              text to speech            |
 +-----------------------------------------------------------------+
 
 ~/Library/Application Support/Kiln/
     models/<owner>/<repo>/<file>     model files
     recipes/<id>.json                imported and single-file recipes
     gallery/*.png                    generated images
+    audio/*.wav, *.json              generated sound, each with its settings
     chats/<uuid>.json                saved chats
     attachments/<uuid>[-<name>].<ext>   files attached to prompts
 
@@ -43,6 +48,8 @@ Kiln has three parts:
     <uuid>.raw, <uuid>.preview, <uuid>.init    files exchanged with kiln-engine
 <temporary directory>/kiln-whisper/
     <uuid>.f32, <uuid>.txt                     files exchanged with kiln-whisper
+<temporary directory>/kiln-audio/
+    <uuid>.f32                                 file exchanged with kiln-audio
 ```
 
 ## KilnCore modules
@@ -54,7 +61,8 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 | `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator` | Recipe schema and validation, loading bundled and user recipes, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate. See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
 | `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator` | Download queue, resumable transfers, verification, on-disk layout, speed estimate. |
-| `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format. |
+| `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `HelperSession`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format. |
+| `Audio/` | `GeneratedAudio`, `AudioStore`, `AudioItem` | Sound a model made, WAV encoding, saving and listing sounds with their settings. |
 | `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
 | `Chats/` | `Chat`, `ChatTurn`, `ChatStore` | Saved chats as JSON files. |
 
@@ -74,9 +82,11 @@ The access token is optional. `KeychainTokenStore` keeps it as a generic passwor
 
 ### Engines and kinds
 
-A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`: an image, which the gallery saves, or text, which is kept in the chat turn.
+A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`: an image, which the gallery saves; text, which is kept in the chat turn; or audio, which `AudioStore` saves.
 
-The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Two are registered: `sd.cpp` (`StableDiffusionCppEngine`, images) and `whisper.cpp` (`WhisperCppEngine`, speech to text). Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
+The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Three are registered: `sd.cpp` (`StableDiffusionCppEngine`, images), `whisper.cpp` (`WhisperCppEngine`, speech to text) and `audio.cpp` (`AudioCppEngine`, text to speech).
+
+Each engine class prepares the files and the command for one job and hands them to a `HelperSession`, which owns the helper process: launching it, reading its events and log, cancelling, classifying a crash, and removing the job's scratch files. An engine only interprets the events that are its own, such as a finished image. Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
 
 ## The helper process
 
@@ -120,6 +130,28 @@ It follows the same lifecycle and line protocol as `kiln-engine`, with one reque
 The spoken language is detected automatically and timestamps are not produced. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), then one of `text` (`{"type":"text","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
 
 `WhisperCppEngine` requires an attachment (`missingAudio` otherwise), writes the samples and reads the transcript in its scratch folder, and removes both files when the job ends. A file AVFoundation cannot decode fails with `unreadableAudio` before the helper is started.
+
+## The text-to-speech helper
+
+`kiln-audio` is [`Engine/audio/main.cpp`](../Engine/audio/main.cpp), linked statically against audio.cpp (`Vendor/audio.cpp`, a submodule pinned to a release tag) with Metal on. [`Engine/audio/CMakeLists.txt`](../Engine/audio/CMakeLists.txt) compiles in only the model families Kiln has recipes for (`AUDIOCPP_MODELS`), compiles the model descriptions into the binary so it needs no files beside it, and builds for any Apple Silicon chip rather than the build machine's. audio.cpp offers its C interface only as a shared library, so the helper compiles that one source file (`src/capi/audiocpp.cpp`) into itself. Adding a model family means adding it to `AUDIOCPP_MODELS` and writing a recipe.
+
+It has one request:
+
+```json
+{"type":"speak","model":"/…/pocket-tts-english-bf16.gguf","family":"pocket_tts","text":"Hello.","voice":"alba","output":"/tmp/kiln-audio/<uuid>.f32"}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `model` | Path of the model file. The helper keeps it loaded and reloads only when the path or family changes. |
+| `family` | audio.cpp's name for the kind of model, from the recipe's `speech.family`. |
+| `text` | What to say. |
+| `voice` | A voice name. Some models have voices built in; PocketTTS loads `embeddings/<voice>.safetensors` beside the model file, which is where the recipe's `voice` files are stored. |
+| `output` | File the helper writes the sound to, as raw interleaved 32-bit floats. |
+
+Events are `ready`, `loading`, `progress` (stage `speaking`, no measurable total), then `audio` (`{"type":"audio","path":…,"sample_rate":24000,"channels":1,"frames":…}`) or `error`, then `idle`. audio.cpp cannot stop a run in progress, so `cancel` is accepted and ignored: a cancelled job ends for the app at once, and the helper is killed only if the run has not finished within the grace period.
+
+`AudioCppEngine` refuses an empty text (`missingText`) and a voice the recipe does not list (`unknownVoice`), checks that the output file holds exactly `frames * channels` floats, and yields a `GeneratedAudio`. Recipe validation restricts `speech.family` and voice names to letters, digits, dots, dashes and underscores, because the engine builds a file path from a voice name.
 
 ## Helper protocol
 
@@ -362,6 +394,10 @@ Listing the gallery reads only the chunks before the pixel data of each `.png` f
 
 "Reuse Settings" reads the record back into the Generate screen: the prompt, negative prompt, size, steps, cfg, sampler and exact seed, and the recipe if it is still known. It does not restore an attached image.
 
+### Audio
+
+Generated sound is a 16-bit PCM WAV file in `~/Library/Application Support/Kiln/audio/`, named like a gallery image. A WAV file has no place for settings, so `AudioStore` writes a JSON file of the same name beside it with the `GenerationRecord` and the sound's length. A WAV without a readable JSON file is not listed. Deleting an item deletes both files.
+
 ### Chats
 
 `ChatStore` keeps one JSON file per chat, `chats/<uuid>.json`, so a damaged file costs one chat at most. Files that cannot be decoded are skipped. Chats are listed most recently updated first.
@@ -370,6 +406,7 @@ A `Chat` has an `id`, a `title`, `createdAt`, `updatedAt`, an `isArchived` flag 
 
 - `image`: the file name of the result inside the gallery folder
 - `text`: the text the model wrote, such as a transcript, stored in the chat itself
+- `audio`: the file name of the sound inside the audio folder
 - `failed`: the error message
 - `cancelled`
 

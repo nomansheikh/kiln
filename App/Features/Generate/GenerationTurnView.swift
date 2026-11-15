@@ -47,6 +47,11 @@ struct GenerationTurnView: View {
                 GenerationProgressLine(phase: phase)
                     .transition(.opacity)
             }
+        case .audio(let item):
+            AudioReplyMessage(item: item) {
+                model.generation.regenerate(turn)
+            }
+            .transition(Motion.settle(reduced: reduceMotion))
         case .text(let text):
             TextReplyMessage(text: text) {
                 model.generation.regenerate(turn)

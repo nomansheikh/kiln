@@ -7,11 +7,14 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     public var attachment: URL?
     /// Settings for an image model. Nil for other kinds.
     public var image: ImageSettings?
+    /// Settings for a model that speaks. Nil for other kinds.
+    public var speech: SpeechSettings?
 
-    public init(prompt: String, attachment: URL? = nil, image: ImageSettings? = nil) {
+    public init(prompt: String, attachment: URL? = nil, image: ImageSettings? = nil, speech: SpeechSettings? = nil) {
         self.prompt = prompt
         self.attachment = attachment
         self.image = image
+        self.speech = speech
     }
 
     /// An image request using the recipe's recommended settings.
@@ -24,7 +27,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case prompt, attachment, image
+        case prompt, attachment, image, speech
         /// Records written before requests had kinds kept the image settings at the
         /// top level and called the attachment `sourceImage`.
         case sourceImage, width
@@ -40,6 +43,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
         } else if container.contains(.width) {
             image = try ImageSettings(from: decoder)
         }
+        speech = try container.decodeIfPresent(SpeechSettings.self, forKey: .speech)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -47,6 +51,17 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
         try container.encode(prompt, forKey: .prompt)
         try container.encodeIfPresent(attachment, forKey: .attachment)
         try container.encodeIfPresent(image, forKey: .image)
+        try container.encodeIfPresent(speech, forKey: .speech)
+    }
+}
+
+/// Settings of one piece of generated speech.
+public struct SpeechSettings: Codable, Sendable, Equatable {
+    /// The voice to speak in, by the name the model knows it by.
+    public var voice: String?
+
+    public init(voice: String? = nil) {
+        self.voice = voice
     }
 }
 

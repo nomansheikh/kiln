@@ -52,6 +52,9 @@ struct PromptComposer: View {
                     GenerationImageSizeMenu(draft: $generation.draft)
                     advancedButton
                 }
+                if let recipe, output == .audio, !recipe.voices.isEmpty {
+                    GenerationVoiceMenu(voices: recipe.voices, selection: $generation.draft.voice)
+                }
                 Spacer(minLength: 8)
                 PromptSendButton(isBusy: generation.phase.isBusy, action: send)
                     .disabled(!generation.phase.isBusy && !generation.canGenerate)

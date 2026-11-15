@@ -12,6 +12,7 @@ final class AppModel {
     let library: ModelLibrary
     let generation: GenerationStore
     let gallery: GalleryLibrary
+    let audio: AudioLibrary
     let chats: ChatLibrary
     let account: HubAccount
 
@@ -41,16 +42,23 @@ final class AppModel {
         let galleryDirectory = GalleryStore.defaultDirectory
         #endif
         let gallery = GalleryLibrary(store: GalleryStore(directory: galleryDirectory))
+        let audio = AudioLibrary(store: AudioStore(directory: AudioStore.defaultDirectory))
         let chats = ChatLibrary(store: ChatStore(directory: ChatStore.defaultDirectory))
         let generation = GenerationStore(
             library: library,
             gallery: gallery,
+            audio: audio,
             chats: chats,
             attachments: AttachmentLibrary(directory: AttachmentLibrary.defaultDirectory),
             engine: EngineRouter([
                 StableDiffusionCppEngine.engineID: StableDiffusionCppEngine(
                     helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-engine")
                         ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-engine"),
+                    storage: storage
+                ),
+                AudioCppEngine.engineID: AudioCppEngine(
+                    helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-audio")
+                        ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-audio"),
                     storage: storage
                 ),
                 WhisperCppEngine.engineID: WhisperCppEngine(
@@ -63,6 +71,7 @@ final class AppModel {
 
         self.library = library
         self.gallery = gallery
+        self.audio = audio
         self.chats = chats
         self.generation = generation
         account = HubAccount(tokenStore: tokenStore, hub: hub)

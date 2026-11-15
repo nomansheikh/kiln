@@ -9,6 +9,7 @@ import Testing
             #""components": [{"role": "checkpoint", "repo": "o/r", "file": "f.gguf"}]"#,
         ]
         if let output { fields.append(#""output": "\#(output)""#) }
+        if output == "audio" { fields.append(#""speech": {"family": "f"}"#) }
         if let accepts { fields.append(#""accepts": \#(accepts)"#) }
         if defaults {
             fields.append(#""defaults": {"steps": 8, "cfg": 1, "sampler": "euler", "width": 64, "height": 64}"#)

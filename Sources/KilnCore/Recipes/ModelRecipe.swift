@@ -13,6 +13,8 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var accepts: [MediaKind]?
     /// Recommended settings of an image model. Required when the output is an image.
     public var defaults: ImageDefaults?
+    /// How a model that speaks is run. Required when the output is audio.
+    public var speech: SpeechDefaults?
     public var licenseNote: String?
     /// Smallest amount of system RAM the recipe is expected to run on.
     public var minMemoryGB: Double?
@@ -35,6 +37,7 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         output: MediaKind? = nil,
         accepts: [MediaKind]? = nil,
         defaults: ImageDefaults?,
+        speech: SpeechDefaults? = nil,
         licenseNote: String? = nil,
         minMemoryGB: Double? = nil,
         variants: [Variant]? = nil
@@ -47,12 +50,13 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
         self.output = output
         self.accepts = accepts
         self.defaults = defaults
+        self.speech = speech
         self.licenseNote = licenseNote
         self.minMemoryGB = minMemoryGB
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, engine, components, output, accepts, defaults, variants, tested
+        case id, name, engine, components, output, accepts, defaults, speech, variants, tested
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
         case baseModel = "base_model"
@@ -97,8 +101,14 @@ extension ModelRecipe {
         case clipL = "clip_l"
         case clipG = "clip_g"
         case t5xxl
-        /// The one file of a model whose engine loads nothing else (whisper.cpp).
+        /// The main file of a model whose engine needs no other kind of file
+        /// (whisper.cpp, audio.cpp).
         case model
+        /// A voice a speech model can speak in. The only role that may repeat.
+        case voice
+
+        /// Whether a recipe may list more than one file with this role.
+        public var mayRepeat: Bool { self == .voice }
     }
 
     public struct Component: Codable, Sendable, Equatable {

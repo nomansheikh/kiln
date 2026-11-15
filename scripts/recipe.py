@@ -31,6 +31,7 @@ HUB_HOST = "huggingface.co"
 ENGINES = {
     "sd.cpp": {"output": "image", "accepts": None},
     "whisper.cpp": {"output": "text", "accepts": ["audio"]},
+    "audio.cpp": {"output": "audio", "accepts": None},
 }
 ENGINE = "sd.cpp"
 SCHEMA_REFERENCE = "./schema.json"
@@ -39,10 +40,12 @@ INDEX_NAME = "index.json"
 RESERVED_NAMES = {"index.json", "schema.json"}
 
 # ModelRecipe.ComponentRole
-ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model"]
+ROLES = ["checkpoint", "diffusion_model", "llm", "vae", "clip_l", "clip_g", "t5xxl", "model", "voice"]
+# ComponentRole.mayRepeat: a recipe may list several files with these roles.
+REPEATABLE_ROLES = {"voice"}
 
 RECIPE_KEYS = {
-    "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults",
+    "$schema", "id", "name", "engine", "components", "output", "accepts", "defaults", "speech",
     "license_note", "min_memory_gb", "variants", "tested", "base_model",
 }
 # MediaKind
@@ -52,6 +55,7 @@ DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",
     "sigmas", "flash_attention", "scheduler", "guidance", "flow_shift",
 }
+SPEECH_KEYS = {"family", "voices", "voice"}
 VARIANT_KEYS = {"id", "name", "components", "min_memory_gb"}
 
 # Used only when the stable-diffusion.cpp submodule is not checked out.
@@ -193,10 +197,67 @@ def validate_components(components, where, problems, curated, allow_empty=False)
         role = validate_component(component, "%s[%d]: " % (where, index), problems, curated)
         if role is None:
             continue
+        if role in REPEATABLE_ROLES:
+            # Voices are told apart by name, so two files may not share one.
+            name = voice_name(component.get("file"))
+            if ("voice", name) in roles:
+                problems.append('%s lists the voice "%s" more than once.' % (where, name))
+            roles.append(("voice", name))
+            continue
         if role in roles:
             problems.append('%s lists more than one "%s" component. Each role may appear once.' % (where, role))
         roles.append(role)
     return roles
+
+
+SAFE_NAME = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9._-]*\Z")
+
+
+def voice_name(file):
+    """Component.voiceName: the file's name without its folder and extension."""
+    if not isinstance(file, str):
+        return ""
+    return os.path.splitext(os.path.basename(file))[0]
+
+
+def recipe_voices(recipe):
+    """ModelRecipe.voices: the built-in list, or the names of the voice files."""
+    speech = recipe.get("speech")
+    if isinstance(speech, dict) and isinstance(speech.get("voices"), list):
+        return speech["voices"]
+    components = recipe.get("components")
+    if not isinstance(components, list):
+        return []
+    return [voice_name(c.get("file")) for c in components if isinstance(c, dict) and c.get("role") == "voice"]
+
+
+def validate_speech(recipe, problems, curated):
+    speech = recipe.get("speech")
+    if not isinstance(speech, dict):
+        problems.append('speech is missing or is not an object: a model that makes audio needs it, with a "family".')
+        return
+    if curated:
+        unknown_keys(speech, SPEECH_KEYS, "speech: ", problems)
+    family = speech.get("family")
+    if not isinstance(family, str) or not SAFE_NAME.match(family):
+        problems.append("speech.family must be the engine's name for the model, in letters, digits, dashes and underscores.")
+    voices = speech.get("voices")
+    if voices is not None and (
+        not isinstance(voices, list) or not voices or len(set(map(str, voices))) != len(voices)
+        or any(not isinstance(v, str) for v in voices)
+    ):
+        problems.append("speech.voices must be an array of at least one name, each listed once.")
+    names = [v for v in recipe_voices(recipe) if isinstance(v, str)]
+    for name in names:
+        if not SAFE_NAME.match(name):
+            problems.append('The voice name "%s" may use only letters, digits, dots, dashes and underscores.' % name)
+    voice = speech.get("voice")
+    if voice is not None and not isinstance(voice, str):
+        problems.append("speech.voice must be a string.")
+    elif curated and voice is not None and voice not in names:
+        problems.append('speech.voice "%s" is not one of the recipe\'s voices: %s.' % (voice, ", ".join(names) or "none"))
+    if curated and not names:
+        problems.append('The recipe has no voices: add "voice" components or list speech.voices.')
 
 
 def validate_defaults(defaults, problems, curated):
@@ -308,6 +369,8 @@ def validate_recipe(recipe, curated=True, file_name=None):
     # Only image models have image settings; the app requires them there.
     if output == "image" or recipe.get("defaults") is not None:
         validate_defaults(recipe.get("defaults"), problems, curated)
+    if output == "audio" or recipe.get("speech") is not None:
+        validate_speech(recipe, problems, curated)
 
     variants = recipe.get("variants")
     if variants is not None and not isinstance(variants, list):
@@ -525,6 +588,11 @@ def command_new(args):
         raise UsageError("An image recipe needs --steps, --cfg, --sampler, --width and --height.")
     if not image and (given or args.flash_attention or args.base_model):
         raise UsageError("The default settings and --base-model are for image recipes; the %s engine takes none." % args.engine)
+    speaks = ENGINES[args.engine]["output"] == "audio"
+    if speaks and not args.family:
+        raise UsageError("A recipe for the %s engine needs --family, the engine's name for the model." % args.engine)
+    if not speaks and (args.family or args.voice or args.voices):
+        raise UsageError("--family, --voice and --voices are for recipes of an engine that makes audio.")
 
     defaults = {"steps": args.steps, "cfg": args.cfg, "sampler": args.sampler, "width": args.width, "height": args.height}
     if args.sigmas:
@@ -544,7 +612,14 @@ def command_new(args):
         recipe["defaults"] = defaults
     else:
         recipe["output"] = ENGINES[args.engine]["output"]
-        recipe["accepts"] = ENGINES[args.engine]["accepts"]
+        if ENGINES[args.engine]["accepts"] is not None:
+            recipe["accepts"] = ENGINES[args.engine]["accepts"]
+    if speaks:
+        recipe["speech"] = {"family": args.family}
+        if args.voices:
+            recipe["speech"]["voices"] = [name for value in args.voices for name in value.split(",") if name]
+        if args.voice:
+            recipe["speech"]["voice"] = args.voice
     if args.license_note:
         recipe["license_note"] = args.license_note
     if args.min_memory_gb is not None:
@@ -839,6 +914,11 @@ def build_parser():
                      help='ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...; repeat for each variant')
     new.add_argument("--engine", default=ENGINE, choices=sorted(ENGINES),
                      help="engine that runs the model (default: %s). whisper.cpp is speech to text" % ENGINE)
+    speech = new.add_argument_group("speech settings, for an engine that makes audio")
+    speech.add_argument("--family", help="the engine's name for the model, for example pocket_tts (required)")
+    speech.add_argument("--voice", help="the voice used until the user picks one (default: the first)")
+    speech.add_argument("--voices", nargs="+", metavar="NAME",
+                        help="voices built into the model file; leave out when the voices are voice= components")
     settings = new.add_argument_group("default settings of an image recipe (take them from the model card)")
     settings.add_argument("--steps", type=int, help="sampling steps (required)")
     settings.add_argument("--cfg", type=float, help="classifier-free guidance scale (required)")

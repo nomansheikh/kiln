@@ -39,11 +39,12 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `$schema` | string | no | `"./schema.json"`, so editors validate and autocomplete the file. The app ignores it. |
 | `id` | string | yes | Unique identifier. Also the file name (`<id>.json`). |
 | `name` | string | yes | Display name. |
-| `engine` | string | yes | Inference engine: `sd.cpp` (stable-diffusion.cpp, makes images) or `whisper.cpp` (speech to text). |
+| `engine` | string | yes | Inference engine: `sd.cpp` (stable-diffusion.cpp, makes images), `whisper.cpp` (speech to text) or `audio.cpp` (text to speech). |
 | `components` | array of [component](#components) | yes | Files to download. At least one, unless the recipe has [variants](#variants), in which case these are the files shared by every variant and the array may be empty. The key must be present either way. |
 | `output` | string | no | What the model produces: `image`, `audio` or `text`. `image` when absent. See [kinds](#kinds-of-model). |
 | `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same three values. See [kinds](#kinds-of-model). |
 | `defaults` | [defaults](#defaults) object | for image models | Recommended generation settings of an image model. Required when `output` is `image`. |
+| `speech` | object | for audio.cpp | How a model that speaks is run: `family`, and optionally `voices` and `voice`. See [speech](#speech). |
 | `license_note` | string | no | Short, human-readable summary of the model's licence terms. |
 | `min_memory_gb` | number | no | Smallest amount of system RAM the recipe is expected to run on. |
 | `base_model` | string | no | Hugging Face repo of the original model the `diffusion_model` file was made from, for example `black-forest-labs/FLUX.1-dev`. Lets files from other repos of the same model run with this recipe. See [family recipes](#family-recipes). |
@@ -66,6 +67,7 @@ Each engine makes one kind, and a curated recipe must state it:
 | --- | --- | --- | --- | --- |
 | `sd.cpp` | `image` (or absent) | absent | required | the roles in [Roles](#roles) |
 | `whisper.cpp` | `text` | `["audio"]` | not allowed | one `model` file in whisper.cpp's ggml format |
+| `audio.cpp` | `audio` | absent | not allowed | one `model` file in audio.cpp's GGUF format, any number of `voice` files, and `speech` |
 
 A speech-to-text recipe looks like this:
 
@@ -109,7 +111,7 @@ The file is stored at `~/Library/Application Support/Kiln/models/<owner>/<repo>/
 
 ### Roles
 
-Each role may appear at most once in a list of components. Any other value is rejected when the file is decoded.
+Each role may appear at most once in a list of components, except `voice`. Any other value is rejected when the file is decoded.
 
 | `role` | Meaning | Key in the helper's `model` object | stable-diffusion.cpp context parameter |
 | --- | --- | --- | --- |
@@ -120,11 +122,42 @@ Each role may appear at most once in a list of components. Any other value is re
 | `clip_l` | CLIP-L text encoder (Flux and SD3 families) | `clip_l` | `clip_l_path` |
 | `clip_g` | CLIP-G text encoder (SD3 family) | `clip_g` | `clip_g_path` |
 | `t5xxl` | T5-XXL text encoder (Flux and SD3 families) | `t5xxl` | `t5xxl_path` |
-| `model` | The one file of a model whose engine loads nothing else. Used by `whisper.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe`) | none |
+| `model` | The main file of a model whose engine needs no other kind of file. Used by `whisper.cpp` and `audio.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe` and `speak`) | none |
+| `voice` | A voice a speech model can speak in, named after the file. Used by `audio.cpp` recipes. The only role that may repeat. | (found by the engine beside the model file) | none |
 
 Roles a recipe does not use are left unset. There is no role for a LoRA or a vision projector, so a model that needs one of those cannot be described yet. The mapping lives in `generateCommand` in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
 
 To decide which roles a model needs, read its page under [`Vendor/stable-diffusion.cpp/docs/`](https://github.com/leejet/stable-diffusion.cpp/tree/master/docs) (for example `flux.md`, `sd3.md`, `qwen_image.md`). The command lines there use the flags `-m`, `--diffusion-model`, `--llm`, `--vae`, `--clip_l`, `--clip_g` and `--t5xxl`, which correspond to the first seven roles in the order of the table.
+
+## Speech
+
+A recipe for the `audio.cpp` engine has a `speech` object:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `family` | string | yes | audio.cpp's name for the kind of model, for example `pocket_tts`. It must be one of the families compiled into the helper (`AUDIOCPP_MODELS` in `Engine/audio/CMakeLists.txt`). |
+| `voices` | array of strings | no | Names of voices built into the model file. Leave it out when the voices are separate files. |
+| `voice` | string | no | The voice used until the user picks one. The first voice when absent. |
+
+Voices come from one of two places. A model with voices inside its file lists them in `speech.voices`. A model that loads each voice from its own file lists those files as components with the role `voice`; each is a voice named after its file, so `embeddings/alba.safetensors` is the voice `alba`. `voice` is the only role that may appear more than once, and no two voice files may share a name.
+
+`family` and every voice name may use only letters, digits, dots, dashes and underscores, and may not start with a dot: the engine builds a file path from a voice name.
+
+Each voice has its own licence, which may differ from the model's. Include only voices whose source states a licence, and name each source in `license_note`.
+
+```json
+{
+  "id": "pocket-tts-english",
+  "name": "PocketTTS English",
+  "engine": "audio.cpp",
+  "output": "audio",
+  "speech": { "family": "pocket_tts", "voice": "alba" },
+  "components": [
+    { "role": "voice", "repo": "audio-cpp/audio.cpp-gguf", "file": "PocketTTS-GGUF/english/embeddings/alba.safetensors", … }
+  ],
+  "variants": [ … one `model` file each … ]
+}
+```
 
 ## Defaults
 
@@ -290,7 +323,7 @@ Recipe:
 1. `id` is not empty, contains only lowercase letters `a-z`, digits, `.`, `-` and `_`, and does not start with `.`.
 2. `name` is not empty and does not consist only of spaces and tabs.
 3. `components` has at least one entry, unless the recipe has at least one variant.
-4. No two components share a `role`.
+4. No two components share a `role`, except `voice`; no two `voice` files share a name.
 
 Each component:
 
@@ -307,6 +340,12 @@ Defaults:
 11. `sampler` is not empty.
 12. `width` and `height` are greater than zero.
 13. `sigmas`, when present, has exactly `steps + 1` values.
+
+Speech (these rules are not numbered, so the numbers below stay as they were):
+
+- A recipe whose `output` is `audio` has `speech` with a `family`.
+- `family` and every voice name are safe names (see [speech](#speech)).
+- `speech.voices`, when present, is not empty and has no repeats.
 
 Each variant:
 
@@ -329,7 +368,7 @@ Two things check every file in `recipes/` on each push: the test `everyCuratedRe
 The test requires:
 
 - the file name without `.json` equals the recipe `id`
-- `engine` is `sd.cpp` or `whisper.cpp`
+- `engine` is `sd.cpp`, `whisper.cpp` or `audio.cpp`
 - every component of every variant (or of the recipe, when it has no variants) has `revision`, `size_bytes` and `sha256`
 - `recipes/index.json` lists exactly the recipe files
 
@@ -364,7 +403,8 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--name NAME` | Display name. Required. |
 | `--component ROLE=OWNER/REPO:PATH` | A file every install needs. Repeat for each file. |
 | `--variant ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...` | One variant: its id, its name, optionally its minimum memory, then its files. Repeat for each variant. |
-| `--engine NAME` | `sd.cpp` (the default) or `whisper.cpp`. For `whisper.cpp` the script writes `output` and `accepts` itself and takes none of the settings below. |
+| `--engine NAME` | `sd.cpp` (the default), `whisper.cpp` or `audio.cpp`. For the last two the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
+| `--family NAME`, `--voice NAME`, `--voices NAME ...` | For `audio.cpp`: `speech.family` (required), `speech.voice` and `speech.voices`. Voice files are given as `--component voice=OWNER/REPO:PATH`, once per voice. |
 | `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The defaults, required for an image recipe. There are no built-in values: take them from the model card. |
 | `--sigmas N,N,...` | Custom sigma schedule, `steps + 1` numbers separated by commas or spaces. |
 | `--flash-attention` | Sets `flash_attention` to `true`. |
