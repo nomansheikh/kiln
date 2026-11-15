@@ -73,8 +73,8 @@ void unload() {
     g_loaded_key.clear();
 }
 
-bool load_model(const std::string& path, const std::string& family) {
-    const std::string key = family + "\n" + path;
+bool load_model(const std::string& path, const std::string& family, const std::string& backend_name) {
+    const std::string key = family + "\n" + path + "\n" + backend_name;
     if (g_session != nullptr && key == g_loaded_key) {
         return true;
     }
@@ -91,7 +91,7 @@ bool load_model(const std::string& path, const std::string& family) {
         unload();
         return false;
     }
-    const audiocpp_backend_config backend = {"metal", 0, 4};
+    const audiocpp_backend_config backend = {backend_name.c_str(), 0, 4};
     if (failed(audiocpp_session_create(g_model, "tts", "offline", &backend, nullptr, &g_session), "load_failed",
                "The model could not be loaded.")) {
         unload();
@@ -102,7 +102,9 @@ bool load_model(const std::string& path, const std::string& family) {
 }
 
 void speak(const json& request) {
-    if (!load_model(request.at("model").get<std::string>(), request.value("family", std::string()))) {
+    // The GPU unless the app asks for the CPU, which it does for a model that fails on the GPU.
+    if (!load_model(request.at("model").get<std::string>(), request.value("family", std::string()),
+                    request.value("backend", std::string("metal")))) {
         return;
     }
 

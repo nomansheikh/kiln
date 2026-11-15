@@ -24,7 +24,7 @@ struct ModelsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: "Models", subtitle: "Curated recipes and Hugging Face checkpoints") {
+            ScreenHeader(title: "Models", subtitle: "Recipes, the engines' own model lists and Hugging Face") {
                 headerControls
             }
             Rectangle()
@@ -34,7 +34,9 @@ struct ModelsView: View {
             StableScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     if !query.isEmpty {
-                        HubSearchResults(query: query, title: "Hugging Face results")
+                        // Kiln's own models that match come first, then Hugging Face.
+                        ModelsRecipeList(showsDownloadedOnly: false, query: query)
+                        HubSearchResults(query: query, title: "Hugging Face results", isFollowingSection: true)
                     } else {
                         ModelsTaskFilter(recipes: model.library.recipes, selection: $taskFilter)
                         ModelsRecipeList(showsDownloadedOnly: showsDownloadedOnly, task: task)

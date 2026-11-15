@@ -25,6 +25,9 @@ targets:
       - path: recipes
         type: folder
         buildPhase: resources
+      - path: catalog
+        type: folder
+        buildPhase: resources
       # Licence notices have to travel with the binary.
       - path: LICENSE
         buildPhase: resources

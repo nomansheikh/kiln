@@ -122,7 +122,7 @@ Model files are not part of the app. The Whisper recipe downloads them from Hugg
 
 ## kiln-audio
 
-The `kiln-audio` helper (text to speech) is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/audio/CMakeLists.txt](Engine/audio/CMakeLists.txt): Metal on, only the `pocket_tts` model family, no eSpeak, no model manager, no server. It was read from the object files of a build.
+The `kiln-audio` helper (text to speech) is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/audio/CMakeLists.txt](Engine/audio/CMakeLists.txt): Metal on, every model family (`AUDIOCPP_MODEL_SET=full`), no eSpeak, no model manager, no server. The separately built libraries were read from the object files of a build; the code inside audio.cpp's own sources was found by searching them for licence notices.
 
 Paths are relative to `Vendor/audio.cpp/`, a git submodule. This section was last checked against submodule commit `61c7838baf1f7f34769b5b7bd369c0d78edf9535` (tag `v0.9.5`) on 2026-11-15.
 
@@ -135,11 +135,29 @@ Paths are relative to `Vendor/audio.cpp/`, a git submodule. This section was las
 | Abseil, subset (`external/sentencepiece/third_party/absl/`) | Apache-2.0 | https://github.com/abseil/abseil-cpp | `LICENSE` in that folder |
 | cJSON (`external/cJSON/`) | MIT, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors | https://github.com/DaveGamble/cJSON | `external/cJSON/LICENSE` |
 | LibYAML (`external/libyaml/`) | MIT, Copyright (c) 2017-2020 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov | https://github.com/yaml/libyaml | `external/libyaml/License` |
-| Unicode helpers (`external/llama_tokenizer/unicode.cpp`, `unicode-data.cpp`) | Not stated in the folder: it has no licence file and the files carry no notice. Their names and role match `src/unicode.cpp` in llama.cpp, which is MIT (Copyright (c) 2023-2026 The ggml authors). Treated here as covered by audio.cpp's Apache-2.0 `LICENSE`; the origin was not confirmed. | https://github.com/ggml-org/llama.cpp (presumed) | not verified |
+| utf8proc (`external/utf8proc/`) | MIT, Copyright (c) 2014-2021 Steven G. Johnson, Jiahao Chen, Tony Kelman, Jonas Fonseca and other contributors; Copyright (c) 2009, 2013 Public Software Group e. V. Its Unicode data tables are under the Unicode data licence. | https://github.com/JuliaStrings/utf8proc | `external/utf8proc/LICENSE.md` |
+| Tokenizer helpers (`external/llama_tokenizer/unicode.cpp`, `unicode-data.cpp`, `bpe-core.cpp`) | Not stated in the folder: it has no licence file and the files carry no notice. Their names and role match `src/unicode.cpp` in llama.cpp, which is MIT (Copyright (c) 2023-2026 The ggml authors). Treated here as covered by audio.cpp's Apache-2.0 `LICENSE`; the origin was not confirmed. | https://github.com/ggml-org/llama.cpp (presumed) | not verified |
 | JSON for Modern C++ (`Vendor/stable-diffusion.cpp/thirdparty/json.hpp`, version 3.11.2). Included only by `Engine/audio/main.cpp`. | MIT, Copyright 2013-2022 Niels Lohmann | https://github.com/nlohmann/json | SPDX header in the file |
+
+### Notices inside audio.cpp's own sources
+
+These are parts ported or copied into `src/`, each marked in the source with its origin. All are compiled into the helper now that every model family is.
+
+| Where | Origin | License | Verified from |
+| --- | --- | --- | --- |
+| `src/framework/audio/detail/speech_fft_internal.h` | pocketfft | BSD 3-Clause, Copyright (C) 2010-2024 Max-Planck-Society, Copyright (C) 2019-2020 Peter Bell, with parts Copyright (C) 2003, 2007-14 Matteo Frigo and Massachusetts Institute of Technology, and others named in the file | notice in the file |
+| `src/framework/audio/kaldi_fbank.cpp` | handy-computer/transcribe.cpp | MIT, Copyright (c) 2026 The transcribe.cpp authors | comment in the file |
+| `src/framework/decoders/ctc_host_decoder.cpp`, `src/community_models/nemotron_transcribe/`, `src/community_models/sortformer_diar/aosc_state.cpp` | NVIDIA/NeMo-Speech.cpp | Apache-2.0, Copyright (c) 2026 NVIDIA Corporation & affiliates | SPDX headers; `src/community_models/nemotron_transcribe/THIRD_PARTY_NOTICES.md` |
+| `src/community_models/nemotron_transcribe/alignment.cpp` | Routines reproduced from SciPy, NumPy and PyTorch | BSD 3-Clause, with the copyright holders listed in that folder's `THIRD_PARTY_NOTICES.md` | that file |
+| `src/community_models/nemotron_transcribe/timestamp_unit_tables.inc` | Unicode 15.1 Character Database | Unicode data licence | that folder's `THIRD_PARTY_NOTICES.md` |
+| `src/community_models/zipvoice/jieba_segmenter.cpp` | cppjieba and jieba | MIT, Copyright (c) 2013 Yanyi Wu; Copyright (c) 2012 Sun Junyi | comment in the file |
+| `src/models/micro_wake_word/frontend.cpp` | KissFFT, as used by TensorFlow Lite Micro | BSD 3-Clause, Copyright 2003-2010 Mark Borgerding | comment in the file |
+| `src/models/firered_vad/runtime.cpp` | FireRedTeam/FireRedVAD | Apache-2.0, Copyright 2026 Xiaohongshu | SPDX header |
+
+This search looked for licence notices in `src/`, `include/` and `app/`. Code copied without a notice would not have been found.
 
 The headers in `external/sentencepiece/third_party/darts_clone/` (BSD 3-Clause) and `esaxx/` (MIT) are in the tree; whether they are compiled into the helper was not checked, since header-only code leaves no object file. Their licence files are beside them.
 
-audio.cpp can be built with eSpeak-ng, which is GPL-3.0-or-later. Kiln does not enable that option (`AUDIOCPP_STATIC_ESPEAK` is off), so no GPL code is in the helper. Model families that need eSpeak, such as Kokoro for English, are not compiled in for that reason.
+audio.cpp can be built with eSpeak-ng, which is GPL-3.0-or-later. Kiln does not enable that option (`AUDIOCPP_STATIC_ESPEAK` is off), so no GPL code is in the helper. Model families that need eSpeak, such as Kokoro for English, are left out of Kiln's model lists for that reason. audio.cpp's eSpeak adapter can also load an eSpeak library that is already installed on the Mac; Kiln ships no such library and offers no model that asks for it.
 
 Model and voice files are not part of the app. Recipes download them from Hugging Face; their licences are stated in each recipe's `license_note`.

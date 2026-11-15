@@ -25,6 +25,13 @@ final class SpeechStore {
     var text = ""
     private(set) var recipeID: String?
     var voice: String?
+    /// Code of the language to speak in. Nil lets the model decide.
+    var language: String?
+    /// A description of the voice or the delivery. Kept across models, and sent
+    /// only to one that takes it.
+    var instruction = ""
+    /// The words chosen for a model that takes fixed style words instead.
+    var styleWords: [String] = []
     private(set) var activity = Activity.idle
     /// The clip that is playing or was played last.
     private(set) var current: AudioItem?
@@ -79,7 +86,7 @@ final class SpeechStore {
     }
 
     var canGenerate: Bool {
-        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil
+        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction
             && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -88,6 +95,10 @@ final class SpeechStore {
         // Keep the chosen voice when the new model has it too.
         if let recipe, voice.map({ !recipe.voices.contains($0) }) ?? true {
             voice = recipe.defaultVoice
+        }
+        // A language the new model does not offer goes back to "Auto".
+        if let language, recipe?.languages?.contains(language) != true {
+            self.language = nil
         }
     }
 
@@ -104,7 +115,7 @@ final class SpeechStore {
         guard canGenerate, let recipe = selectedRecipe else { return }
         let sent = text
         let request = GenerationRequest(
-            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: SpeechSettings(voice: voice)
+            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: SpeechSettings(voice: voice, instruction: sentInstruction), language: language
         )
         text = ""
         errorMessage = nil
@@ -191,6 +202,7 @@ final class SpeechStore {
             if let voice = item.record.request.speech?.voice, recipe.voices.contains(voice) {
                 self.voice = voice
             }
+            restoreStyle(item.record.request.speech?.instruction, for: recipe)
         }
     }
 

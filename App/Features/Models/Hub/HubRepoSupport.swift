@@ -39,7 +39,7 @@ extension ModelLibrary {
 
     /// The recipe shipped with the app for the model this repo is a version of, if any.
     func familyRecipe(for info: HFModelInfo) -> ModelRecipe? {
-        recipes.first { !userRecipeIDs.contains($0.id) && $0.isSameFamily(as: info) }
+        recipes.first { !userRecipeIDs.contains($0.id) && !catalogIDs.contains($0.id) && $0.isSameFamily(as: info) }
     }
 
     /// The recipe made for a file when it was downloaded from the Hugging Face list.

@@ -11,6 +11,7 @@
     "qwen-image-2.1-turbo-uncensored.json",
     "qwen-image-2.1-turbo.json",
     "qwen-image-2.1.json",
+    "qwen3-tts-1.7b-customvoice.json",
     "realvisxl-v5.0.json",
     "sd-1.5.json",
     "sdxl-base-1.0.json",

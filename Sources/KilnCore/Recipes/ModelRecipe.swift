@@ -15,6 +15,9 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     public var defaults: ImageDefaults?
     /// How a model that speaks is run. Required when the output is audio.
     public var speech: SpeechDefaults?
+    /// Codes of the languages the user may choose between, such as `en`. When
+    /// absent the model works in one language or decides by itself.
+    public var languages: [String]?
     public var licenseNote: String?
     /// Smallest amount of system RAM the recipe is expected to run on.
     public var minMemoryGB: Double?
@@ -56,7 +59,7 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, engine, components, output, accepts, defaults, speech, variants, tested
+        case id, name, engine, components, output, accepts, defaults, speech, languages, variants, tested
         case licenseNote = "license_note"
         case minMemoryGB = "min_memory_gb"
         case baseModel = "base_model"
@@ -104,11 +107,14 @@ extension ModelRecipe {
         /// The main file of a model whose engine needs no other kind of file
         /// (whisper.cpp, audio.cpp).
         case model
-        /// A voice a speech model can speak in. The only role that may repeat.
+        /// A voice a speech model can speak in. Repeats, once per voice.
         case voice
+        /// Another file the engine finds beside the model, such as a tokenizer
+        /// or a configuration. Repeats.
+        case support
 
         /// Whether a recipe may list more than one file with this role.
-        public var mayRepeat: Bool { self == .voice }
+        public var mayRepeat: Bool { self == .voice || self == .support }
     }
 
     public struct Component: Codable, Sendable, Equatable {

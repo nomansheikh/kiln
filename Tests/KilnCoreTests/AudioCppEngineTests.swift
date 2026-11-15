@@ -53,6 +53,22 @@ import Testing
         await engine.shutdown()
     }
 
+    @Test func aModelThatCrashesOnTheGPURunsOnTheCPUFromThenOn() async throws {
+        // The helper dies when asked for the GPU and counts the requests it was sent.
+        let count = fixture.root.appendingPathComponent("requests")
+        let engine = try fixture.engine(onSpeak: "printf 'x' >> '\(count.path)'\ncase \"$line\" in *'\"backend\":\"metal\"'*) exit 1;; esac\n" + fixture.success)
+        let sound = GenerationEvent.finished(.audio(GeneratedAudio(sampleRate: 24_000, channels: 1, samples: Data("abcdefgh".utf8))))
+
+        let first = try await run(engine, GenerationRequest(prompt: "Hello."))
+        let second = try await run(engine, GenerationRequest(prompt: "Hello again."))
+
+        #expect(first.last == sound)
+        #expect(second.last == sound)
+        // GPU then CPU the first time; straight to the CPU the second time.
+        #expect(try String(contentsOf: count, encoding: .utf8) == "xxx")
+        await engine.shutdown()
+    }
+
     @Test func aVoiceTheRecipeDoesNotListIsRejected() async throws {
         let engine = try fixture.engine(onSpeak: fixture.success)
 

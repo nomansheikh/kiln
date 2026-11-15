@@ -45,6 +45,7 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same three values. See [kinds](#kinds-of-model). |
 | `defaults` | [defaults](#defaults) object | for image models | Recommended generation settings of an image model. Required when `output` is `image`. |
 | `speech` | object | for audio.cpp | How a model that speaks is run: `family`, and optionally `voices` and `voice`. See [speech](#speech). |
+| `languages` | array of strings | no | Codes of the languages the user may choose between, such as `en`, for a speech model that works in several. The app offers them in a language menu with "Auto" first. Leave it out for a model that works in one language or decides by itself. |
 | `license_note` | string | no | Short, human-readable summary of the model's licence terms. |
 | `min_memory_gb` | number | no | Smallest amount of system RAM the recipe is expected to run on. |
 | `base_model` | string | no | Hugging Face repo of the original model the `diffusion_model` file was made from, for example `black-forest-labs/FLUX.1-dev`. Lets files from other repos of the same model run with this recipe. See [family recipes](#family-recipes). |
@@ -111,7 +112,7 @@ The file is stored at `~/Library/Application Support/Kiln/models/<owner>/<repo>/
 
 ### Roles
 
-Each role may appear at most once in a list of components, except `voice`. Any other value is rejected when the file is decoded.
+Each role may appear at most once in a list of components, except `voice` and `support`. Any other value is rejected when the file is decoded.
 
 | `role` | Meaning | Key in the helper's `model` object | stable-diffusion.cpp context parameter |
 | --- | --- | --- | --- |
@@ -123,7 +124,8 @@ Each role may appear at most once in a list of components, except `voice`. Any o
 | `clip_g` | CLIP-G text encoder (SD3 family) | `clip_g` | `clip_g_path` |
 | `t5xxl` | T5-XXL text encoder (Flux and SD3 families) | `t5xxl` | `t5xxl_path` |
 | `model` | The main file of a model whose engine needs no other kind of file. Used by `whisper.cpp` and `audio.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe` and `speak`) | none |
-| `voice` | A voice a speech model can speak in, named after the file. Used by `audio.cpp` recipes. The only role that may repeat. | (found by the engine beside the model file) | none |
+| `voice` | A voice a speech model can speak in, named after the file. Used by `audio.cpp` recipes. May repeat. | (found by the engine beside the model file) | none |
+| `support` | Another file the engine finds beside the model, such as a tokenizer or a configuration. Used by `audio.cpp`. May repeat; no two may share a path. | (found by the engine beside the model file) | none |
 
 Roles a recipe does not use are left unset. There is no role for a LoRA or a vision projector, so a model that needs one of those cannot be described yet. The mapping lives in `generateCommand` in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
 
@@ -138,10 +140,25 @@ A recipe for the `audio.cpp` engine has a `speech` object:
 | `family` | string | yes | audio.cpp's name for the kind of model, for example `pocket_tts`. It must be one of the families compiled into the helper (`AUDIOCPP_MODELS` in `Engine/audio/CMakeLists.txt`). |
 | `voices` | array of strings | no | Names of voices built into the model file. Leave it out when the voices are separate files. |
 | `voice` | string | no | The voice used until the user picks one. The first voice when absent. |
+| `instruction` | string | no | `optional` when the model takes a free description of the voice or the delivery, such as "Very happy."; `required` when it cannot speak without one. Leave it out for a model that takes none. |
+| `styles` | array of objects | no | For a model that takes fixed words instead of a free description: groups of `{"name", "options"}`, such as `{"name": "Age", "options": ["child", "elderly"]}`. The user may choose one word per group. Cannot be combined with `instruction`. |
+| `tags` | array of strings | no | Marks the model understands inside the text, written as they are typed, such as `[laughter]`. |
 
 Voices come from one of two places. A model with voices inside its file lists them in `speech.voices`. A model that loads each voice from its own file lists those files as components with the role `voice`; each is a voice named after its file, so `embeddings/alba.safetensors` is the voice `alba`. `voice` is the only role that may appear more than once, and no two voice files may share a name.
 
 `family` and every voice name may use only letters, digits, dots, dashes and underscores, and may not start with a dot: the engine builds a file path from a voice name.
+
+#### Expression
+
+Models differ in how a voice can be directed, so a recipe states what its model takes and the Speech screen shows only those controls:
+
+- `instruction`: a Style chip opens a field for a free description. The text is sent to the engine as its `instruct` option.
+- `styles`: the Style chip is a menu of the listed words, one per group. The chosen words are sent as `instruct`, joined with commas, in the recipe's order. Words the recipe does not list are never sent.
+- `tags`: a Sounds menu adds a tag where the cursor is. A tag can also be typed anywhere in the text.
+
+A mark can be written the same way for every model: one word in square or angle brackets, such as `[laughs]`. Before the text is sent, `SpeechMarks` rewrites it to the model's own tag when the recipe lists one that is the same word (`[laughs]` becomes `[laughter]` or `<laugh>`), and leaves it out otherwise, because a model that does not know a mark reads the word aloud. Brackets around anything else (`[1]`, `[citation needed]`, `[S1]`) are ordinary text. The saved clip keeps the text as it was written. On the Speech screen a mark the model has is shown in the accent colour, and one that will be left out is struck through and named under the text.
+
+Take every value from the model's page in `Vendor/audio.cpp/docs/models/`, its source under `Vendor/audio.cpp/src/models/` or its model card. A model that only follows an instruction together with a template or a reference recording has none of these fields: Kiln does not pass those yet.
 
 Each voice has its own licence, which may differ from the model's. Include only voices whose source states a licence, and name each source in `license_note`.
 
@@ -158,6 +175,27 @@ Each voice has its own licence, which may differ from the model's. Include only 
   "variants": [ … one `model` file each … ]
 }
 ```
+
+## The catalogue
+
+Not every model has a recipe. `catalog/` holds entries generated by `scripts/catalog.py` from what the engines' own projects publish:
+
+| File | Generated from | Entries |
+| --- | --- | --- |
+| `catalog/audio.cpp.json` | `Vendor/audio.cpp/model_specs/`, audio.cpp's list of the models it runs and where their files are, with licences from its `docs/model_licenses.md` | Text-to-speech models |
+| `catalog/whisper.cpp.json` | The files of the `ggerganov/whisper.cpp` repo on Hugging Face | Whisper models |
+
+Each file is `{"source": …, "recipes": [ … ]}`, and each entry is a recipe in every respect: the same fields, every file pinned to a commit and size, and a SHA-256 for every file large enough for the Hub to hash. What differs is where it comes from. Nobody ran it, so the app lists these under "More models" with a note saying so, and an entry may fail to load or need a setting Kiln does not offer, such as a reference recording of a voice.
+
+How the app treats them (`RecipeStore+Catalog.swift`):
+
+- A curated recipe wins. An entry is dropped when a curated recipe downloads the same main file, and an entry with variants loses only the variants that are covered.
+- An entry this version cannot read or that fails validation is skipped without an error.
+- Entries sort after curated recipes and before the user's own.
+
+What the generator leaves out, and why: model families that need eSpeak (GPL-3.0, not shipped); families audio.cpp marks `experimental`, `testing` or `wip`; packages that are not GGUF; models split over several weight files, which the helper does not load yet; and packages that are a part for another setup rather than a model.
+
+Run `python3 scripts/catalog.py` after updating a vendored engine and commit the result. `--check` fails when the committed files differ from what would be generated; it is not part of CI, because the Hub's `main` moves independently of this repository.
 
 ## Defaults
 
@@ -323,7 +361,7 @@ Recipe:
 1. `id` is not empty, contains only lowercase letters `a-z`, digits, `.`, `-` and `_`, and does not start with `.`.
 2. `name` is not empty and does not consist only of spaces and tabs.
 3. `components` has at least one entry, unless the recipe has at least one variant.
-4. No two components share a `role`, except `voice`; no two `voice` files share a name.
+4. No two components share a `role`, except `voice` and `support`; no two `voice` files share a name and no two `support` files share a path.
 
 Each component:
 
@@ -346,6 +384,11 @@ Speech (these rules are not numbered, so the numbers below stay as they were):
 - A recipe whose `output` is `audio` has `speech` with a `family`.
 - `family` and every voice name are safe names (see [speech](#speech)).
 - `speech.voices`, when present, is not empty and has no repeats.
+- `speech.instruction`, when present, is `optional` or `required`.
+- `speech.styles`, when present, has named groups, each with at least one word; no word repeats or contains a comma; and `instruction` is absent.
+- `speech.tags`, when present, is not empty, has no repeats, and every tag is one line of at most 40 characters.
+
+Languages: `languages`, when present, is not empty, has no repeats, and every entry is 2 to 12 letters, dashes or underscores.
 
 Each variant:
 
@@ -404,6 +447,7 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--component ROLE=OWNER/REPO:PATH` | A file every install needs. Repeat for each file. |
 | `--variant ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...` | One variant: its id, its name, optionally its minimum memory, then its files. Repeat for each variant. |
 | `--engine NAME` | `sd.cpp` (the default), `whisper.cpp` or `audio.cpp`. For the last two the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
+| `--instruction optional\|required`, `--style NAME=WORD,WORD`, `--tags TAG ...` | For `audio.cpp`: `speech.instruction`, one group of `speech.styles` (repeat for each group) and `speech.tags`. See [Expression](#expression). |
 | `--family NAME`, `--voice NAME`, `--voices NAME ...` | For `audio.cpp`: `speech.family` (required), `speech.voice` and `speech.voices`. Voice files are given as `--component voice=OWNER/REPO:PATH`, once per voice. |
 | `--steps`, `--cfg`, `--sampler`, `--width`, `--height` | The defaults, required for an image recipe. There are no built-in values: take them from the model card. |
 | `--sigmas N,N,...` | Custom sigma schedule, `steps + 1` numbers separated by commas or spaces. |

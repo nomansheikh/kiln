@@ -55,6 +55,9 @@ struct PromptComposer: View {
                 if let recipe, output == .audio, !recipe.voices.isEmpty {
                     GenerationVoiceMenu(voices: recipe.voices, selection: $generation.draft.voice)
                 }
+                if let languages = recipe?.languages, languages.count > 1 {
+                    GenerationLanguageMenu(languages: languages, selection: $generation.draft.language)
+                }
                 Spacer(minLength: 8)
                 PromptSendButton(isBusy: generation.phase.isBusy, action: send)
                     .disabled(!generation.phase.isBusy && !generation.canGenerate)

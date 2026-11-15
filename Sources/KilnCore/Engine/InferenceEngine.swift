@@ -64,6 +64,7 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case unreadableSourceImage
     case missingAudio
     case missingText
+    case missingInstruction
     case unknownVoice(String)
     case unreadableAudio
     case helperUnavailable(String)
@@ -87,22 +88,24 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "This model turns speech into text. Attach an audio file first."
         case .missingText:
             "This model reads text aloud. Type what it should say first."
+        case .missingInstruction:
+            "This model needs a description of the voice. Add one under Style first."
         case .unknownVoice(let voice):
             "This model has no voice called \"\(voice)\". Pick another voice."
         case .unreadableAudio:
             "The attached audio could not be read. Try a WAV, MP3 or M4A file."
         case .helperUnavailable(let reason):
-            "The image engine could not be started: \(reason)"
+            "The engine could not be started: \(reason)"
         case .modelLoadFailed(let detail):
             Self.join("The model could not be loaded. Its files may be damaged or unsupported.", detail)
         case .outOfMemory:
             "This Mac ran out of memory. Try a smaller image size, a smaller quantization, or close other apps."
         case .crashed(let detail):
-            Self.join("The image engine stopped unexpectedly.", detail)
+            Self.join("The engine stopped unexpectedly.", detail)
         case .generationFailed(let detail):
-            Self.join("The image could not be generated.", detail)
+            Self.join("The model could not finish this request.", detail)
         case .invalidOutput:
-            "The image engine returned data Kiln could not read."
+            "The engine returned data Kiln could not read."
         }
     }
 

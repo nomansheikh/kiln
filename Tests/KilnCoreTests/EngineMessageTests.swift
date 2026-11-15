@@ -40,7 +40,7 @@ import Testing
         let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: String])
         #expect(object == [
             "type": "transcribe", "model": "/models/ggml-model.bin", "audio": "/tmp/a.f32",
-            "prompt": "Names: \"Kiln\"", "output": "/tmp/a.txt",
+            "prompt": "Names: \"Kiln\"", "language": "auto", "output": "/tmp/a.txt",
         ])
         #expect(EngineMessage.stage("transcribing") == .transcribing)
     }

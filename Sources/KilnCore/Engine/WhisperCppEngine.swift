@@ -60,7 +60,8 @@ public final class WhisperCppEngine: InferenceEngine {
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).txt")
             try AudioSamples.write(attachment, to: audio)
             let command = try EngineMessage.transcribeCommand(
-                model: storage.url(for: model), audio: audio, prompt: request.prompt, output: output
+                model: storage.url(for: model), audio: audio, prompt: request.prompt,
+                language: request.language(for: recipe), output: output
             )
 
             await session.run(id: id, command: command, files: [audio, output], continuation: continuation) { event in

@@ -29,7 +29,8 @@ final class AppModel {
                 bundledDirectory: Bundle.main.resourceURL?.appendingPathComponent("recipes")
                     ?? support.appendingPathComponent("bundled"),
                 userDirectory: support.appendingPathComponent("recipes", isDirectory: true),
-                remoteDirectory: Self.remoteRecipesDirectory
+                remoteDirectory: Self.remoteRecipesDirectory,
+                catalogDirectory: Bundle.main.resourceURL?.appendingPathComponent("catalog")
             ),
             hub: hub,
             downloads: DownloadManager(
@@ -150,9 +151,15 @@ final class AppModel {
         selection = .models
     }
 
-    /// Uses a model on the Generate screen.
+    /// Opens the screen a model is used on, with the model selected: Speech for
+    /// one that reads text aloud, the chat for everything else.
     func use(_ recipe: ModelRecipe) {
-        generation.selectRecipe(recipe)
-        selection = .generate
+        if recipe.task == .textToSpeech {
+            speech.selectRecipe(recipe)
+            selection = .speech
+        } else {
+            generation.selectRecipe(recipe)
+            selection = .generate
+        }
     }
 }

@@ -1,0 +1,2543 @@
+{
+  "source": "audio.cpp v0.9.5, model_specs/",
+  "recipes": [
+    {
+      "id": "audio.cpp-audio8-tts-realistic-0.6b",
+      "name": "Audio8 TTS Realistic 0.6B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/Audio8-TTS-Realistic-0.6b-GGUF",
+              "file": "audio8-tts-realistic-0.6b-bf16.gguf",
+              "revision": "b57015b9e916ede150f4b168b4b882be37ad723f",
+              "size_bytes": 1890480128,
+              "sha256": "77b1025faec0ef371d2c332f25bf1df5fae9f5c51f3b342f99cdf197e71a1394"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/Audio8-TTS-Realistic-0.6b-GGUF",
+              "file": "audio8-tts-realistic-0.6b-q8_0.gguf",
+              "revision": "b57015b9e916ede150f4b168b4b882be37ad723f",
+              "size_bytes": 1429460800,
+              "sha256": "e8a2402b50341b12316f94e78afd8b69d38010c5d3ba3878d64ca8f9ea90a930"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "audio8_tts"
+      },
+      "languages": [
+        "yue",
+        "zh",
+        "nl",
+        "en",
+        "fr",
+        "de",
+        "it",
+        "ja",
+        "ko",
+        "pl",
+        "es"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-audio8-tts-preview-0.6b",
+      "name": "Audio8 TTS Preview 0.6B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "js-byte/Audio8-TTS-Preview-0.6b-GGUF",
+          "file": "audio8-tts-preview-0.6b-q8_0.gguf",
+          "revision": "788f6fdb0bbdbbc407c63f3265cea9875b4a7c14",
+          "size_bytes": 1429545312,
+          "sha256": "7fa4d2ce5ef37a0a2526cad814bb271b1255d50681297ba56407c6307148652f"
+        }
+      ],
+      "speech": {
+        "family": "audio8_tts"
+      },
+      "languages": [
+        "yue",
+        "zh",
+        "nl",
+        "en",
+        "fr",
+        "de",
+        "it",
+        "ja",
+        "ko",
+        "pl",
+        "es"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-breezetts-2",
+      "name": "BreezeTTS 2",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Breeze-TTS-2-GGUF/breeze-tts-2-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 7342918784,
+              "sha256": "5620623371e2011e9bb22389f12252d3969061adad139b3cdda6b1473a82a0d5"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Breeze-TTS-2-GGUF/breeze-tts-2-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 5079670336,
+              "sha256": "b17b89b1c21107c44e8d556ab0a856d7acd06bdd0c914e68e0e57f6e33f555a3"
+            }
+          ]
+        },
+        {
+          "id": "q4_0",
+          "name": "Q4",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Breeze-TTS-2-GGUF/breeze-tts-2-q4_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3794800192,
+              "sha256": "56b3cc598b1f9220b6fb23dc9eaa098a9a1d0cc6604298a76faac79eef4824b8"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "breeze_tts"
+      },
+      "license_note": "License: BreezeBlue Research and Non-Commercial License. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-chatterbox",
+      "name": "Chatterbox",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Chatterbox-GGUF/chatterbox-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3744365922,
+              "sha256": "615371181a0bffe8239cf6f724d57f2b153618c52c31d526c8f20eacc763c6e1"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Chatterbox-GGUF/chatterbox-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2088399204,
+              "sha256": "45d71d8d248ba831014813bbbbba74c7d786dd9447c02090fe05c44344f69453"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "chatterbox"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-cosyvoice3",
+      "name": "CosyVoice3",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f32",
+          "name": "F32 (full precision)",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "CosyVoice3-GGUF/cosyvoice3-f32.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 6995036864,
+              "sha256": "68f8242bab325e8de1c80e179444b1f758248951d4283d8124e03fe182e74f34"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "CosyVoice3-GGUF/cosyvoice3-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2257658336,
+              "sha256": "d13bd731ead92d6d514d5749d9b59ea1b3ae735569fa46978250caaf5c983133"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "cosyvoice3"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-dottts-soar",
+      "name": "DotTTS SOAR",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-SOAR-GGUF/dots-tts-soar-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4788732064,
+              "sha256": "b4e028cf4b536b6a249799421738ed3b4c78794a9e9293c2f9da0448076bc0a1"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-SOAR-GGUF/dots-tts-soar-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2962751232,
+              "sha256": "2ac144eacc02ff47b37988a924a0480ed2fe3756790c51c1943348eba34dae27"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "dots_tts"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-dottts-meanflow",
+      "name": "DotTTS MeanFlow",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-MF-GGUF/dots-tts-mf-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4791358304,
+              "sha256": "4738dd818d4a5be1ad0162c2828711da99182ab044b7d72a7833facd6cc0b7f8"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-MF-GGUF/dots-tts-mf-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2965377472,
+              "sha256": "abc4c27db2a6750119d70f5e66e9c268c80c47ff4659867bbba124717f05ae7a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "dots_tts"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-dottts-edit",
+      "name": "DotTTS Edit",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-Edit-GGUF/dots-tts-edit-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4788786240,
+              "sha256": "3f4711edcb28a1688462eaba75711bf073514fbd5336a1141b88430d4c6a884f"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "DotTTS-Edit-GGUF/dots-tts-edit-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2962805408,
+              "sha256": "5f2df7c42849feaaa4b3f0808b72804132bee6e6314563125973b15fc1e3a122"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "dots_tts"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. The dots.tts.edit card defers to the dots.tts project, which is Apache-2.0. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-unified-arabic-multi-dialect",
+      "name": "Habibi-TTS Unified (Arabic, multi-dialect)",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-unified/habibi-unified-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403189792,
+          "sha256": "cde3d020727fd8a8f973fe06fe859be0135f805573e2303bfd87075b6577461f"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-unified/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11920
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-alg",
+      "name": "Habibi-TTS ALG",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-alg/habibi-alg-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403126752,
+          "sha256": "e115893f6d76e061faa20d0aad20957ce8b822470b21b623fb0ccfb870ea78df"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-alg/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11792
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-egy",
+      "name": "Habibi-TTS EGY",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-egy/habibi-egy-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403231392,
+          "sha256": "4bf92dc6f192dea643260f6b945ccca16c0fa4aa1124cc08fc76c8b98930f401"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-egy/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11983
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-irq",
+      "name": "Habibi-TTS IRQ",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-irq/habibi-irq-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403150784,
+          "sha256": "3152192e07523d4165f705930b5f66307f9dc87bc6334ff68783b617af30aea9"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-irq/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11829
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-mar",
+      "name": "Habibi-TTS MAR",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-mar/habibi-mar-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403141120,
+          "sha256": "1845a1160aa1503f0f8672571b6b71e3913c66a215216f41cadd0f0b459a6c86"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-mar/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11813
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-msa",
+      "name": "Habibi-TTS MSA",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-msa/habibi-msa-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403059072,
+          "sha256": "509b407af48c27041e493f2cf940058d952d0de7c51cf012ffc9f565a52e2f7b"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-msa/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11698
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-sau",
+      "name": "Habibi-TTS SAU",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-sau/habibi-sau-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403137024,
+          "sha256": "e2f01d1aa7ed19a5854bd36fa088bf8a0d6be2c5050819b2cbf5ead4ee636b3d"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-sau/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11807
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-habibi-tts-uae",
+      "name": "Habibi-TTS UAE",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-uae/habibi-uae-orig.gguf",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 1403147264,
+          "sha256": "800c45d361f0901635b55923770fe8748783e9284e50062076785c91ff012b51"
+        },
+        {
+          "role": "support",
+          "repo": "trklou/audio.cpp",
+          "file": "habibi-uae/vocab.txt",
+          "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
+          "size_bytes": 11823
+        }
+      ],
+      "speech": {
+        "family": "f5_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0 (F5-TTS); CC-BY-NC-SA-4.0 (Habibi-TTS). Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-fish-audio-s2-pro",
+      "name": "Fish Audio S2 Pro",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 10229282400,
+              "sha256": "b938ecf9968fc0a432c04d2b05cc6f729663017d1b1c0a079c90e3c504750447"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 6317915552,
+              "sha256": "4f051347079cfb61f9ef2996f67057229e486fefce31374721b5690940dfc34a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "fish_audio"
+      },
+      "license_note": "License: Fish Audio Research License. Research or non-commercial use only. Commercial use needs a separate license from Fish Audio. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-glm-tts",
+      "name": "GLM-TTS",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "mirek190/audio.cpp",
+          "file": "Text to audio (TTS)/GLM-TTS_Q8.gguf",
+          "revision": "94bbade143c5f62c0c842ef5b2119f7880fa9ee4",
+          "size_bytes": 5143764640,
+          "sha256": "11407571ee39817d67490be66bee3c7205e10c06f5750e980192f838e15c3554"
+        }
+      ],
+      "speech": {
+        "family": "glm_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-higgs-audio-v3-tts-4b",
+      "name": "Higgs Audio v3 TTS 4B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 8501592736,
+              "sha256": "d9fc55bee3e0d1e84eb9ffec779355c870190487bdaa4a2d26b99c1b1f40c12b"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 5095359136,
+              "sha256": "cfa5cc01adcd199dfcf1baf0f610aa474cda83418fd1802aa6defa82d956a0e4"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "higgs_audio_tts"
+      },
+      "license_note": "License: Boson Higgs TTS 3 Research and Non-Commercial License. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-indextts2",
+      "name": "IndexTTS2",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2-GGUF/index-tts2-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 8084559360,
+              "sha256": "3affa94a9b02040fa06774c6047806bbc0f0a90d57ab4de7e50d31d1b19f0350"
+            }
+          ]
+        },
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2-GGUF/index-tts2-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4646905664,
+              "sha256": "4bed1d526a81a7a7bfd5ebd72006bf7168ef061261b9d85b6dce30cfc882fda8"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2-GGUF/index-tts2-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3633895968,
+              "sha256": "a56e09f49fd39a894dfe1b065ab94884e9ed3515a92f75aff06fb6e6714b6b2c"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "index_tts2"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "es",
+        "ar"
+      ],
+      "license_note": "License: bilibili Model Use License. Commercial use is allowed only under conditions. A separate license is needed above RMB 1 billion yearly revenue or 100 million monthly users. The model and its outputs may not be used to improve other commercial AI models. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-indextts2.5",
+      "name": "IndexTTS2.5",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2.5-GGUF/index-tts2_5-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 7885098208,
+              "sha256": "cfbf964b7692395a9cc93f57ba62ed4b069e367478254fec8180282f205c5d75"
+            }
+          ]
+        },
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2.5-GGUF/index-tts2_5-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4547359840,
+              "sha256": "505f896d83aa5d309a3180e5e72f95a9b192c95930d6d9d534b93c0ca8b42e73"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3502960096,
+              "sha256": "d1ab7b5c3f5ecf2bcd285753be76c7290b0a54939a76b7c39e8f886f80cf6b5c"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "index_tts2"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "es",
+        "ar"
+      ],
+      "license_note": "License: bilibili Model Use License. Commercial use is allowed only under conditions. A separate license is needed above RMB 1 billion yearly revenue or 100 million monthly users. The model and its outputs may not be used to improve other commercial AI models. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-irodori-tts-v4.1-small",
+      "name": "Irodori-TTS v4.1 Small",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-v4-Small-GGUF/irodori-tts-v4-small-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1762151136,
+              "sha256": "9bf7e431597f21d1ee4fd48fd4f0bbdc83c83ba6f47c6e4ea0557cbf69aaeda5"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-v4-Small-GGUF/irodori-tts-v4-small-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1368994144,
+              "sha256": "9be716e8ab66c887417acf446d198e5dc53f1669bb90136a410706232f1a0d38"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "irodori_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-irodori-tts-v4.1-anime",
+      "name": "Irodori-TTS v4.1 Anime",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Irodori-TTS-v4-Small-GGUF/irodori-tts-v4.1-anime-q8_0.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 1112550112,
+          "sha256": "858daf47b0439f3750c88e70658b3bbba5457ca38f1bd79b67be950be7a33d00"
+        }
+      ],
+      "speech": {
+        "family": "irodori_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-irodori-tts-600m-v3-voicedesign",
+      "name": "Irodori-TTS 600M v3 VoiceDesign",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-600M-v3-VoiceDesign-GGUF/irodori-tts-600m-v3-voicedesign-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1463790784,
+              "sha256": "006ec83aff079162a7a3aa038de9a57fa3d81ad47ed845c4a435e39ad206e6f1"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-600M-v3-VoiceDesign-GGUF/irodori-tts-600m-v3-voicedesign-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1272143168,
+              "sha256": "e7bb696b9fa59b59fb51935a3db08c0552c383cc1f2ad8927544864f672e4527"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "irodori_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-irodori-tts-500m-v3",
+      "name": "Irodori-TTS 500M v3",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-500M-v3-GGUF/irodori-tts-500m-v3-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1254816224,
+              "sha256": "d8cb39d6dd6929eb4de1c3e8f508d4322402d3424b553cf52006d5ef2d37546b"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-500M-v3-GGUF/irodori-tts-500m-v3-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1093742688,
+              "sha256": "2442786d5e4c102759bac44b87b8ed987ba66fd6af640f6dc1b98598af1485a3"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "irodori_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-irodori-tts-v4.1-small-meanflow",
+      "name": "Irodori-TTS v4.1 Small MeanFlow",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-v4-Small-GGUF/irodori-tts-v4.1-small-mf-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1768191712,
+              "sha256": "fd3391b40eea2e8061ac507dfa2402980a382f245713218d553fd7904fe223d1"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Irodori-TTS-v4-Small-GGUF/irodori-tts-v4.1-small-mf-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1368276320,
+              "sha256": "a450c277a29b771bde3ceb21fd753bfb9a61c93aef952e0a3b20ad8d3facbbcd"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "irodori_tts"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-magpietts-multilingual-357m",
+      "name": "MagpieTTS Multilingual 357M",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MagpieTTS-Multilingual-357M-GGUF/magpie-tts-multilingual-357m-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1912137280,
+              "sha256": "3ed26e41e19ec0b47249e31859fe2f29b2c9a5b0cd6f518c0c27782de575096f"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MagpieTTS-Multilingual-357M-GGUF/magpie-tts-multilingual-357m-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1562142912,
+              "sha256": "c762503a80f9af75db33379763b923c5c8a00ca79374e1e0d4051e6d68151377"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "magpie_tts"
+      },
+      "languages": [
+        "ar-AE",
+        "ar-MSA",
+        "ar-SA",
+        "de",
+        "en",
+        "es",
+        "fr",
+        "hi",
+        "it",
+        "ko",
+        "pt-BR",
+        "vi",
+        "zh"
+      ],
+      "license_note": "License: NVIDIA Open Model License. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-maya1",
+      "name": "Maya1",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Maya1-GGUF/maya1-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 6682824288,
+              "sha256": "52b3d12ec44bd484cad61a3630dfd4645c70e124c7f285f714c484b1a4b7e390"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Maya1-GGUF/maya1-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4040216160,
+              "sha256": "559703c4b31fa93f7092c6c8c76723b9584c1ec2644083c9ff17f8ab14d10a58"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "maya1",
+        "instruction": "required",
+        "tags": [
+          "<laugh>",
+          "<whisper>",
+          "<sigh>",
+          "<gasp>"
+        ]
+      },
+      "license_note": "License: Apache-2.0 (Maya1); MIT (SNAC). Commercial use is allowed. The combined GGUF contains weights from both projects. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-ming-3.0-tts-0.5b",
+      "name": "Ming 3.0 TTS 0.5B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/Ming-3.0-TTS-0.5B-GGUF",
+              "file": "ming-3.0-tts-0.5b-bf16.gguf",
+              "revision": "2eb8d37c7f10672e69c8aa33091baa04c461b66c",
+              "size_bytes": 2998284288,
+              "sha256": "43f108a4e6bb54af13071d0cb345a094e0b011b3b8318d8fb2c61753733f5312"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/Ming-3.0-TTS-0.5B-GGUF",
+              "file": "ming-3.0-tts-0.5b-q8_0.gguf",
+              "revision": "2eb8d37c7f10672e69c8aa33091baa04c461b66c",
+              "size_bytes": 1742280896,
+              "sha256": "fcf2aa25e8e9cf2065a936e506581735c64d6255fb7869f09fbb61a2dde09aa1"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "ming3_tts"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "es"
+      ],
+      "license_note": "License: MIT. Commercial use is allowed. Retain the inclusionAI MIT notice; the official package includes its audio VAE and CAMPPlus speaker encoder. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-miotts-1.7b",
+      "name": "MioTTS 1.7B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MioTTS-1.7B-GGUF/miotts-1.7b-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3518537760,
+              "sha256": "fa1accea1be2e697d5856e3f06e94b1d849f61f90b5f359507934295acf8fca7"
+            }
+          ]
+        },
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MioTTS-1.7B-GGUF/miotts-1.7b-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3518537760,
+              "sha256": "0f06a3ac49471027faee2c12987da8f074ab29643f0f6a68cdb7fd065b7655df"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MioTTS-1.7B-GGUF/miotts-1.7b-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2197332000,
+              "sha256": "14ec51c59de3c451a0955eed04ba42eab20c8261ae2259674db0934931e66d0a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "miotts"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-moss-tts-local-v1.5",
+      "name": "MOSS-TTS-Local v1.5",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MOSS-TTS-Local-v1.5-GGUF/moss-tts-local-v1.5-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 13367800768,
+              "sha256": "293d590dcf8c01686762af605cdc11b7aade5e328ea2b091150e09839794d57f"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MOSS-TTS-Local-v1.5-GGUF/moss-tts-local-v1.5-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 7512224256,
+              "sha256": "d465210814e60cc09224b33bf272bde519c871dda76997a8c17aed4878d1ba9a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "moss_tts_local"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-moss-tts-nano-100m",
+      "name": "MOSS-TTS-Nano 100M",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MOSS-TTS-Nano-100M-GGUF/moss-tts-nano-100m-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 332428384,
+              "sha256": "ea44b602f3fbd6e18d505c48533035bf2db604e929117abcd05d2d77b8f786c8"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "MOSS-TTS-Nano-100M-GGUF/moss-tts-nano-100m-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 193343328,
+              "sha256": "823b0de64f01f1ee9a168356c1199be500d71ec2f769f0183b416c9e6dbc0abc"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "moss_tts_nano"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-neutts-2e",
+      "name": "NeuTTS 2E",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "NeuTTS-2E-GGUF/neutts-2e-orig.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 3016181288,
+          "sha256": "fb1b437f6ae9ba005930a38977573f994bc08290f3b16ee6ca99028a2aeb402d"
+        }
+      ],
+      "speech": {
+        "family": "neutts"
+      },
+      "license_note": "License: NeuTTS Open License v1.0. Commercial use is allowed only under conditions. Commercial use is licensed only while yearly revenue stays under USD 5M. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-omnivoice",
+      "name": "OmniVoice",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "OmniVoice-GGUF/omnivoice-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1639556448,
+              "sha256": "cec92925cddef7d8ef33a462155b268a662a15a9ebd40cb5a284ccc1179d6a08"
+            }
+          ]
+        },
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "OmniVoice-GGUF/omnivoice-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1639556288,
+              "sha256": "a5e0b148274f1bd719dd9e30b2d400671e587b0457a9c7e8840cfe7be94c5b62"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "OmniVoice-GGUF/omnivoice-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1350296096,
+              "sha256": "0e5a721edd1b08d9067ef66f40ded609a6b14f5a8445c703f9869736cabd350a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "omnivoice",
+        "styles": [
+          {
+            "name": "Gender",
+            "options": [
+              "male",
+              "female"
+            ]
+          },
+          {
+            "name": "Age",
+            "options": [
+              "child",
+              "teenager",
+              "young adult",
+              "middle-aged",
+              "elderly"
+            ]
+          },
+          {
+            "name": "Pitch",
+            "options": [
+              "very low pitch",
+              "low pitch",
+              "moderate pitch",
+              "high pitch",
+              "very high pitch"
+            ]
+          },
+          {
+            "name": "Manner",
+            "options": [
+              "whisper"
+            ]
+          },
+          {
+            "name": "Accent",
+            "options": [
+              "american accent",
+              "british accent",
+              "australian accent",
+              "chinese accent",
+              "canadian accent",
+              "indian accent",
+              "korean accent",
+              "portuguese accent",
+              "russian accent",
+              "japanese accent"
+            ]
+          }
+        ],
+        "tags": [
+          "[laughter]",
+          "[sigh]",
+          "[confirmation-en]",
+          "[question-en]",
+          "[question-ah]",
+          "[question-oh]",
+          "[question-ei]",
+          "[question-yi]",
+          "[surprise-ah]",
+          "[surprise-oh]",
+          "[surprise-wa]",
+          "[surprise-yo]",
+          "[dissatisfaction-hnn]"
+        ]
+      },
+      "license_note": "License: CC-BY-NC. Research or non-commercial use only. Changed from Apache-2.0 on 2026-07-03, \"due to constraints from its training data (e.g., Emilia)\". The code is Apache-2.0. The audio tokenizer, bosonai/higgs-audio-v2-tokenizer, is under the Boson Higgs Audio 2 Community License. VoiceTut-TTS is a fine-tune of OmniVoice that its model card declares as Apache-2.0; it reuses the OmniVoice audio tokenizer unchanged. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-voicetut-tts-egyptian-arabic",
+      "name": "VoiceTut-TTS Egyptian Arabic",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "mohammedaly22/VoiceTut-TTS-GGUF",
+              "file": "voicetut-tts-f16.gguf",
+              "revision": "615457bb2e9043f468e012c159146b28fa8f5959",
+              "size_bytes": 1639524576,
+              "sha256": "e621b1512d9d75d1c515c8dbb589b4f173758d6df5cea3781b3a2c4791693486"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "mohammedaly22/VoiceTut-TTS-GGUF",
+              "file": "voicetut-tts-q8_0.gguf",
+              "revision": "615457bb2e9043f468e012c159146b28fa8f5959",
+              "size_bytes": 1350264224,
+              "sha256": "995a1fc8973cf376b490231aa107bd22ab1f5da003e89d11ada48f6d5058f67a"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "omnivoice",
+        "styles": [
+          {
+            "name": "Gender",
+            "options": [
+              "male",
+              "female"
+            ]
+          },
+          {
+            "name": "Age",
+            "options": [
+              "child",
+              "teenager",
+              "young adult",
+              "middle-aged",
+              "elderly"
+            ]
+          },
+          {
+            "name": "Pitch",
+            "options": [
+              "very low pitch",
+              "low pitch",
+              "moderate pitch",
+              "high pitch",
+              "very high pitch"
+            ]
+          },
+          {
+            "name": "Manner",
+            "options": [
+              "whisper"
+            ]
+          },
+          {
+            "name": "Accent",
+            "options": [
+              "american accent",
+              "british accent",
+              "australian accent",
+              "chinese accent",
+              "canadian accent",
+              "indian accent",
+              "korean accent",
+              "portuguese accent",
+              "russian accent",
+              "japanese accent"
+            ]
+          }
+        ],
+        "tags": [
+          "[laughter]",
+          "[sigh]",
+          "[confirmation-en]",
+          "[question-en]",
+          "[question-ah]",
+          "[question-oh]",
+          "[question-ei]",
+          "[question-yi]",
+          "[surprise-ah]",
+          "[surprise-oh]",
+          "[surprise-wa]",
+          "[surprise-yo]",
+          "[dissatisfaction-hnn]"
+        ]
+      },
+      "license_note": "License: CC-BY-NC. Research or non-commercial use only. Changed from Apache-2.0 on 2026-07-03, \"due to constraints from its training data (e.g., Emilia)\". The code is Apache-2.0. The audio tokenizer, bosonai/higgs-audio-v2-tokenizer, is under the Boson Higgs Audio 2 Community License. VoiceTut-TTS is a fine-tune of OmniVoice that its model card declares as Apache-2.0; it reuses the OmniVoice audio tokenizer unchanged. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-llama-outetts-1.0-1b",
+      "name": "Llama-OuteTTS 1.0 1B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "mirek190/audio.cpp",
+          "file": "Text to audio (TTS)/Llama-OuteTTS-1.0-1B_Q8.gguf",
+          "revision": "94bbade143c5f62c0c842ef5b2119f7880fa9ee4",
+          "size_bytes": 3029895456,
+          "sha256": "b05292715569bbd1662520b8a2dc465a74ccf602f0872359888abdd70f5f91e2"
+        }
+      ],
+      "speech": {
+        "family": "outetts"
+      },
+      "license_note": "License: CC-BY-NC-SA-4.0. Research or non-commercial use only. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-personaplex-7b-v1",
+      "name": "PersonaPlex 7B v1",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PersonaPlex-GGUF/personaplex-7b-v1-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 10944018976,
+              "sha256": "0a2263ceacd820450cb825b8063c8dd29d565a3fbd7e7ced2290a58a4286c73b"
+            }
+          ]
+        },
+        {
+          "id": "q4_k",
+          "name": "Q4",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PersonaPlex-GGUF/personaplex-7b-v1-q4_k.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 7860681248,
+              "sha256": "257347f65ed2cf563d44499144636f7999a78fe9547c27b5eb057b4ce9cc3665"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "personaplex"
+      },
+      "license_note": "License: NVIDIA Open Model License. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-plapre-3",
+      "name": "Plapre 3",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "f32",
+          "name": "F32 (full precision)",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Plapre-3-GGUF/plapre-3-f32.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2284552288,
+              "sha256": "fd320031dbb46efa91541044a0e484e4be1dba5e0cfa657bcc75a914ec7b9e60"
+            }
+          ]
+        },
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Plapre-3-GGUF/plapre-3-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1145069888,
+              "sha256": "8baa6069d5cd81bc01bfc039bfcb7c4b7406e659157b3c768fa2bc839fdfc9a1"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "plapre",
+        "voices": [
+          "tor",
+          "ida",
+          "liv",
+          "ask",
+          "kaj"
+        ],
+        "voice": "tor"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Includes Kanade (MIT), WavLM and CosyVoice2 HiFT components; retain their upstream notices as well. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-english",
+      "name": "PocketTTS English",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "voice",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "PocketTTS-GGUF/english/embeddings/alba.safetensors",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 6194424,
+          "sha256": "69c32db63ca56843d994f81f343f62e0bf2d73f7e4c9bc73e44bb1110b1d8845"
+        }
+      ],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/english/pocket-tts-english-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219107328,
+              "sha256": "24ab011c231ea33e7e8b88453c8faec02cdeb37c9b62dbb946ec5c806ec35902"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/english/pocket-tts-english-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 127867968,
+              "sha256": "3f71cf6a51f93c2f2e554e98970a3f49fb9a98d0c64bed5a815e65be3d2ff588"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-french",
+      "name": "PocketTTS French",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "voice",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "PocketTTS-GGUF/french/embeddings/cosette.safetensors",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 6244152,
+          "sha256": "e3c3d60c8c494592f03b2e9b1e963a90b6953229b78d6f6889898066129ebc89"
+        }
+      ],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/french/pocket-tts-french-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219356768,
+              "sha256": "f7b197184e36d9f744fbc3e224e685de8fc977ab748e3612732a8706e9096541"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/french/pocket-tts-french-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 128117408,
+              "sha256": "ae7e6d536c20245d216a7ec9404124cf67f913380bf41a6380c55d6ca9dbaef5"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-german",
+      "name": "PocketTTS German",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/german/pocket-tts-german-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219107808,
+              "sha256": "e8b47c42f9c377eed09ad6d3e4e35031ca35dbc69ef55992c2cabafbc24885c6"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/german/pocket-tts-german-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 127868448,
+              "sha256": "d99a966c42026dbe119863ad8a8c96ddd3c8d2e800dfe2ab75a0caa579293268"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voices": [
+          "alba"
+        ],
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-italian",
+      "name": "PocketTTS Italian",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/italian/pocket-tts-italian-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219108064,
+              "sha256": "853805d9b7fe25d33ecdc609dc62686d2df88f2ac1041a8009c4ca1bdfb4d51d"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/italian/pocket-tts-italian-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 127868704,
+              "sha256": "aa25eb6c0d73fa90a26c07ed5453f44c321ff483b33e96e5c3693b6f76ef9149"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voices": [
+          "alba"
+        ],
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-portuguese",
+      "name": "PocketTTS Portuguese",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/portuguese/pocket-tts-portuguese-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219108992,
+              "sha256": "0ba1e195f8225299218ee8a731457e3121fa171b0f6135bcc8afc43ff96faa46"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/portuguese/pocket-tts-portuguese-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 127869632,
+              "sha256": "e6e76fde1770586b11fab5a7d4fa07006d911098718991e242ca6006bd0513cd"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voices": [
+          "alba"
+        ],
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-pockettts-spanish",
+      "name": "PocketTTS Spanish",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/spanish/pocket-tts-spanish-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 219108864,
+              "sha256": "aefafb0186b16847aa184c28d2bf0310ccb5999f1fde98c416786b268fa8d232"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "PocketTTS-GGUF/spanish/pocket-tts-spanish-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 127869504,
+              "sha256": "d2645064c191d0b9b8daf6d24d2b8a310d89f694c9b3523c1258bc9455adcaff"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "pocket_tts",
+        "voices": [
+          "alba"
+        ],
+        "voice": "alba"
+      },
+      "license_note": "License: CC-BY-4.0. Commercial use is allowed. Packaged language checkpoints, including the six-layer French model, share the upstream model-card license. Attribution required. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-qwen3-tts-12hz-1.7b-base",
+      "name": "Qwen3 TTS 12Hz 1.7B Base",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4544284416,
+              "sha256": "8b7248c563cef53e269a4f168ce6e23a7d6117e77ae2aa1d51b1d64084a1550f"
+            }
+          ]
+        },
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4203169600,
+              "sha256": "db237375e0f04d10fd0ac0afc2855e6844fdcb04a7d471e8a4b6c36bdb6030d7"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2695186240,
+              "sha256": "92641a8022d521efd79a5db45e952589b3f2b781680f9abfcf26f075d37b86c6"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "qwen3_tts"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "ru",
+        "pt",
+        "es",
+        "it"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-qwen3-tts-12hz-1.7b-customvoice",
+      "name": "Qwen3 TTS 12Hz 1.7B CustomVoice",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4179155488,
+              "sha256": "5be0742e196ea9cd9ce0d7d8b69b0fc4fa8181b06cb0bd0591fb1dcdfce6c5a5"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2817055200,
+              "sha256": "c8ac3f94b6e73f137c0e7ecc9270bc8faec7a476ff799b87e48844d1d0987ac3"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "qwen3_tts",
+        "instruction": "optional"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "ru",
+        "pt",
+        "es",
+        "it"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-qwen3-tts-12hz-1.7b-voicedesign",
+      "name": "Qwen3 TTS 12Hz 1.7B VoiceDesign",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4179100352,
+              "sha256": "f12c79e8c492f006b04f5ba823bebe512c9d46e13a7837081f1d34803b4bac0e"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2817000064,
+              "sha256": "b86e03d1d2077bbaed157ab7a7fc646c3e309e69afa52c5e1c86b622b4715057"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "qwen3_tts",
+        "instruction": "optional"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "ru",
+        "pt",
+        "es",
+        "it"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-qwen3-tts-12hz-0.6b-base",
+      "name": "Qwen3 TTS 12Hz 0.6B Base",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-0.6B-Base-GGUF/qwen3-tts-12hz-0.6b-base-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2516161088,
+              "sha256": "b730cd6dfe549d7afd2b4735f57558744d5118db11ba0f7b8d2d42278cc431c7"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Qwen3-TTS-12Hz-0.6B-Base-GGUF/qwen3-tts-12hz-0.6b-base-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 1991217728,
+              "sha256": "c7d0e6c9485a25ae1f6a4c0796f0023230a0051c44cbd2bd05d73770f2cce637"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "qwen3_tts"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "ru",
+        "pt",
+        "es",
+        "it"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-soprano-1.1-80m",
+      "name": "Soprano-1.1-80M",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "WalkingCat/Soprano-1.1-80M-GGUF",
+              "file": "Soprano-1.1-80M-GGUF/soprano-1.1-80m-bf16.gguf",
+              "revision": "36c6f47cf91421b7f0cf3d862d28ae2e41aab3f2",
+              "size_bytes": 221809792,
+              "sha256": "46c60cdf5b8e5a3b26bfd185c0870826c05b533979ea7c1d399a9ffb76a50a54"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "WalkingCat/Soprano-1.1-80M-GGUF",
+              "file": "Soprano-1.1-80M-GGUF/soprano-1.1-80m-q8_0.gguf",
+              "revision": "36c6f47cf91421b7f0cf3d862d28ae2e41aab3f2",
+              "size_bytes": 123162336,
+              "sha256": "4758ad908395dc73a1b973d9a29ce96941f4328594d1c6c1223e7b7710a6a131"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "soprano_tts"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-sopro-v2-turbo",
+      "name": "Sopro V2 Turbo",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "samuel-vitorino/sopro-v2-turbo",
+          "file": "sopro-v2-turbo-f16.gguf",
+          "revision": "c12d0dc7c4a33b3cb6ea3d11ceb70bc60c7c6312",
+          "size_bytes": 317653216,
+          "sha256": "4cbf818ee5e86952ac125d1a0645e7d7b03fcbdfb8fc87ad2076597bd2a700ee"
+        }
+      ],
+      "speech": {
+        "family": "sopro_tts"
+      },
+      "languages": [
+        "en",
+        "pt",
+        "fr",
+        "de"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-supertonic-3",
+      "name": "Supertonic 3",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Supertonic-3-GGUF/supertonic-3-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 454076228,
+              "sha256": "9edd05cf92feab49c6b29721d14c86566459dca7f4a6eeb99306372cdce03697"
+            }
+          ]
+        },
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Supertonic-3-GGUF/supertonic-3-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 454076228,
+              "sha256": "ceede06706a11590dd055220152b44c37a5fb8ac33bb61e19a334e5258901b09"
+            }
+          ]
+        },
+        {
+          "id": "f16",
+          "name": "F16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Supertonic-3-GGUF/supertonic-3-f16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 312785732,
+              "sha256": "7a44c47d1f387e4fb163e2eed9615b58470c77e26ac8b2b1a6be49dfb8670899"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "supertonic"
+      },
+      "license_note": "License: BigScience OpenRAIL-M. Commercial use is allowed. Its use restrictions apply and must be passed on. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-vibevoice-1.5b",
+      "name": "VibeVoice 1.5B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "VibeVoice-1.5B-GGUF/vibevoice-1.5b-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 5420026434,
+              "sha256": "d851e2e972ff7def0729cc02da7b417bbe68ac6769594507ae78b4d3f414e1ac"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "VibeVoice-1.5B-GGUF/vibevoice-1.5b-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 3224706114,
+              "sha256": "e9ca80a31ffe7e4726fcad9798ba10ba1e514d89174fd48ea548d21022e0e6f8"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "vibevoice"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-vibevoice-7b",
+      "name": "VibeVoice 7B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/VibeVoice-7B-GGUF",
+          "file": "vibevoice-7b-q8_0.gguf",
+          "revision": "4bad716c078324abfaf3cc35c4774e6a16877694",
+          "size_bytes": 10581659618,
+          "sha256": "9cda67577f55258d1621cfe306bebcf3e36892fb8c030aa53bf890aa45f4b9fd"
+        }
+      ],
+      "speech": {
+        "family": "vibevoice"
+      },
+      "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-vieneu-tts-v3-turbo",
+      "name": "VieNeu-TTS v3 Turbo",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "support",
+          "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+          "file": "gguf/voices/manifest.json",
+          "revision": "61b85e3d937fbbacb387714180e8182823512523",
+          "size_bytes": 3855
+        },
+        {
+          "role": "support",
+          "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+          "file": "gguf/voices/minh_quan_pro/ref_codes.txt",
+          "revision": "61b85e3d937fbbacb387714180e8182823512523",
+          "size_bytes": 4348
+        },
+        {
+          "role": "support",
+          "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+          "file": "gguf/voices/minh_quan_pro/speaker.emb.txt",
+          "revision": "61b85e3d937fbbacb387714180e8182823512523",
+          "size_bytes": 2206
+        }
+      ],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+              "file": "gguf/vieneu-v3-turbo-bf16.gguf",
+              "revision": "61b85e3d937fbbacb387714180e8182823512523",
+              "size_bytes": 292024704,
+              "sha256": "c9c23d51989382e27730077c2373023bcfb0891db63a1efec97fd73b4bd6b7dc"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
+              "file": "gguf/vieneu-v3-turbo-q8_0.gguf",
+              "revision": "61b85e3d937fbbacb387714180e8182823512523",
+              "size_bytes": 187917664,
+              "sha256": "a60569e5d7dd6f24cbb7bb2e7c472bb988ad19563a4e78f0cc67cc53fd189bb4"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "vieneu_v3_turbo"
+      },
+      "license_note": "audio.cpp does not record a licence for this model. Check the model's page before using it."
+    },
+    {
+      "id": "audio.cpp-vieneu-tts-v3-turbo-first-community-port-july-2026-weights",
+      "name": "VieNeu-TTS v3 Turbo (first community port, July 2026 weights)",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "phuocnguyen90/VieNeu-TTS-v3-Turbo-GGUF",
+          "file": "model.gguf",
+          "revision": "dedc3ddd2d6ce768fffdfe7237eeefdd1698a1a6",
+          "size_bytes": 170482368,
+          "sha256": "40aa7282ab00e0e7911e00ca49268c674318ec8ce20947c85516c483ec3a8bb7"
+        }
+      ],
+      "speech": {
+        "family": "vieneu_v3_turbo"
+      },
+      "license_note": "audio.cpp does not record a licence for this model. Check the model's page before using it."
+    },
+    {
+      "id": "audio.cpp-voxcpm-0.5b",
+      "name": "VoxCPM 0.5B",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VoxCPM1-GGUF/voxcpm-0.5b-q8_0-audiovae-f16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 847888768,
+          "sha256": "c5cd54e0b011a1f5c43cce41f7deb24d2dfbd74b635fcc6b5229b57a4ec37d11"
+        }
+      ],
+      "speech": {
+        "family": "voxcpm1"
+      },
+      "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko"
+      ],
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-voxcpm2",
+      "name": "VoxCPM2",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "orig",
+          "name": "Original precision",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "VoxCPM2-GGUF/voxcpm2-orig.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4960723200,
+              "sha256": "30dfeb1f74a8d7efb893ae625f3c4ec9651b2dd8c22d5e40dc08ced2aa9cac89"
+            }
+          ]
+        },
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "VoxCPM2-GGUF/voxcpm2-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4772295296,
+              "sha256": "dc48028ebf08b9fd2456cbf5fa1ab52568d16660e34d0fa418c35e251ca1ecab"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "VoxCPM2-GGUF/voxcpm2-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 2955007488,
+              "sha256": "8df1faf274e1bdeedef1fd9ddd6aba6632536f66f2e080991d2352af35ceef72"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "voxcpm2"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-vocalrender-pro-voxcpm2",
+      "name": "VocalRender-Pro (VoxCPM2)",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VoxCPM2-GGUF/finetune/vocalrender-pro-orig.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 9544158368,
+          "sha256": "1c9148d67d3df67a0b04a8dbf9201d61bb7cac346bbfc9650b42f9d387a3df05"
+        }
+      ],
+      "speech": {
+        "family": "voxcpm2"
+      },
+      "license_note": "License: Apache-2.0. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    },
+    {
+      "id": "audio.cpp-voxtral-4b-tts-2603",
+      "name": "Voxtral 4B TTS 2603",
+      "engine": "audio.cpp",
+      "output": "audio",
+      "components": [],
+      "variants": [
+        {
+          "id": "bf16",
+          "name": "BF16",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Voxtral-4B-TTS-2603-GGUF/voxtral-4b-tts-2603-bf16.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 8030847808,
+              "sha256": "883f53bc9e54412110649f2725819c2453d871cc0f02d9dde1aaec495960081d"
+            }
+          ]
+        },
+        {
+          "id": "q8_0",
+          "name": "Q8",
+          "components": [
+            {
+              "role": "model",
+              "repo": "audio-cpp/audio.cpp-gguf",
+              "file": "Voxtral-4B-TTS-2603-GGUF/voxtral-4b-tts-2603-q8_0.gguf",
+              "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+              "size_bytes": 4722918208,
+              "sha256": "46eca2bfc66c89c415b66995d3544e91dea3320c93765ec0596f5c616354972d"
+            }
+          ]
+        }
+      ],
+      "speech": {
+        "family": "voxtral_tts"
+      },
+      "license_note": "License: CC-BY-NC-4.0. Research or non-commercial use only. Includes the upstream preset voice embeddings, which share the model's non-commercial license. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
+    }
+  ]
+}
