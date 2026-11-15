@@ -1,25 +1,27 @@
 import KilnCore
 import SwiftUI
 
-/// The settings an image was made with, shown from its Details button.
+/// The settings an output was made with, shown from its Details button.
 struct GenerationDetails: View {
     let record: GenerationRecord
 
     var body: some View {
-        let request = record.request
+        let image = record.request.image
 
         Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 7) {
             row("Model", record.recipeName)
-            row("Size", "\(request.width) × \(request.height)")
-            row("Steps", "\(request.steps)")
-            row("CFG", request.cfg.formatted(.number.precision(.fractionLength(0...2))))
-            row("Sampler", request.sampler)
-            row("Seed", String(request.seed))
+            if let image {
+                row("Size", "\(image.width) × \(image.height)")
+                row("Steps", "\(image.steps)")
+                row("CFG", image.cfg.formatted(.number.precision(.fractionLength(0...2))))
+                row("Sampler", image.sampler)
+                row("Seed", String(image.seed))
+            }
             if let duration = record.durationSeconds {
                 row("Time", Duration.seconds(duration).formatted(.units(allowed: [.minutes, .seconds], width: .abbreviated)))
             }
-            if !request.negativePrompt.isEmpty {
-                row("Negative", request.negativePrompt)
+            if let negative = image?.negativePrompt, !negative.isEmpty {
+                row("Negative", negative)
             }
         }
         .font(.callout)

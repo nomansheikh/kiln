@@ -13,7 +13,7 @@ import Testing
     @Test func anUnreadableSourceImageIsReportedBeforeTheHelperStarts() async throws {
         let engine = try engine(onGenerate: success)
         var edit = request
-        edit.sourceImage = root.appendingPathComponent("missing.png")
+        edit.attachment = root.appendingPathComponent("missing.png")
 
         await #expect(throws: EngineError.unreadableSourceImage) {
             _ = try await collect(engine.generate(recipe: recipe, request: edit))

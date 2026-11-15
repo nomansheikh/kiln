@@ -117,6 +117,9 @@ enum EngineMessage {
         preview: URL,
         initImage: URL? = nil
     ) throws -> Data {
+        guard let settings = request.image else {
+            throw EngineError.generationFailed(detail: "The request has no image settings.")
+        }
         func path(_ role: ModelRecipe.ComponentRole) -> String? {
             recipe.components.first { $0.role == role }.map { storage.url(for: $0).path }
         }
@@ -129,24 +132,24 @@ enum EngineMessage {
                 clipL: path(.clipL),
                 clipG: path(.clipG),
                 t5xxl: path(.t5xxl),
-                flashAttention: recipe.defaults.flashAttention ?? false
+                flashAttention: recipe.defaults?.flashAttention ?? false
             ),
             params: .init(
                 prompt: request.prompt,
-                negativePrompt: request.negativePrompt,
-                width: request.width,
-                height: request.height,
-                steps: request.steps,
-                cfg: request.cfg,
-                sampler: request.sampler,
-                sigmas: request.sigmas,
-                seed: request.seed,
+                negativePrompt: settings.negativePrompt,
+                width: settings.width,
+                height: settings.height,
+                steps: settings.steps,
+                cfg: settings.cfg,
+                sampler: settings.sampler,
+                sigmas: settings.sigmas,
+                seed: settings.seed,
                 initImage: initImage?.path,
-                strength: initImage == nil ? nil : request.strength,
+                strength: initImage == nil ? nil : settings.strength,
                 // These belong to the model, not to one prompt, so they come from the recipe.
-                scheduler: recipe.defaults.scheduler,
-                guidance: recipe.defaults.guidance,
-                flowShift: recipe.defaults.flowShift
+                scheduler: recipe.defaults?.scheduler,
+                guidance: recipe.defaults?.guidance,
+                flowShift: recipe.defaults?.flowShift
             ),
             output: output.path,
             preview: preview.path

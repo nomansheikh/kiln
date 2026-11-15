@@ -10,6 +10,7 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
     case invalidSHA256(file: String)
     case invalidSize(file: String)
     case invalidDefaults(String)
+    case missingDefaults
     case invalidVariant(String)
 
     public var errorDescription: String? {
@@ -32,6 +33,8 @@ public enum RecipeValidationError: Error, Equatable, LocalizedError {
             "The size for \(file) must be greater than zero."
         case .invalidDefaults(let reason):
             "The default settings are invalid: \(reason)."
+        case .missingDefaults:
+            "An image model needs default settings: steps, CFG, sampler, width and height."
         case .invalidVariant(let id):
             "The variant \"\(id)\" needs a unique id of lowercase letters, digits, dots, dashes and underscores, and a name."
         }
@@ -42,7 +45,11 @@ extension ModelRecipe {
     public func validate() throws(RecipeValidationError) {
         guard Self.isValidSlug(id) else { throw .invalidID(id) }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { throw .emptyName }
-        try defaults.validate()
+        if let defaults {
+            try defaults.validate()
+        } else if outputKind == .image {
+            throw .missingDefaults
+        }
         if let baseModel, !Component.isValidRepo(baseModel) { throw .invalidRepo(baseModel) }
 
         guard let variants, !variants.isEmpty else {
@@ -101,7 +108,7 @@ extension ModelRecipe.Component {
     }
 }
 
-extension ModelRecipe.GenerationDefaults {
+extension ModelRecipe.ImageDefaults {
     func validate() throws(RecipeValidationError) {
         guard steps > 0 else { throw .invalidDefaults("steps must be greater than zero") }
         guard cfg >= 0 else { throw .invalidDefaults("cfg cannot be negative") }

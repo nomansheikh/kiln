@@ -18,7 +18,7 @@ import Testing
         #expect(events == [
             .loadingModel,
             .progress(.init(stage: .sampling, completed: 1, total: 2)),
-            .finished(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8))),
+            .finished(.image(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8)))),
         ])
         let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("scratch").path)
         #expect(leftovers.isEmpty)
@@ -40,7 +40,7 @@ import Testing
         // The unreadable second preview is skipped rather than failing the job.
         #expect(events.filter { if case .preview = $0 { true } else { false } }
             == [.preview(GeneratedImage(width: 1, height: 1, channels: 3, pixels: Data("abc".utf8)))])
-        #expect(events.last == .finished(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8))))
+        #expect(events.last == .finished(.image(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8)))))
         let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("scratch").path)
         #expect(leftovers.isEmpty)
         await engine.shutdown()
@@ -59,14 +59,14 @@ import Testing
         """)
         let gallery = GalleryStore(directory: root.appendingPathComponent("gallery"))
         let record = GenerationRecord(recipeID: "r", recipeName: "R", request: request)
-        let source = try gallery.save(GeneratedImage(width: 3, height: 2, channels: 3, pixels: Data(count: 18)), record: record)
+        let source = try gallery.save(.image(GeneratedImage(width: 3, height: 2, channels: 3, pixels: Data(count: 18))), record: record)
         var edit = request
-        edit.sourceImage = source.url
-        edit.strength = 0.5
+        edit.attachment = source.url
+        edit.image?.strength = 0.5
 
         let events = try await collect(engine.generate(recipe: recipe, request: edit))
 
-        #expect(events.last == .finished(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8))))
+        #expect(events.last == .finished(.image(GeneratedImage(width: 2, height: 2, channels: 3, pixels: Data("abcdefghijkl".utf8)))))
         let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("scratch").path)
         #expect(leftovers.isEmpty)
         await engine.shutdown()

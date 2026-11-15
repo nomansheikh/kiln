@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// Everything needed to reproduce a generated image.
+/// Everything needed to reproduce a generation.
 public struct GenerationRecord: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var createdAt: Date
@@ -31,15 +31,19 @@ public struct GenerationRecord: Codable, Sendable, Equatable, Identifiable {
     /// The settings as one block of text, in the layout other Stable Diffusion tools read.
     public var parametersText: String {
         var lines = [request.prompt]
-        if !request.negativePrompt.isEmpty {
-            lines.append("Negative prompt: \(request.negativePrompt)")
+        guard let image = request.image else {
+            lines.append("Model: \(recipeName)")
+            return lines.joined(separator: "\n")
+        }
+        if !image.negativePrompt.isEmpty {
+            lines.append("Negative prompt: \(image.negativePrompt)")
         }
         lines.append([
-            "Steps: \(request.steps)",
-            "Sampler: \(request.sampler)",
-            "CFG scale: \(request.cfg.formatted(.number.locale(Locale(identifier: "en_US_POSIX"))))",
-            "Seed: \(request.seed)",
-            "Size: \(request.width)x\(request.height)",
+            "Steps: \(image.steps)",
+            "Sampler: \(image.sampler)",
+            "CFG scale: \(image.cfg.formatted(.number.locale(Locale(identifier: "en_US_POSIX"))))",
+            "Seed: \(image.seed)",
+            "Size: \(image.width)x\(image.height)",
             "Model: \(recipeName)",
         ].joined(separator: ", "))
         return lines.joined(separator: "\n")

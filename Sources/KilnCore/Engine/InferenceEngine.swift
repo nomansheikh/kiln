@@ -1,66 +1,5 @@
 import Foundation
 
-public struct GenerationRequest: Codable, Sendable, Equatable {
-    public var prompt: String
-    public var negativePrompt: String
-    public var width: Int
-    public var height: Int
-    public var steps: Int
-    public var cfg: Double
-    public var sampler: String
-    public var sigmas: [Double]?
-    public var seed: Int64
-    /// An image to start from instead of pure noise.
-    public var sourceImage: URL?
-    /// How far the result may move from the source image: 0 keeps it, 1 ignores it.
-    public var strength: Double?
-
-    public init(
-        prompt: String,
-        negativePrompt: String = "",
-        width: Int,
-        height: Int,
-        steps: Int,
-        cfg: Double,
-        sampler: String,
-        sigmas: [Double]? = nil,
-        seed: Int64,
-        sourceImage: URL? = nil,
-        strength: Double? = nil
-    ) {
-        self.sourceImage = sourceImage
-        self.strength = strength
-        self.prompt = prompt
-        self.negativePrompt = negativePrompt
-        self.width = width
-        self.height = height
-        self.steps = steps
-        self.cfg = cfg
-        self.sampler = sampler
-        self.sigmas = sigmas
-        self.seed = seed
-    }
-
-    /// A request using the recipe's recommended settings.
-    public init(prompt: String, negativePrompt: String = "", defaults: ModelRecipe.GenerationDefaults, seed: Int64) {
-        self.init(
-            prompt: prompt,
-            negativePrompt: negativePrompt,
-            width: defaults.width,
-            height: defaults.height,
-            steps: defaults.steps,
-            cfg: defaults.cfg,
-            sampler: defaults.sampler,
-            sigmas: defaults.sigmas,
-            seed: seed
-        )
-    }
-
-    public static func randomSeed() -> Int64 {
-        Int64.random(in: 0...Int64(UInt32.max))
-    }
-}
-
 public struct GenerationProgress: Sendable, Equatable {
     public enum Stage: Sendable, Equatable {
         case preparing
@@ -101,12 +40,17 @@ public struct GeneratedImage: Sendable, Hashable {
     }
 }
 
+/// What a finished generation produced.
+public enum GenerationOutput: Sendable, Hashable {
+    case image(GeneratedImage)
+}
+
 public enum GenerationEvent: Sendable, Equatable {
     case loadingModel
     case progress(GenerationProgress)
     /// A rough, low-resolution look at the image so far.
     case preview(GeneratedImage)
-    case finished(GeneratedImage)
+    case finished(GenerationOutput)
 }
 
 public enum EngineError: Error, Equatable, LocalizedError {

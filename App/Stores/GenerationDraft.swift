@@ -18,7 +18,7 @@ struct GenerationDraft: Equatable {
     var editStrength = EditStrength.balanced
 
     /// Applies a recipe's recommended settings, keeping the prompt.
-    mutating func apply(_ defaults: ModelRecipe.GenerationDefaults) {
+    mutating func apply(_ defaults: ModelRecipe.ImageDefaults) {
         width = defaults.width
         height = defaults.height
         steps = defaults.steps
@@ -29,14 +29,36 @@ struct GenerationDraft: Equatable {
     /// Restores everything from a past generation, with its exact seed.
     mutating func apply(_ request: GenerationRequest) {
         prompt = request.prompt
-        negativePrompt = request.negativePrompt
-        width = request.width
-        height = request.height
-        steps = request.steps
-        cfg = request.cfg
-        sampler = request.sampler
+        guard let image = request.image else { return }
+        negativePrompt = image.negativePrompt
+        width = image.width
+        height = image.height
+        steps = image.steps
+        cfg = image.cfg
+        sampler = image.sampler
         randomSeed = false
-        seed = request.seed
+        seed = image.seed
+    }
+
+    /// The request to send to a model: the prompt, the attachment, and the
+    /// settings of the model's kind.
+    func request(for recipe: ModelRecipe) -> GenerationRequest {
+        var request = GenerationRequest(prompt: prompt.trimmingCharacters(in: .whitespacesAndNewlines), attachment: attachment)
+        if recipe.outputKind == .image {
+            request.image = ImageSettings(
+                negativePrompt: negativePrompt,
+                width: width,
+                height: height,
+                steps: steps,
+                cfg: cfg,
+                sampler: sampler,
+                // The recipe's sigma schedule only fits its own step count.
+                sigmas: steps == recipe.defaults?.steps ? recipe.defaults?.sigmas : nil,
+                seed: seed,
+                strength: attachment == nil ? nil : editStrength.rawValue
+            )
+        }
+        return request
     }
 }
 

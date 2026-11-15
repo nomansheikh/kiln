@@ -35,7 +35,7 @@ import Testing
             ],
             defaults: .init(steps: 2, cfg: 1, sampler: "euler", width: 64, height: 64, sigmas: [1, 0.5, 0], flashAttention: true)
         )
-        let request = GenerationRequest(prompt: "a \"quoted\" cat", negativePrompt: "blurry", defaults: recipe.defaults, seed: 42)
+        let request = GenerationRequest(prompt: "a \"quoted\" cat", negativePrompt: "blurry", defaults: recipe.defaults!, seed: 42)
 
         let data = try EngineMessage.generateCommand(recipe: recipe, storage: storage, request: request,
                                                        output: URL(fileURLWithPath: "/tmp/out.raw"), preview: URL(fileURLWithPath: "/tmp/out.preview"))
@@ -66,8 +66,8 @@ import Testing
 
     @Test func generateCommandCarriesTheSourceImageAndStrength() throws {
         let recipe = makeRecipe()
-        var request = GenerationRequest(prompt: "make it snow", defaults: recipe.defaults, seed: 1)
-        request.strength = 0.6
+        var request = GenerationRequest(prompt: "make it snow", defaults: recipe.defaults!, seed: 1)
+        request.image?.strength = 0.6
 
         let data = try EngineMessage.generateCommand(
             recipe: recipe, storage: ModelStorage(root: URL(fileURLWithPath: "/models")), request: request,
@@ -93,7 +93,7 @@ import Testing
         )
         let data = try EngineMessage.generateCommand(
             recipe: recipe, storage: ModelStorage(root: URL(fileURLWithPath: "/m")),
-            request: GenerationRequest(prompt: "x", defaults: recipe.defaults, seed: 1),
+            request: GenerationRequest(prompt: "x", defaults: recipe.defaults!, seed: 1),
             output: URL(fileURLWithPath: "/tmp/o"), preview: URL(fileURLWithPath: "/tmp/p")
         )
 

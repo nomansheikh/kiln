@@ -155,8 +155,8 @@ import Testing
                   revision: "cbcb9ff83b17e1eeef693479a8d34cea355a0ee4", sizeBytes: 7_591_577_312,
                   sha256: "8d74ae0be534df394ea2d29f04b77f879318c9e0df20a3e208e6bedbf89b4159"),
         ])
-        #expect(recipe.defaults.width == 512)
-        #expect(ModelRecipe.singleFile(HFFile(path: "sd_xl_base_1.0.safetensors", sizeBytes: 1, sha256: nil), in: info).defaults.width == 1024)
+        #expect(recipe.defaults?.width == 512)
+        #expect(ModelRecipe.singleFile(HFFile(path: "sd_xl_base_1.0.safetensors", sizeBytes: 1, sha256: nil), in: info).defaults?.width == 1024)
     }
 
     @Test func savedRecipesLoadBackFromTheUserDirectory() async throws {

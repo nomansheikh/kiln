@@ -1,14 +1,16 @@
+import KilnCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The prompt field with its attachment, size, settings and send controls.
-/// Return sends the prompt; Option-Return adds a line. An image can be
-/// attached with the plus button or by dropping a file on the composer.
+/// The prompt field with its attachment, settings and send controls, which
+/// follow the kind of the selected model. Return sends the prompt;
+/// Option-Return adds a line. A file the model takes can be attached with
+/// the plus button or by dropping it on the composer.
 struct PromptComposer: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsAdvanced = false
-    @State private var isPickingImage = false
+    @State private var isPickingFile = false
     @State private var isDropTarget = false
     @State private var attachError: String?
     @FocusState private var promptFocused: Bool
@@ -17,6 +19,9 @@ struct PromptComposer: View {
         @Bindable var generation = model.generation
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
         let attachment = generation.draft.attachment
+        let recipe = generation.selectedRecipe
+        let output = recipe?.outputKind ?? .image
+        let inputKinds = recipe?.inputKinds ?? []
 
         VStack(alignment: .leading, spacing: 6) {
             if let attachment {
@@ -28,7 +33,7 @@ struct PromptComposer: View {
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.92, anchor: .topLeading)))
             }
 
-            TextField(attachment == nil ? "Describe an image" : "Describe how to change it", text: $generation.draft.prompt, axis: .vertical)
+            TextField(placeholder(output: output, hasAttachment: attachment != nil), text: $generation.draft.prompt, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15))
                 // Two lines tall when empty, so there is visible room to write.
@@ -40,9 +45,13 @@ struct PromptComposer: View {
                 .padding(.bottom, 4)
 
             HStack(spacing: 6) {
-                attachButton
-                GenerationImageSizeMenu(draft: $generation.draft)
-                advancedButton
+                if !inputKinds.isEmpty {
+                    attachButton(for: inputKinds)
+                }
+                if output == .image {
+                    GenerationImageSizeMenu(draft: $generation.draft)
+                    advancedButton
+                }
                 Spacer(minLength: 8)
                 PromptSendButton(isBusy: generation.phase.isBusy, action: send)
                     .disabled(!generation.phase.isBusy && !generation.canGenerate)
@@ -66,10 +75,10 @@ struct PromptComposer: View {
             attach(file)
             return true
         } isTargeted: { isDropTarget = $0 }
-        .fileImporter(isPresented: $isPickingImage, allowedContentTypes: [.image]) { result in
+        .fileImporter(isPresented: $isPickingFile, allowedContentTypes: inputKinds.map(\.contentType)) { result in
             if case .success(let file) = result { attach(file) }
         }
-        .alert("Could Not Attach Image", isPresented: Binding(isPresenting: $attachError)) {
+        .alert("Could Not Attach File", isPresented: Binding(isPresenting: $attachError)) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(attachError ?? "")
@@ -78,7 +87,7 @@ struct PromptComposer: View {
 
     // MARK: - Actions
 
-    /// Sends the prompt, or stops the image being generated.
+    /// Sends the prompt, or stops the generation that is running.
     private func send() {
         let generation = model.generation
         if generation.phase.isBusy {
@@ -100,8 +109,16 @@ struct PromptComposer: View {
 
     // MARK: - Controls
 
-    private var attachButton: some View {
-        Button { isPickingImage = true } label: {
+    private func placeholder(output: MediaKind, hasAttachment: Bool) -> String {
+        switch (output, hasAttachment) {
+        case (.image, true): "Describe how to change it"
+        case (_, true): "Add instructions, or send the file as it is"
+        default: output.promptPlaceholder
+        }
+    }
+
+    private func attachButton(for kinds: [MediaKind]) -> some View {
+        Button { isPickingFile = true } label: {
             Image(systemName: "plus")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -111,8 +128,8 @@ struct PromptComposer: View {
         }
         .buttonStyle(PressableButtonStyle())
         .focusable(false)
-        .help("Attach an image to edit")
-        .accessibilityLabel("Attach image")
+        .help(kinds == [.image] ? "Attach an image to edit" : "Attach a file")
+        .accessibilityLabel(kinds == [.image] ? "Attach image" : "Attach file")
     }
 
     private var advancedButton: some View {

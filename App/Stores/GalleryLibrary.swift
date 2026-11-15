@@ -20,9 +20,9 @@ final class GalleryLibrary {
         items = store.items()
     }
 
-    /// Saves a new image and returns its gallery entry.
-    func add(_ image: GeneratedImage, record: GenerationRecord) throws -> GalleryItem {
-        let item = try store.save(image, record: record)
+    /// Saves a new output and returns its gallery entry.
+    func add(_ output: GenerationOutput, record: GenerationRecord) throws -> GalleryItem {
+        let item = try store.save(output, record: record)
         reload()
         return item
     }

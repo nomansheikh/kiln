@@ -108,10 +108,12 @@ struct RecipeCard: View {
                     .help("Total download size")
             }
             Pill(text: recipe.fileCountText, systemImage: "doc.on.doc")
-            Pill(text: "\(recipe.defaults.width) × \(recipe.defaults.height)", systemImage: "aspectratio")
-                .help("Default resolution")
-            Pill(text: "\(recipe.defaults.steps) steps", systemImage: "bolt")
-                .help("Default step count")
+            if let defaults = recipe.defaults {
+                Pill(text: "\(defaults.width) × \(defaults.height)", systemImage: "aspectratio")
+                    .help("Default resolution")
+                Pill(text: "\(defaults.steps) steps", systemImage: "bolt")
+                    .help("Default step count")
+            }
             if let fit = model.library.fit(for: recipe) {
                 FitLabel(fit: fit, memoryGB: Int(model.library.memory.physicalMemoryGB.rounded()))
                     .padding(.leading, 6)
