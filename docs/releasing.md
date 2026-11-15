@@ -3,9 +3,8 @@
 A release is a signed, notarized disk image attached to a GitHub Release. The signing
 key stays in the maintainer's keychain and is never uploaded anywhere.
 
-No release has been made yet, and neither way of making one described here has been
-run from start to finish. Treat the first release as the test of this page and correct
-it afterwards.
+Version 0.1.0 was made with Xcode, as described below. The release script has not been
+run from start to finish.
 
 Before either way, go through [release-checklist.md](release-checklist.md): what to
 run, and what to click through by hand, since the app has no automated tests.
@@ -28,12 +27,19 @@ credentials need to be stored.
    xcodegen generate
    ```
 
-4. Open `Kiln.xcodeproj`, choose Product, Archive, then Distribute App, Direct
-   Distribution. Xcode signs, uploads for notarization, and gives back a notarized
-   `Kiln.app`.
-5. Check the three helpers inside it. They are copied in and signed by a build script,
-   not by Xcode, and whether the export signs them again with Developer ID is not known
-   yet. Each must show the Developer ID authority, the `runtime` flag and a timestamp:
+4. Open `Kiln.xcodeproj` and set the signing for the release. The project signs ad hoc
+   by default, so that anyone can build it, and an archive made that way stops at
+   "No Team Found in Archive", whatever team is picked in the menu. In the Kiln target's
+   Signing & Capabilities tab, for the Release configuration, turn off automatic
+   signing, choose your team and the "Developer ID Application" certificate. This is
+   not kept in the repository, and `xcodegen generate` resets it, so it is done again
+   for each release.
+5. Choose Product, Archive, then Distribute App, Direct Distribution. Xcode uploads the
+   archive for notarization and gives back a notarized `Kiln.app` to export. For 0.1.0
+   this took seconds.
+6. Check the three helpers inside it. They are copied in and signed by a build script
+   with the identity the build uses, so with the signing above they come out signed like
+   the app. Each must show the Developer ID authority, the `runtime` flag and a timestamp:
 
    ```sh
    for helper in kiln-engine kiln-whisper kiln-audio; do
@@ -46,7 +52,7 @@ credentials need to be stored.
    If a helper is signed with anything else, notarization fails or the helper does not
    start on another Mac. Fix the signing in `project.yml` ("Bundle the helpers") before
    going on.
-6. Package the app and work out its checksum:
+7. Package the app and work out its checksum:
 
    ```sh
    ./scripts/package-dmg.sh Kiln.app Kiln-0.1.0.dmg
@@ -56,11 +62,11 @@ credentials need to be stored.
    The disk image itself is not notarized this way; the app inside it is, and that is
    what Gatekeeper checks when the app is opened. Notarizing the image as well needs
    the notary credentials described below.
-7. Try it as a user would, on an account that has never run Kiln: open the disk image,
+8. Try it as a user would, on an account that has never run Kiln: open the disk image,
    drag the app to Applications, open it, download one model and generate with it. This
    is the only step that shows Gatekeeper, the sandboxed helpers and a first launch
    working together.
-8. Create a draft release and publish it once it has been read through:
+9. Create a draft release and publish it once it has been read through:
 
    ```sh
    gh release create v0.1.0 Kiln-0.1.0.dmg --draft --title "Kiln 0.1.0" --notes "..."
