@@ -84,6 +84,37 @@ import Testing
         await engine.shutdown()
     }
 
+    @Test func aLoadFailureWaitsForAReasonThatIsLoggedAfterIt() async throws {
+        // The log and the events come through different pipes, so the reason can arrive second.
+        let engine = try engine(onGenerate: """
+        echo '{"type":"error","code":"load_failed","message":"The model could not be loaded."}'
+        echo '{"type":"idle"}'
+        sleep 0.2
+        echo '[error] init model loader from file failed' >&2
+        """)
+
+        await #expect(throws: EngineError.modelLoadFailed(detail: "[error] init model loader from file failed")) {
+            _ = try await collect(engine.generate(recipe: recipe, request: request))
+        }
+        await engine.shutdown()
+    }
+
+    @Test func aLoadFailureWithoutAReasonIsStillReported() async throws {
+        let engine = try engine(onGenerate: """
+        echo '{"type":"error","code":"load_failed","message":"The model could not be loaded."}'
+        echo '{"type":"idle"}'
+        """)
+
+        await #expect(throws: EngineError.modelLoadFailed(detail: "")) {
+            _ = try await collect(engine.generate(recipe: recipe, request: request))
+        }
+        // The helper's idle belonged to the failed job, so the next job is not cut short by it.
+        await #expect(throws: EngineError.modelLoadFailed(detail: "")) {
+            _ = try await collect(engine.generate(recipe: recipe, request: request))
+        }
+        await engine.shutdown()
+    }
+
     @Test func rejectsOutputOfTheWrongSize() async throws {
         let engine = try engine(onGenerate: """
         printf 'short' > "$output"

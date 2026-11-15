@@ -64,9 +64,13 @@ TAKES_INSTRUCTION = {
 }
 
 # Families that need the words spoken in a voice recording although their spec
-# marks `reference_text` as optional. OmniVoice refuses a recording without them
-# ("native voice clone currently requires reference_text").
-NEEDS_REFERENCE_TEXT = {"omnivoice"}
+# marks `reference_text` as optional:
+# - OmniVoice refuses a recording without them ("native voice clone currently
+#   requires reference_text").
+# - BreezeTTS: "supplied reference audio requires its transcript" (docs/models/breeze_tts.md).
+# - Qwen3 TTS Base: "`--reference-text` required unless `x_vector_only_mode=true`"
+#   (docs/models/qwen3_tts.md), an option Kiln does not send.
+NEEDS_REFERENCE_TEXT = {"omnivoice", "breeze_tts", "qwen3_tts"}
 
 # Families of which only some packages copy a voice: those whose id contains one of the words.
 # Qwen3 TTS copies a voice with its Base models only (docs/models/qwen3_tts.md).

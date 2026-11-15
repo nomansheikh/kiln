@@ -107,6 +107,39 @@ import Testing
         #expect(sound.frameCount == 300 + 2 * gap)
     }
 
+    @Test func aLineThatFailsKeepsTheLinesReadBeforeIt() async throws {
+        let engine = FakeEngine(
+            events: [.finished(.audio(tone(100)))], failingOn: (request: 3, error: .generationFailed(detail: "out of words"))
+        )
+        var events: [GenerationEvent] = []
+        var failure: Error?
+        do {
+            for try await event in engine.speak(recipe: try named(), request: GenerationRequest(prompt: script)) {
+                events.append(event)
+            }
+        } catch {
+            failure = error
+        }
+        // The first two lines arrive as a clip, then the error names the third.
+        guard events.count == 1, case .finished(.audio(let clip)) = events[0] else {
+            Issue.record("expected one clip, got \(events)")
+            return
+        }
+        #expect(clip.frameCount == 100 + 6_000 + 100)
+        guard case .scriptStopped(finished: 2, total: 3, let detail) = failure as? EngineError else {
+            Issue.record("unexpected failure: \(String(describing: failure))")
+            return
+        }
+        #expect(detail.contains("out of words"))
+    }
+
+    @Test func aFirstLineThatFailsFailsAsItDid() async throws {
+        let engine = FakeEngine(events: [.finished(.audio(tone(100)))], failingOn: (request: 1, error: .missingText))
+        await #expect(throws: EngineError.missingText) {
+            for try await _ in engine.speak(recipe: try self.named(), request: GenerationRequest(prompt: self.script)) {}
+        }
+    }
+
     @Test func plainTextGoesToTheModelAsItIs() async throws {
         let engine = FakeEngine(events: [.finished(.audio(tone(100)))])
         for try await _ in engine.speak(recipe: try named(), request: GenerationRequest(prompt: "Hello there.")) {}

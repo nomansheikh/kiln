@@ -3,7 +3,8 @@ import Foundation
 extension InferenceEngine {
     /// Reads a text aloud. A script for a model that speaks in one voice at a
     /// time is read turn by turn, each in its speaker's voice, and joined into
-    /// one sound; anything else goes to the model as it is.
+    /// one sound; anything else goes to the model as it is. When a later turn
+    /// fails, the turns already read are still delivered, followed by the error.
     public func speak(recipe: ModelRecipe, request: GenerationRequest) -> AsyncThrowingStream<GenerationEvent, Error> {
         let turns: [GenerationRequest]
         do {
@@ -19,15 +20,27 @@ extension InferenceEngine {
                 do {
                     var parts: [GeneratedAudio] = []
                     for (index, turn) in turns.enumerated() {
-                        for try await event in generate(recipe: recipe, request: turn) {
-                            switch event {
-                            case .finished(.audio(let sound)): parts.append(sound)
-                            case .finished: throw EngineError.invalidOutput
-                            case .loadingModel where index > 0: break
-                            default: continuation.yield(event)
+                        do {
+                            for try await event in generate(recipe: recipe, request: turn) {
+                                switch event {
+                                case .finished(.audio(let sound)): parts.append(sound)
+                                case .finished: throw EngineError.invalidOutput
+                                case .loadingModel where index > 0: break
+                                default: continuation.yield(event)
+                                }
                             }
+                            try Task.checkCancellation()
+                        } catch let error where !(error is CancellationError) && !parts.isEmpty {
+                            // The lines read so far took time to make, so they are kept
+                            // as a clip and the failure names the line that stopped it.
+                            if let sound = GeneratedAudio.joined(parts) {
+                                continuation.yield(.finished(.audio(sound)))
+                            }
+                            throw EngineError.scriptStopped(
+                                finished: parts.count, total: turns.count,
+                                detail: (error as? LocalizedError)?.errorDescription ?? ""
+                            )
                         }
-                        try Task.checkCancellation()
                     }
                     guard let sound = GeneratedAudio.joined(parts) else { throw EngineError.invalidOutput }
                     continuation.yield(.finished(.audio(sound)))
