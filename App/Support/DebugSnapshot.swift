@@ -40,6 +40,11 @@ enum DebugSnapshot {
         ProcessInfo.processInfo.arguments.contains("--open-style")
     }
 
+    /// `--sample-update` shows the sidebar's notice of a new version without asking GitHub.
+    static var showsSampleUpdate: Bool {
+        ProcessInfo.processInfo.arguments.contains("--sample-update")
+    }
+
     /// `--only <screen>` limits a snapshot to one screen, named as in `SidebarItem`.
     private static var onlyItem: SidebarItem? {
         let arguments = ProcessInfo.processInfo.arguments
@@ -51,6 +56,23 @@ enum DebugSnapshot {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
         return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
+    }
+
+    /// A copy started for a snapshot while another copy of Kiln is running sometimes
+    /// gets no window, and then nothing is captured. Asking the app to reopen, as
+    /// clicking its Dock icon does, makes it create one.
+    static func openWindowIfMissing() {
+        guard outputDirectory != nil else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !NSApp.windows.contains(where: { $0.isVisible && $0.contentView != nil }) else { return }
+            let me = NSAppleEventDescriptor(processIdentifier: ProcessInfo.processInfo.processIdentifier)
+            let reopen = NSAppleEventDescriptor(
+                eventClass: AEEventClass(kCoreEventClass), eventID: AEEventID(kAEReopenApplication), targetDescriptor: me,
+                returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID)
+            )
+            _ = try? reopen.sendEvent(options: .noReply, timeout: 1)
+        }
     }
 
     static func run(model: AppModel, into directory: URL) async {
