@@ -8,13 +8,14 @@ struct SpeechComposer: View {
     @Environment(AppModel.self) private var model
     @State private var editor = SpeechEditorProxy()
     @State private var textHeight = SpeechTextEditor.height(ofLines: 3)
+    @State private var isFocused = false
 
     var body: some View {
         @Bindable var speech = model.speech
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
 
         VStack(alignment: .leading, spacing: 6) {
-            SpeechTextEditor(text: $speech.text, tags: tags, showsSpeakers: speech.isScript, proxy: editor, height: $textHeight, onSubmit: send)
+            SpeechTextEditor(text: $speech.text, tags: tags, showsSpeakers: speech.isScript, proxy: editor, height: $textHeight, isFocused: $isFocused, onSubmit: send)
                 // Three lines tall when empty; a long text scrolls inside the field.
                 .frame(height: min(max(textHeight, SpeechTextEditor.height(ofLines: 3)), SpeechTextEditor.height(ofLines: 12)))
                 .overlay(alignment: .topLeading) {
@@ -98,6 +99,7 @@ struct SpeechComposer: View {
         .padding(12)
         .background(Theme.surface, in: shape)
         .overlay(shape.strokeBorder(Theme.hairline))
+        .composerGlow(isWorking: speech.isGenerating, isFocused: isFocused)
         .shadow(color: .black.opacity(0.07), radius: 18, y: 6)
         .contentShape(shape)
         .onTapGesture { editor.focus() }

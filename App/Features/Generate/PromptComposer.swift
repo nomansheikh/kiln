@@ -66,6 +66,7 @@ struct PromptComposer: View {
         .padding(12)
         .background(Theme.surface, in: shape)
         .overlay(shape.strokeBorder(isDropTarget ? Theme.accent : Theme.hairline, lineWidth: isDropTarget ? 2 : 1))
+        .composerGlow(isWorking: generation.phase.isBusy, isFocused: promptFocused && !isDropTarget)
         .shadow(color: .black.opacity(0.07), radius: 18, y: 6)
         .contentShape(shape)
         .onTapGesture { promptFocused = true }
