@@ -140,13 +140,6 @@ struct SpeechVoiceEditor: View {
         }
     }
 
-    /// Runs `work` with access to a file picked in the open panel, which may need opening first.
-    private func withAccess<T>(to file: URL, _ work: () async throws -> T) async rethrows -> T {
-        let scoped = file.startAccessingSecurityScopedResource()
-        defer { if scoped { file.stopAccessingSecurityScopedResource() } }
-        return try await work()
-    }
-
     private func transcribe() {
         guard let source else { return }
         isTranscribing = true
@@ -154,7 +147,10 @@ struct SpeechVoiceEditor: View {
         Task {
             defer { isTranscribing = false }
             do {
-                let words = try await withAccess(to: source) { try await model.speech.transcribe(source, language: language) }
+                // A file picked in the open panel may need opening first.
+                let scoped = source.startAccessingSecurityScopedResource()
+                defer { if scoped { source.stopAccessingSecurityScopedResource() } }
+                let words = try await model.speech.transcribe(source, language: language)
                 if words.isEmpty {
                     problem = "No words were heard in the first \(Int(AudioSamples.referenceSeconds)) seconds."
                 } else {
@@ -172,9 +168,9 @@ struct SpeechVoiceEditor: View {
                 if let edited {
                     try model.speech.updateVoice(edited, name: name, transcript: transcript)
                 } else if let recording {
-                    try await withAccess(to: recording) {
-                        try model.speech.addVoice(recording: recording, name: name, transcript: transcript)
-                    }
+                    let scoped = recording.startAccessingSecurityScopedResource()
+                    defer { if scoped { recording.stopAccessingSecurityScopedResource() } }
+                    try model.speech.addVoice(recording: recording, name: name, transcript: transcript)
                 }
                 dismiss()
             } catch {
