@@ -3,6 +3,7 @@ import SwiftUI
 
 struct Sidebar: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var isVisible: Bool
 
     var body: some View {
@@ -41,10 +42,17 @@ struct Sidebar: View {
 
             Spacer(minLength: 8)
 
+            if let release = model.updates.available {
+                UpdateNotice(release: release)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, model.library.downloadEntries.isEmpty ? 8 : 0)
+                    .transition(Motion.rise(reduced: reduceMotion))
+            }
             if !model.library.downloadEntries.isEmpty {
                 DownloadsButton()
                     .padding(8)
             }
         }
+        .animation(Motion.layout(reduced: reduceMotion), value: model.updates.available)
     }
 }

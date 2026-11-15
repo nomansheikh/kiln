@@ -16,6 +16,7 @@ final class AppModel {
     let audio: AudioLibrary
     let chats: ChatLibrary
     let account: HubAccount
+    let updates = UpdateStore()
 
     init() {
         let support = URL.applicationSupportDirectory.appendingPathComponent("Kiln", isDirectory: true)
@@ -89,6 +90,7 @@ final class AppModel {
             speech?.selectDefaultRecipeIfNeeded()
         }
         refreshRecipeCatalogIfDue()
+        updates.start()
     }
 
     /// Every engine under the id recipes use for it, each with its helper inside the app.
