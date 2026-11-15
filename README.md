@@ -72,7 +72,7 @@ Only some of these recipes have been run; see Status.
 ## Requirements
 
 - An Apple Silicon Mac
-- macOS 14 or later (only macOS 27.2 has been tested; see Status)
+- macOS 14 or later (only macOS 27 has been tested; see Status)
 
 ## Privacy and safety
 
@@ -92,8 +92,8 @@ How to report a vulnerability, and what is in scope, is in [SECURITY.md](SECURIT
 
 Kiln is early. Read this before relying on it.
 
-- **No release yet.** No release has been published, so there are no signed or notarized builds and no download. Until then you build from source. How a release is made is in [docs/releasing.md](docs/releasing.md); it has not been done yet. The app says when a newer version is published but does not update itself. There is no Intel build.
-- **One test machine, one macOS version.** Everything below was run on the maintainer's Mac, an Apple M5 Ultra with 96 GB of memory, on macOS 27.2. Kiln is built for macOS 14 and later, but no older version and no other Mac has been tried. The helpers' sandbox with the GPU is the part most likely to behave differently on an older system.
+- **Releases.** Version 0.1.0 is a signed, notarized disk image on the [Releases page](https://github.com/nomansheikh/kiln/releases). How a release is made is in [docs/releasing.md](docs/releasing.md). The app says when a newer version is published but does not update itself. There is no Intel build.
+- **Two test machines.** Development and everything below was done on the maintainer's Mac, an Apple M5 Ultra with 96 GB of memory, on macOS 27.2. The notarized 0.1.0 build was also installed from its disk image on a Mac mini (Apple M4, 16 GB, macOS 27.0.1), where an image, a transcript and a spoken clip were each made. Kiln is built for macOS 14 and later, but no version older than macOS 27 has been tried. The helpers' sandbox with the GPU is the part most likely to behave differently on an older system.
 - **Images.** The Stable Diffusion XL Base 1.0 recipe has been downloaded and run end to end through the app, and it is the only recipe marked `"tested": true`. The screenshots above were made with the Qwen-Image 2.1 Turbo Uncensored recipe. The other image recipes pass the file check (`python3 scripts/recipe.py check`), which shows that their files exist and match. It does not show that they generate an image.
 - **Speech to text.** The Whisper Large v3 Turbo recipe has been downloaded and has transcribed a recording through the app. Cancelling a transcription and long recordings have not been tried.
 - **Text to speech.** PocketTTS English has been used through the app, and its output transcribes back to the input text. OmniVoice and VibeVoice 1.5B have been run through the engine: OmniVoice with style words, sound marks, a designed voice and copied voices, and VibeVoice with a script, with and without copied voices. Chatterbox, Qwen3-TTS 1.7B Base and VoxCPM2 pass the file check only. Long texts have not been tried.
