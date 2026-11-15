@@ -21,12 +21,16 @@ Standard library only; works on Python 3.9.
 
 import argparse
 import glob
+import hashlib
 import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUDIOCPP = os.path.join(ROOT, "Vendor", "audio.cpp")
@@ -143,15 +147,42 @@ def pinned(role, repo, path, info, hub):
     return {"role": role, "repo": repo, "file": path, "revision": info.get("sha"), "size_bytes": found[0], "sha256": found[1]}
 
 
+# The most a file may weigh for this script to fetch it and work out its checksum.
+# Model weights are far larger and always come with one from the Hub.
+SMALL_FILE_LIMIT = 1 << 20
+
+
 def small_file(role, repo, path, info, hub):
-    """A file too small for LFS has no SHA-256 on the Hub; it is pinned by commit and size."""
+    """A file too small for LFS has no SHA-256 on the Hub, so it is fetched to work one out.
+
+    The app refuses a download it cannot check, so a file whose checksum cannot be
+    had leaves its model out of the catalogue.
+    """
     found = hub.file(info, path)
     if not found or not isinstance(found[0], int) or found[0] <= 0:
         return None
-    component = {"role": role, "repo": repo, "file": path, "revision": info.get("sha"), "size_bytes": found[0]}
-    if found[1]:
-        component["sha256"] = found[1]
-    return component
+    checksum = found[1] or fetched_sha256(repo, path, info.get("sha"), found[0])
+    if not checksum:
+        return None
+    return {"role": role, "repo": repo, "file": path, "revision": info.get("sha"), "size_bytes": found[0], "sha256": checksum}
+
+
+def fetched_sha256(repo, path, revision, size):
+    """SHA-256 of a small text file on the Hub at a commit, or None when it cannot be read."""
+    if not revision or size > SMALL_FILE_LIMIT:
+        return None
+    url = "https://huggingface.co/%s/resolve/%s/%s" % (
+        urllib.parse.quote(repo, safe="/"), urllib.parse.quote(revision, safe=""), urllib.parse.quote(path, safe="/"))
+    request = urllib.request.Request(url, headers={"User-Agent": "kiln-recipe-script"})
+    token = os.environ.get("HF_TOKEN", "").strip()
+    if token:
+        request.add_header("Authorization", "Bearer " + token)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            content = response.read(SMALL_FILE_LIMIT + 1)
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    return hashlib.sha256(content).hexdigest() if len(content) == size else None
 
 
 # ---------------------------------------------------------------------------

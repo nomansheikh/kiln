@@ -33,7 +33,11 @@ public final class AudioCppEngine: InferenceEngine {
     ) {
         self.storage = storage
         self.scratchDirectory = scratchDirectory
-        session = HelperSession(helperURL: helperURL, cancelGracePeriod: cancelGracePeriod) { log in
+        session = HelperSession(
+            helperURL: helperURL,
+            arguments: HelperProcess.sandboxArguments(models: storage.root, scratch: scratchDirectory),
+            cancelGracePeriod: cancelGracePeriod
+        ) { log in
             log.filter { $0.contains("[error]") }.suffix(3).joined(separator: "\n")
         }
     }

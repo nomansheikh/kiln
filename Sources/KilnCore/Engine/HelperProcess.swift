@@ -10,13 +10,34 @@ struct HelperProcess {
     /// Log lines from the helper's stderr.
     let logs: AsyncStream<String>
 
-    static func launch(_ executable: URL) throws(EngineError) -> HelperProcess {
+    /// The only variables a helper is started with. A helper reads files from the
+    /// internet, so it is not handed the app's whole environment, which can hold
+    /// access tokens such as `HF_TOKEN`.
+    static let passedVariables: Set<String> = ["HOME", "TMPDIR", "USER", "LOGNAME", "LANG"]
+
+    /// What a helper is started with, out of the app's own environment.
+    static func environment(from parent: [String: String]) -> [String: String] {
+        var environment = parent.filter { passedVariables.contains($0.key) }
+        environment["PATH"] = "/usr/bin:/bin"
+        return environment
+    }
+
+    /// The arguments that make a helper confine itself (see `Engine/sandbox.h`):
+    /// it may then read the models folder, write the scratch folder, and reach
+    /// neither the network nor the rest of the user's files.
+    static func sandboxArguments(models: URL, scratch: URL) -> [String] {
+        ["--sandbox", models.path, scratch.path]
+    }
+
+    static func launch(_ executable: URL, arguments: [String] = []) throws(EngineError) -> HelperProcess {
         guard FileManager.default.isExecutableFile(atPath: executable.path) else {
             throw .helperUnavailable("\(executable.lastPathComponent) is missing from the app.")
         }
         let process = Process()
         let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()
         process.executableURL = executable
+        process.arguments = arguments
+        process.environment = environment(from: ProcessInfo.processInfo.environment)
         process.standardInput = stdin
         process.standardOutput = stdout
         process.standardError = stderr

@@ -126,11 +126,14 @@ public actor DownloadManager {
                     status.state = .downloading
                     status.currentFile = component.file
                 }
+                // A file that cannot be checked is not fetched: the checksum is what
+                // ties the bytes to the file the recipe names.
+                guard let sha256 = component.sha256 else { throw DownloadError.noChecksum(file: component.file) }
                 let item = DownloadItem(
                     url: HFClient.downloadURL(repo: component.repo, file: component.file, revision: component.revision),
                     destination: storage.url(for: component),
                     expectedSize: component.sizeBytes,
-                    sha256: component.sha256
+                    sha256: sha256
                 )
                 try await downloader.download(item) { [weak self] event in
                     Task { await self?.handle(event, for: id, file: component.file, bytesBefore: done) }

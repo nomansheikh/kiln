@@ -15,6 +15,14 @@ enum EngineMessage {
         case cancelled
         case error(code: String, message: String)
         case idle
+
+        /// The file the helper says it wrote, for the events that name one.
+        var path: String? {
+            switch self {
+            case .image(let path, _, _, _), .preview(let path, _, _, _), .audio(let path, _, _, _), .text(let path): path
+            default: nil
+            }
+        }
     }
 
     private struct RawEvent: Decodable {

@@ -275,9 +275,12 @@ def validate_speech(recipe, problems, curated):
         or not isinstance(speakers["line"], str) or "{n}" not in speakers["line"] or "{text}" not in speakers["line"]
     ):
         problems.append('speech.speakers must have "max", a number of at least 2, and "line", with {n} and {text} in it.')
-    # A model that only copies voices, or invents one for each speaker, has none of its own.
-    if curated and not names and speech.get("reference") != "required" and speakers is None:
-        problems.append('The recipe has no voices: add "voice" components, list speech.voices, or set speech.reference to "required".')
+    # A model with no named voice must get its voice some other way: copied from a
+    # recording, made up from a description, or invented for each speaker of a script.
+    voiced = speech.get("reference") is not None or speech.get("styles") is not None or speech.get("instruction") is not None
+    if curated and not names and not voiced and speakers is None:
+        problems.append('The recipe has no voices: add "voice" components, list speech.voices, or say how the model '
+                        'gets a voice with speech.reference, speech.instruction, speech.styles or speech.speakers.')
     instruction = speech.get("instruction")
     if instruction is not None and instruction not in INSTRUCTIONS:
         problems.append("speech.instruction must be one of: %s." % ", ".join(INSTRUCTIONS))

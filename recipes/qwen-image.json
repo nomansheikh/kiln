@@ -1,0 +1,74 @@
+{
+  "$schema": "./schema.json",
+  "id": "qwen-image",
+  "name": "Qwen-Image",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "vae",
+      "repo": "Comfy-Org/Qwen-Image",
+      "file": "split_files/vae/qwen_image_vae.safetensors",
+      "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
+      "size_bytes": 253806246,
+      "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f"
+    }
+  ],
+  "defaults": {
+    "steps": 50,
+    "cfg": 4.0,
+    "sampler": "euler",
+    "width": 1024,
+    "height": 1024,
+    "flow_shift": 3.0
+  },
+  "license_note": "Denoiser (GGUF conversion of Qwen/Qwen-Image), VAE and text encoder (Qwen2.5-VL-7B-Instruct GGUF): Apache-2.0.",
+  "base_model": "Qwen/Qwen-Image",
+  "variants": [
+    {
+      "id": "q8",
+      "name": "Q8 (best quality)",
+      "min_memory_gb": 48,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "unsloth/Qwen2.5-VL-7B-Instruct-GGUF",
+          "file": "Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+          "revision": "68bb8bc4b7df5289c143aaec0ab477a7d4051aab",
+          "size_bytes": 8098524032,
+          "sha256": "ee770c700d7429cc6f0c74d6c7ab3c063bf521312fc36e80776d1d79bc9fa4ad"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "QuantStack/Qwen-Image-GGUF",
+          "file": "Qwen_Image-Q8_0.gguf",
+          "revision": "257f261fa92593bed760aa6fa3f7921a49fea00f",
+          "size_bytes": 21761817120,
+          "sha256": "43142b32778dc0568c27395abc6f8291ac53f1de0b98eed919712cf161f248de"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "name": "Q4 (smaller)",
+      "min_memory_gb": 32,
+      "components": [
+        {
+          "role": "llm",
+          "repo": "unsloth/Qwen2.5-VL-7B-Instruct-GGUF",
+          "file": "Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+          "revision": "68bb8bc4b7df5289c143aaec0ab477a7d4051aab",
+          "size_bytes": 4683072384,
+          "sha256": "d16776dcd9a28d42758c2958ed3a752aabf20a305252cd64ff2be72b4a78c503"
+        },
+        {
+          "role": "diffusion_model",
+          "repo": "QuantStack/Qwen-Image-GGUF",
+          "file": "Qwen_Image-Q4_K_M.gguf",
+          "revision": "257f261fa92593bed760aa6fa3f7921a49fea00f",
+          "size_bytes": 13065746976,
+          "sha256": "645473886d7dbb0103f84c563c798f7b0867293d919752d4d6be6a432b0bc988"
+        }
+      ]
+    }
+  ]
+}

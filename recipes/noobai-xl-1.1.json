@@ -1,0 +1,25 @@
+{
+  "$schema": "./schema.json",
+  "id": "noobai-xl-1.1",
+  "name": "NoobAI-XL 1.1",
+  "engine": "sd.cpp",
+  "components": [
+    {
+      "role": "checkpoint",
+      "repo": "Laxhar/noobai-XL-1.1",
+      "file": "NoobAI-XL-v1.1.safetensors",
+      "revision": "814a274af2b8097c0828819d561ec74c7d0c6cea",
+      "size_bytes": 7105349958,
+      "sha256": "6681e8e4b134c81f16533acedb0d406d7e5e366e1624b4105178c64d00b05d51"
+    }
+  ],
+  "defaults": {
+    "steps": 28,
+    "cfg": 5.5,
+    "sampler": "euler_a",
+    "width": 832,
+    "height": 1216
+  },
+  "license_note": "Fair AI Public License 1.0-SD with the model card's added terms: no commercial use of the model, derivative models or generated products; derivatives must be open-sourced; use-based restrictions apply.",
+  "min_memory_gb": 16
+}

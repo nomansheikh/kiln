@@ -1,0 +1,58 @@
+{
+  "$schema": "./schema.json",
+  "id": "qwen3-tts-1.7b-base",
+  "name": "Qwen3-TTS 1.7B Base",
+  "engine": "audio.cpp",
+  "components": [],
+  "output": "audio",
+  "languages": [
+    "en",
+    "zh",
+    "ja",
+    "ko",
+    "de",
+    "fr",
+    "ru",
+    "pt",
+    "es",
+    "it"
+  ],
+  "speech": {
+    "family": "qwen3_tts",
+    "reference": "required",
+    "reference_text": "required"
+  },
+  "license_note": "Apache-2.0, by Alibaba Cloud (Qwen/Qwen3-TTS-12Hz-1.7B-Base). The model has no voice of its own and speaks in a voice copied from a recording and its words. The files are the GGUF conversion published for audio.cpp (audio-cpp/audio.cpp-gguf).",
+  "variants": [
+    {
+      "id": "bf16",
+      "name": "BF16 (best quality)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-bf16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 4203169600,
+          "sha256": "db237375e0f04d10fd0ac0afc2855e6844fdcb04a7d471e8a4b6c36bdb6030d7"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "Q8 (smaller)",
+      "min_memory_gb": 8,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 2695186240,
+          "sha256": "92641a8022d521efd79a5db45e952589b3f2b781680f9abfcf26f075d37b86c6"
+        }
+      ]
+    }
+  ]
+}

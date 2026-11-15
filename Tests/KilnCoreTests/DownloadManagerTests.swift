@@ -10,6 +10,9 @@ import Testing
         storage = ModelStorage(root: FileManager.default.temporaryDirectory.appendingPathComponent("kiln-dm-\(UUID().uuidString)"))
     }
 
+    /// Any well-formed checksum: the fake downloader does not look at the bytes.
+    private let checksum = String(repeating: "ab", count: 32)
+
     private func manager(freeSpace: Int64? = 1_000_000) -> DownloadManager {
         DownloadManager(storage: storage, downloader: downloader, freeSpace: { _ in freeSpace })
     }
@@ -17,7 +20,7 @@ import Testing
     private func recipe(_ id: String = "model", files: [String] = ["llm.gguf", "vae.safetensors"]) -> ModelRecipe {
         let roles: [ModelRecipe.ComponentRole] = [.llm, .vae, .diffusionModel, .checkpoint]
         return makeRecipe(id: id, components: files.enumerated().map { index, file in
-            .init(role: roles[index], repo: "owner/\(id)", file: file, revision: "abc", sizeBytes: 100)
+            .init(role: roles[index], repo: "owner/\(id)", file: file, revision: "abc", sizeBytes: 100, sha256: checksum)
         })
     }
 
@@ -177,9 +180,9 @@ import Testing
     }
 
     @Test func deletingARecipeKeepsFilesSharedWithAnotherRecipe() async throws {
-        let shared = ModelRecipe.Component(role: .vae, repo: "owner/shared", file: "vae.safetensors", sizeBytes: 100)
-        let first = makeRecipe(id: "first", components: [.init(role: .checkpoint, repo: "owner/first", file: "a.gguf", sizeBytes: 100), shared])
-        let second = makeRecipe(id: "second", components: [.init(role: .checkpoint, repo: "owner/second", file: "b.gguf", sizeBytes: 100), shared])
+        let shared = ModelRecipe.Component(role: .vae, repo: "owner/shared", file: "vae.safetensors", sizeBytes: 100, sha256: checksum)
+        let first = makeRecipe(id: "first", components: [.init(role: .checkpoint, repo: "owner/first", file: "a.gguf", sizeBytes: 100, sha256: checksum), shared])
+        let second = makeRecipe(id: "second", components: [.init(role: .checkpoint, repo: "owner/second", file: "b.gguf", sizeBytes: 100, sha256: checksum), shared])
         let manager = manager()
         await manager.start(first)
         await manager.start(second)
@@ -193,5 +196,18 @@ import Testing
 
         try storage.delete(second, keeping: [second])
         #expect(!storage.isInstalled(shared))
+    }
+
+    @Test func aFileWithoutAChecksumIsNotDownloaded() async throws {
+        let unchecked = makeRecipe(id: "unchecked", components: [
+            .init(role: .checkpoint, repo: "owner/unchecked", file: "model.gguf", revision: "abc", sizeBytes: 100),
+        ])
+        let manager = manager()
+        await manager.start(unchecked)
+        let status = await waitFor(manager, "unchecked") {
+            if case .failed = $0?.state { true } else { false }
+        }
+        #expect(status?.state == .failed(DownloadError.noChecksum(file: "model.gguf").errorDescription ?? ""))
+        #expect(downloader.startedFiles.isEmpty)
     }
 }

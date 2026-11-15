@@ -28,7 +28,7 @@ There are two kinds of contribution:
 | `App/Shell/` | Window, sidebar, chat list, and `Downloads/` (the downloads popover). |
 | `App/DesignSystem/` | Shared views and styles: `Theme`, `Motion`, button styles, `Pill`, `Thumbnail` and others. |
 | `App/Support/` | `AppDelegate`, `KeyboardNavigationMonitor`, `DebugSnapshot`. |
-| `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. |
+| `Engine/` | `kiln-engine`: `main.cpp` and `CMakeLists.txt`. The C++ helper that links stable-diffusion.cpp. Also `sandbox.h`, which all three helpers include to confine themselves at start. |
 | `Engine/whisper/` | `kiln-whisper`: the C++ helper that links whisper.cpp and turns speech into text. |
 | `Engine/audio/` | `kiln-audio`: the C++ helper that links audio.cpp, with every model family compiled in, and turns text into speech. |
 | `Vendor/stable-diffusion.cpp/` | Git submodule. Read-only. Its `docs/` folder documents each supported model family. |
@@ -83,6 +83,8 @@ CI (`.github/workflows/ci.yml`) runs on every pull request and on every push to 
 - `build`: `swift test`, the engine build, `xcodegen generate`, the `xcodebuild` line. It is skipped for a pull request that changes only Markdown files or issue templates. The three built helpers are cached, so the engine build (about ten minutes) runs only when `Vendor/`, `Engine/`, `scripts/build-engine.sh` or the runner's compiler changes.
 
 A new push to a pull request cancels the run in progress.
+
+Every GitHub Action in the workflows is pinned to a commit, with its version in a comment beside it, so a moved tag cannot change what CI runs. Dependabot (`.github/dependabot.yml`) opens a pull request when an action has a new release. Keep that form when adding one.
 
 Never commit these. They are in `.gitignore`:
 
@@ -207,7 +209,7 @@ python3 scripts/recipe.py new \
 - A voice stored in its own file is a `voice=` component, repeated once per voice; the voice is named after the file. Voices built into the model file are listed with `--voices` instead.
 - Every family audio.cpp supports is compiled into the helper. A family that needs eSpeak cannot be given a recipe: eSpeak is GPL-3.0 and Kiln does not ship it.
 - The model may already be in the catalogue (`catalog/audio.cpp.json`), which is generated and untested. A curated recipe for the same file replaces that entry in the app, so write one when you have run the model and can vouch for its voices and licence.
-- For a model that can copy a voice from a recording, pass `--reference optional`, or `--reference required` when it has no voice of its own, and `--reference-text` when it takes the words spoken in the recording (`required` if it refuses a recording without them). A recipe with `--reference required` needs no voices.
+- For a model that can copy a voice from a recording, pass `--reference optional`, or `--reference required` when it has no voice of its own, and `--reference-text` when it takes the words spoken in the recording (`required` if it refuses a recording without them). A recipe needs no named voices when it says another way the model gets a voice: copying one (`reference`), a description (`instruction` or `styles`), or a script's speakers (`speakers`).
 - For a model whose voice can be directed, state what it takes: `--instruction optional` (or `required`) for a free description, `--style NAME=WORD,WORD` (repeated) for a fixed list of words, and `--tags` for marks it understands inside the text. Take each from the model's page in `Vendor/audio.cpp/docs/models/` or its source; see "Expression" in [docs/recipes.md](docs/recipes.md).
 - For a model that reads a whole script in one take, each speaker in a voice of their own, pass `--speakers MAX` and `--speaker-line LINE`, the most speakers it reads and how it writes one turn (`"Speaker {n}: {text}"` for VibeVoice), from its page in `Vendor/audio.cpp/docs/`. Such a recipe needs no voices. Leave both out for any other model: the app reads a script for it line by line.
 - For a model that speaks several languages and accepts a language setting, pass `--languages` with the codes from its page in `Vendor/audio.cpp/docs/` or its model card. The same option works for a Whisper recipe.
@@ -218,7 +220,7 @@ python3 scripts/recipe.py new \
 
 `catalog/` holds models that have no recipe: `audio.cpp.json` is generated from audio.cpp's own model list (`Vendor/audio.cpp/model_specs/`) and `whisper.cpp.json` from the files of the `ggerganov/whisper.cpp` repo. The app lists them under "More models" and says they are untested.
 
-- Never edit these files by hand. Regenerate them with `python3 scripts/catalog.py` (needs network, downloads nothing) after updating `Vendor/audio.cpp`, and commit the result.
+- Never edit these files by hand. Regenerate them with `python3 scripts/catalog.py` after updating `Vendor/audio.cpp`, and commit the result. It needs network and downloads no weights; it does fetch the few small text files a model needs beside its weights (vocabularies, voice manifests), to work out their checksums, because the app refuses a file without one.
 - The generator leaves out families that need eSpeak, families audio.cpp marks as experimental, packages that are not GGUF, and models split over several weight files. To leave another one out, add it to the lists at the top of the script with the reason.
 - A catalogue entry needs no pull request of its own. To promote a model, write a curated recipe for it.
 
@@ -273,6 +275,7 @@ Curated recipes are fetched by released apps from this repository (once it is pu
 - **Comments** only where something is not obvious from the code. Explain why, not what.
 - **Coupled changes:**
   - Helper protocol: `Engine/main.cpp`, `Engine/whisper/main.cpp` or `Engine/audio/main.cpp`, `Sources/KilnCore/Engine/EngineProtocol.swift` (and `EngineMessage+Transcribe.swift`, `EngineMessage+Speak.swift`) and `docs/architecture.md` together.
+  - Helper sandbox: a helper may only touch the models folder and its engine's scratch folder. A change that makes a helper read or write anywhere else needs `Engine/sandbox.h`, `SECURITY.md` and `docs/architecture.md` changed with it, and a real run of all three helpers.
   - Recipe format: `Sources/KilnCore/Recipes/`, `recipes/schema.json`, `scripts/recipe.py` and `docs/recipes.md` together.
 
 ### Tests

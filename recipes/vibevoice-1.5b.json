@@ -1,0 +1,49 @@
+{
+  "$schema": "./schema.json",
+  "id": "vibevoice-1.5b",
+  "name": "VibeVoice 1.5B",
+  "engine": "audio.cpp",
+  "components": [],
+  "output": "audio",
+  "speech": {
+    "family": "vibevoice",
+    "reference": "optional",
+    "speakers": {
+      "max": 4,
+      "line": "Speaker {n}: {text}"
+    }
+  },
+  "license_note": "MIT License, by Microsoft (microsoft/VibeVoice-1.5B). The model card limits the model to research use, says it was trained on English and Chinese only, and does not license voice impersonation without explicit recorded consent, disinformation or real-time voice conversion. The files are the GGUF conversion published for audio.cpp (audio-cpp/audio.cpp-gguf).",
+  "variants": [
+    {
+      "id": "bf16",
+      "name": "BF16 (best quality)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VibeVoice-1.5B-GGUF/vibevoice-1.5b-bf16.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 5420026434,
+          "sha256": "d851e2e972ff7def0729cc02da7b417bbe68ac6769594507ae78b4d3f414e1ac"
+        }
+      ]
+    },
+    {
+      "id": "q8",
+      "name": "Q8 (smaller)",
+      "min_memory_gb": 16,
+      "components": [
+        {
+          "role": "model",
+          "repo": "audio-cpp/audio.cpp-gguf",
+          "file": "VibeVoice-1.5B-GGUF/vibevoice-1.5b-q8_0.gguf",
+          "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+          "size_bytes": 3224706114,
+          "sha256": "e9ca80a31ffe7e4726fcad9798ba10ba1e514d89174fd48ea548d21022e0e6f8"
+        }
+      ]
+    }
+  ]
+}
