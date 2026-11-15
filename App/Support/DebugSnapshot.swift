@@ -20,7 +20,7 @@ enum DebugSnapshot {
         directory(after: "--audio")
     }
 
-    /// `--open-voices` opens the Speech screen's voice list, so a snapshot can include it.
+    /// `--open-voices` opens the Speech screen's voice list, or its speaker list for a model that reads a script, so a snapshot can include it.
     static var opensVoiceList: Bool {
         ProcessInfo.processInfo.arguments.contains("--open-voices")
     }
@@ -28,6 +28,11 @@ enum DebugSnapshot {
     /// `--voices <folder>` uses that folder as the user's own voices instead of the real one.
     static var voicesDirectory: URL? {
         directory(after: "--voices")
+    }
+
+    /// `--models <folder>` uses that folder as the downloaded models instead of the real one.
+    static var modelsDirectory: URL? {
+        directory(after: "--models")
     }
 
     /// `--open-style` opens the Speech screen's style editor, so a snapshot can include it.
@@ -98,13 +103,23 @@ enum DebugSnapshot {
         defer {
             if let savedFrame { window?.setFrame(savedFrame, display: false) }
             NSApp.terminate(nil)
+            // An open sheet cancels quitting, which would leave this copy running.
+            exit(0)
         }
         // `--speech-text <text>` fills the Speech screen's field, to show how marks in it are coloured.
         // `--add-voice` opens the sheet for adding a voice on the Speech screen.
         model.speech.isAddingVoice = ProcessInfo.processInfo.arguments.contains("--add-voice")
+        // `--design-voice` opens the sheet for designing one.
+        model.speech.isDesigningVoice = ProcessInfo.processInfo.arguments.contains("--design-voice")
         let words = ProcessInfo.processInfo.arguments
         if let index = words.firstIndex(of: "--speech-text"), words.indices.contains(index + 1) {
             model.speech.text = words[index + 1]
+        }
+        // `--send` reads that text aloud with the selected model and waits for the clip.
+        if words.contains("--send") {
+            model.selection = .speech
+            model.speech.generate()
+            while model.speech.isGenerating { try? await Task.sleep(for: .milliseconds(200)) }
         }
         for item in SidebarItem.allCases where onlyItem == nil || item == onlyItem {
             model.selection = item

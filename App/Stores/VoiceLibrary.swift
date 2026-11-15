@@ -19,8 +19,8 @@ final class VoiceLibrary {
     }
 
     @discardableResult
-    func add(recording: URL, name: String, transcript: String) throws -> SavedVoice {
-        let voice = try store.add(recording: recording, name: name, transcript: transcript)
+    func add(recording: URL, name: String, transcript: String, design: String? = nil) throws -> SavedVoice {
+        let voice = try store.add(recording: recording, name: name, transcript: transcript, design: design)
         reload()
         return voice
     }

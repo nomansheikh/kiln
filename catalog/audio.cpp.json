@@ -2359,7 +2359,12 @@
         }
       ],
       "speech": {
-        "family": "vibevoice"
+        "family": "vibevoice",
+        "speakers": {
+          "max": 4,
+          "line": "Speaker {n}: {text}"
+        },
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },
@@ -2379,7 +2384,12 @@
         }
       ],
       "speech": {
-        "family": "vibevoice"
+        "family": "vibevoice",
+        "speakers": {
+          "max": 4,
+          "line": "Speaker {n}: {text}"
+        },
+        "reference": "optional"
       },
       "license_note": "License: MIT. Commercial use is allowed. As recorded by audio.cpp (docs/model_licenses.md); check the model's page."
     },

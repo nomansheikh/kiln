@@ -22,7 +22,8 @@ extension SpeechStore {
 
     /// Why the model cannot speak yet, as far as its voice goes. Nil when it can.
     var voiceProblem: String? {
-        guard let speech = selectedRecipe?.speech else { return nil }
+        // A script's speakers have voices of their own. See `speakerProblem`.
+        guard let speech = selectedRecipe?.speech, !isScript else { return nil }
         if let savedVoice {
             return speech.referenceText == .required && savedVoice.transcript.isEmpty
                 ? "This model needs the words spoken in \u{201C}\(savedVoice.name)\u{201D} before it can copy the voice." : nil
@@ -30,9 +31,14 @@ extension SpeechStore {
         return speech.reference == .required ? "This model speaks in a voice it copies. Add a voice first." : nil
     }
 
-    /// Saves a recording as a voice and selects it.
+    /// Saves a recording as a voice and selects it, for the speaker it was added for if there is one.
     func addVoice(recording: URL, name: String, transcript: String) throws {
-        savedVoiceID = try voices.add(recording: recording, name: name, transcript: transcript).id
+        let voice = try voices.add(recording: recording, name: name, transcript: transcript)
+        if let pendingSpeaker {
+            choose(.saved(voice.id), for: pendingSpeaker)
+        } else {
+            savedVoiceID = voice.id
+        }
     }
 
     /// Opens the sheet to change a voice's name or words.

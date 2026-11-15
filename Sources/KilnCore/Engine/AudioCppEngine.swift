@@ -109,7 +109,7 @@ public final class AudioCppEngine: InferenceEngine {
                 to: request.prompt.trimmingCharacters(in: .whitespacesAndNewlines), tags: recipe.speech?.tags ?? []
             )
             guard !text.isEmpty else { throw EngineError.missingText }
-            let direction = try Self.direction(for: request, recipe: recipe)
+            var direction = try Self.direction(for: request, text: text, recipe: recipe)
 
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let output = scratchDirectory.appendingPathComponent("\(id.uuidString).f32")
@@ -121,8 +121,21 @@ public final class AudioCppEngine: InferenceEngine {
                 files.append(samples)
                 voiceAudio = (samples, Int(AudioSamples.referenceSampleRate))
             }
+            // The voices of several speakers go as sound files, named in one setting.
+            for (index, sample) in direction.samples.enumerated() {
+                let file = scratchDirectory.appendingPathComponent("\(id.uuidString)-speaker-\(index + 1).wav")
+                do {
+                    try AudioSamples.referenceClip(of: sample).wavData().write(to: file)
+                } catch {
+                    throw EngineError.unreadableReference
+                }
+                files.append(file)
+            }
+            if !direction.samples.isEmpty {
+                direction.options["voice_samples"] = files.suffix(direction.samples.count).map(\.path).joined(separator: ",")
+            }
             let command = try EngineMessage.speakCommand(
-                model: storage.url(for: model), family: family, text: text, voice: direction.voice, voiceAudio: voiceAudio,
+                model: storage.url(for: model), family: family, text: direction.text, voice: direction.voice, voiceAudio: voiceAudio,
                 language: request.language(for: recipe), options: direction.options, onGPU: onGPU, output: output
             )
 

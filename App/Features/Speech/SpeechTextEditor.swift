@@ -5,11 +5,14 @@ import SwiftUI
 /// The Speech composer's text field. It is a text view instead of a SwiftUI
 /// field so that marks such as `[laughs]` can be coloured as they are typed:
 /// in the accent colour when the model has the sound, struck through when it
-/// will be left out. Return sends; Option-Return adds a line.
+/// will be left out, and the names of a script's speakers each in a colour
+/// of their own. Return sends; Shift-Return or Option-Return adds a line.
 struct SpeechTextEditor: NSViewRepresentable {
     @Binding var text: String
     /// The selected model's own marks.
     let tags: [String]
+    /// True when the text is read as a script, whose speakers' names are coloured.
+    var showsSpeakers = false
     let proxy: SpeechEditorProxy
     /// The height the text needs, for the composer to grow with it.
     @Binding var height: CGFloat
@@ -78,11 +81,16 @@ struct SpeechTextEditor: NSViewRepresentable {
         func textView(_ view: NSTextView, doCommandBy selector: Selector) -> Bool {
             // Option-Return arrives as a different command and adds a line as usual.
             guard selector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            // Shift-Return adds a line too, as it does in most places text is sent from.
+            if NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
+                view.insertNewlineIgnoringFieldEditor(nil)
+                return true
+            }
             parent.onSubmit()
             return true
         }
 
-        /// Colours the marks and reports the height the text needs.
+        /// Colours the marks and the speakers' names, and reports the height the text needs.
         func refresh(_ view: NSTextView) {
             guard let layout = view.layoutManager, let container = view.textContainer else { return }
             let whole = NSRange(location: 0, length: (view.string as NSString).length)
@@ -102,6 +110,15 @@ struct SpeechTextEditor: NSViewRepresentable {
                         .foregroundColor: NSColor.tertiaryLabelColor,
                         .strikethroughStyle: NSUnderlineStyle.single.rawValue,
                     ], forCharacterRange: mark.range)
+                }
+            }
+            if parent.showsSpeakers {
+                let script = SpeechScript(view.string)
+                for turn in script.turns {
+                    guard let label = turn.label else { continue }
+                    let hue = VoiceAvatar.hue(ofSpeaker: script.index(of: turn.speaker) ?? 0)
+                    let colour = NSColor(hue: hue, saturation: 0.6, brightness: 0.85, alpha: 1)
+                    layout.addTemporaryAttributes([.foregroundColor: colour], forCharacterRange: label)
                 }
             }
             layout.ensureLayout(for: container)

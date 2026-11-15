@@ -26,4 +26,13 @@ final class SpeechEditorProxy {
         focus()
         return true
     }
+
+    /// Starts a new line at the end of the text with a speaker's name, ready for their words.
+    func startLine(for speaker: String) {
+        guard let view else { return }
+        let text = view.string as NSString
+        let needsBreak = text.length > 0 && !view.string.hasSuffix("\n")
+        view.insertText((needsBreak ? "\n" : "") + speaker + ": ", replacementRange: NSRange(location: text.length, length: 0))
+        focus()
+    }
 }

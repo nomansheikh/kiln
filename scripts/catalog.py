@@ -93,6 +93,14 @@ TAGS = {
     ],
 }
 
+# Families that read a text with several speakers, with the most speakers a text
+# may have and one speaker's turn as the family writes it. Each takes a recording
+# per speaker (`voice_samples`), so it can copy voices even when its tasks do not
+# say so. VibeVoice: docs/tts.md and src/models/vibevoice/tokenizer_text.cpp.
+SPEAKERS = {
+    "vibevoice": {"max": 4, "line": "Speaker {n}: {text}"},
+}
+
 # audio.cpp's own maturity labels. "experimental", "testing" and "wip" are left out.
 STATUSES = {"supported", "community"}
 
@@ -237,6 +245,9 @@ def audiocpp_recipes(hub):
                     recipe["speech"]["styles"] = STYLES[family]
                 if family in TAGS:
                     recipe["speech"]["tags"] = TAGS[family]
+                if family in SPEAKERS:
+                    recipe["speech"]["speakers"] = SPEAKERS[family]
+                    recipe["speech"].setdefault("reference", "optional")
                 recipes.append(recipe)
     return recipes, skipped
 

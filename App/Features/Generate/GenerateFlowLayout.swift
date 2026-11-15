@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// Lays children out in centred rows, wrapping when a row is full.
+/// Lays children out in rows, wrapping when a row is full. The rows are
+/// centred unless `centred` is false, which starts them at the leading edge.
 struct GenerateFlowLayout: Layout {
     var spacing: CGFloat = 8
+    var centred = true
 
     private struct Row {
         var indices: [Int] = []
@@ -19,7 +21,7 @@ struct GenerateFlowLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
         for row in rows(maxWidth: bounds.width, subviews: subviews) {
-            var x = bounds.minX + max((bounds.width - row.width) / 2, 0)
+            var x = bounds.minX + (centred ? max((bounds.width - row.width) / 2, 0) : 0)
             for index in row.indices {
                 let size = subviews[index].sizeThatFits(.unspecified)
                 subviews[index].place(

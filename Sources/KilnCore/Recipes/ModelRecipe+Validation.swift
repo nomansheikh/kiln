@@ -96,6 +96,10 @@ extension ModelRecipe {
             if speech.referenceText != nil, speech.reference == nil {
                 throw .invalidSpeech("\"reference_text\" needs \"reference\": the words belong to a recording of a voice")
             }
+            if let speakers = speech.speakers,
+               speakers.max < 2 || !speakers.line.contains("{n}") || !speakers.line.contains("{text}") {
+                throw .invalidSpeech("\"speakers\" needs a \"max\" of at least 2 and a \"line\" with {n} and {text}")
+            }
             if let tags = speech.tags, tags.isEmpty || Set(tags).count != tags.count || !tags.allSatisfy(isTag) {
                 throw .invalidSpeech("\"tags\" needs at least one tag of at most 40 characters, each listed once")
             }

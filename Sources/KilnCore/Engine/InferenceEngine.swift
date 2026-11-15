@@ -68,6 +68,8 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case missingReference
     case missingReferenceText
     case unreadableReference
+    case tooManySpeakers(Int)
+    case missingSpeakerVoice(String)
     case unknownVoice(String)
     case unreadableAudio
     case helperUnavailable(String)
@@ -99,6 +101,10 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "This model needs the words spoken in the voice recording. Add them to the voice."
         case .unreadableReference:
             "The voice recording could not be read. Try a WAV, MP3 or M4A file."
+        case .tooManySpeakers(let most):
+            "This model speaks in at most \(most) voices at once. Use fewer speakers in the text."
+        case .missingSpeakerVoice(let speaker):
+            "\(speaker) has no voice yet. Give each speaker a voice under Speakers first."
         case .unknownVoice(let voice):
             "This model has no voice called \"\(voice)\". Pick another voice."
         case .unreadableAudio:

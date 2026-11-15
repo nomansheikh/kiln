@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The Speech screen's text field with its voice chip, length and send
 /// button, in the same shape as the Generate screen's composer. Return makes
-/// the clip; Option-Return adds a line.
+/// the clip; Shift-Return adds a line.
 struct SpeechComposer: View {
     @Environment(AppModel.self) private var model
     @State private var editor = SpeechEditorProxy()
@@ -14,12 +14,12 @@ struct SpeechComposer: View {
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
 
         VStack(alignment: .leading, spacing: 6) {
-            SpeechTextEditor(text: $speech.text, tags: tags, proxy: editor, height: $textHeight, onSubmit: send)
+            SpeechTextEditor(text: $speech.text, tags: tags, showsSpeakers: speech.isScript, proxy: editor, height: $textHeight, onSubmit: send)
                 // Three lines tall when empty; a long text scrolls inside the field.
                 .frame(height: min(max(textHeight, SpeechTextEditor.height(ofLines: 3)), SpeechTextEditor.height(ofLines: 12)))
                 .overlay(alignment: .topLeading) {
                     if speech.text.isEmpty {
-                        Text("Type or paste the text you want to hear")
+                        Text("Type or paste the text you want to hear, or a script such as \u{201C}Anna: Did you hear that?\u{201D}")
                             .font(.system(size: 15))
                             .foregroundStyle(.tertiary)
                             .allowsHitTesting(false)
@@ -48,6 +48,13 @@ struct SpeechComposer: View {
                 .padding(.horizontal, 8)
             }
 
+            if let problem = speech.speakerProblem {
+                Label(problem, systemImage: "exclamationmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 8)
+            }
+
             if let skipped {
                 Text(skipped)
                     .font(.caption)
@@ -57,7 +64,9 @@ struct SpeechComposer: View {
             }
 
             HStack(spacing: 8) {
-                if let recipe = speech.selectedRecipe, !recipe.voices.isEmpty || speech.copiesVoices {
+                if speech.isScript {
+                    SpeechSpeakersChip(editor: editor)
+                } else if let recipe = speech.selectedRecipe, !recipe.voices.isEmpty || speech.copiesVoices {
                     SpeechVoiceChip(voices: recipe.voices)
                 }
                 if let languages = speech.selectedRecipe?.languages, languages.count > 1 {
@@ -139,7 +148,7 @@ struct SpeechComposer: View {
         if speech.preparingPreview != nil || speech.isEngineBusyElsewhere() {
             return "Another model is working. Wait for it to finish."
         }
-        if let problem = speech.voiceProblem { return problem }
+        if let problem = speech.voiceProblem ?? speech.speakerProblem { return problem }
         if speech.needsInstruction { return "This model needs a description of the voice. Add one under Style." }
         return "Type something first"
     }

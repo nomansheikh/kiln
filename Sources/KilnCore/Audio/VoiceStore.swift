@@ -1,13 +1,16 @@
 import Foundation
 
-/// A voice the user added: a recording of someone speaking, for a model that
-/// can copy a voice.
+/// A voice the user keeps: a recording of someone speaking, added from a file
+/// or made by a model from a description, for a model that can copy a voice.
 public struct SavedVoice: Sendable, Equatable, Identifiable, Codable {
     public let id: UUID
     public var name: String
     /// The words spoken in the recording. Empty when they were not given.
     public var transcript: String
     public let createdAt: Date
+    /// What the voice was asked to be like, for one a model made up from a
+    /// description. Nil for a recording the user added.
+    public var design: String?
     /// Name of the recording's file inside the voices folder.
     let fileName: String
 
@@ -53,7 +56,7 @@ public struct VoiceStore: Sendable {
 
     /// Copies a recording into the folder as a new voice. It must be audio Kiln can read.
     @discardableResult
-    public func add(recording: URL, name: String, transcript: String) throws -> SavedVoice {
+    public func add(recording: URL, name: String, transcript: String, design: String? = nil) throws -> SavedVoice {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { throw VoiceError.missingName }
         _ = try AudioSamples.decode(recording, sampleRate: AudioSamples.referenceSampleRate)
@@ -65,7 +68,7 @@ public struct VoiceStore: Sendable {
         let voice = SavedVoice(
             id: id, name: name, transcript: transcript.trimmingCharacters(in: .whitespacesAndNewlines),
             // Whole seconds, which is what the saved file keeps.
-            createdAt: Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down)), fileName: "\(id.uuidString).\(isPlain ? kind : "audio")"
+            createdAt: Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down)), design: design, fileName: "\(id.uuidString).\(isPlain ? kind : "audio")"
         )
         try FileManager.default.copyItem(at: recording, to: self.recording(of: voice))
         try write(voice)
