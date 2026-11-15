@@ -96,8 +96,41 @@ jobs:
           command -v cmake >/dev/null || brew install cmake
           brew install xcodegen
 
-      - name: Build kiln-engine
+      # Compiling the three helpers takes about ten minutes and their inputs rarely
+      # change, so the built helpers are kept between runs. The key covers everything
+      # that goes into them: the engines' commits, our wrapper code, the build script
+      # and the compiler. A change to any of these builds them again.
+      - name: Key for the built helpers
+        id: helpers-key
+        run: |
+          {
+            git submodule status --recursive
+            xcodebuild -version
+            cmake --version | head -n 1
+          } > "$RUNNER_TEMP/helpers-inputs.txt"
+          cat "$RUNNER_TEMP/helpers-inputs.txt"
+          echo "toolchain=$(shasum -a 256 "$RUNNER_TEMP/helpers-inputs.txt" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the built helpers
+        id: helpers
+        uses: actions/cache@v6
+        with:
+          path: |
+            build/engine/kiln-engine
+            build/whisper/kiln-whisper
+            build/audio/kiln-audio
+          key: helpers-${{ runner.os }}-${{ runner.arch }}-${{ steps.helpers-key.outputs.toolchain }}-${{ hashFiles('Engine/**', 'scripts/build-engine.sh') }}
+
+      - name: Build the helpers
+        if: steps.helpers.outputs.cache-hit != 'true'
         run: ./scripts/build-engine.sh
+
+      - name: Check the helpers
+        run: |
+          for helper in engine/kiln-engine whisper/kiln-whisper audio/kiln-audio; do
+            test -x "build/$helper" || { echo "::error::build/$helper is missing"; exit 1; }
+            file "build/$helper"
+          done
 
       - name: Generate Xcode project
         run: xcodegen generate
