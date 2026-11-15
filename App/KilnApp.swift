@@ -16,7 +16,7 @@ struct KilnApp: App {
                 .task {
                     // A download or a generation keeps the app alive after its window closes.
                     AppDelegate.hasWorkInProgress = { [model] in
-                        model.generation.phase.isBusy || !model.library.activeDownloads.isEmpty
+                        model.generation.phase.isBusy || model.speech.isUsingEngine || !model.library.activeDownloads.isEmpty
                     }
                 }
                 #if DEBUG
@@ -35,16 +35,22 @@ struct KilnApp: App {
                 Button("New Chat") { model.newChat() }
                     .keyboardShortcut("n", modifiers: .command)
             }
-            CommandMenu("Image") {
-                Button("Generate") { model.generation.generate() }
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .disabled(!model.generation.canGenerate)
-                Button("Stop") { model.generation.cancel() }
-                    .keyboardShortcut(".", modifiers: .command)
-                    .disabled(!model.generation.phase.isBusy)
+            CommandMenu("Generate") {
+                // Both commands act on the screen in front: Speech, or the chat.
+                let onSpeech = model.selection == .speech
+                Button(onSpeech ? "Generate Speech" : "Generate") {
+                    onSpeech ? model.speech.generate() : model.generation.generate()
+                }
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(onSpeech ? !model.speech.canGenerate : !model.generation.canGenerate)
+                Button("Stop") {
+                    onSpeech ? model.speech.cancel() : model.generation.cancel()
+                }
+                .keyboardShortcut(".", modifiers: .command)
+                .disabled(onSpeech ? !model.speech.isGenerating : !model.generation.phase.isBusy)
                 Divider()
                 Button("Unload Model from Memory") { model.generation.unloadModel() }
-                    .disabled(model.generation.phase.isBusy || model.generation.loadedRecipeID == nil)
+                    .disabled(model.generation.phase.isBusy || model.speech.isUsingEngine || model.generation.loadedRecipeID == nil)
             }
             CommandGroup(after: .sidebar) {
                 ForEach(Array(SidebarItem.allCases.enumerated()), id: \.element) { index, item in

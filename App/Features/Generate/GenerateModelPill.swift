@@ -12,6 +12,7 @@ struct GenerateModelPill: View {
                 label("No model")
             }
             .buttonStyle(.plain)
+            .pointerCursor()
             .help("Download a model")
         } else {
             // A Menu of Toggles rather than a Picker so every change goes through selectRecipe(_:),
@@ -37,6 +38,7 @@ struct GenerateModelPill: View {
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
+            .pointerCursor()
             .menuIndicator(.hidden)
             .focusable(false)
             .fixedSize()

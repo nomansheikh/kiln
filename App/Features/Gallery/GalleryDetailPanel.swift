@@ -57,6 +57,7 @@ struct GalleryDetailPanel: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .pointerCursor()
             .keyboardShortcut(.cancelAction)
             .help("Close")
             .accessibilityLabel("Close")
@@ -97,6 +98,7 @@ struct GalleryDetailPanel: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .pointerCursor()
                 .help(copyHelp)
                 .accessibilityLabel(copyHelp)
             }

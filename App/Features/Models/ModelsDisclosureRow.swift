@@ -21,6 +21,7 @@ struct ModelsDisclosureRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
     }
 }

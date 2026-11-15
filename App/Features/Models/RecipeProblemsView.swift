@@ -38,6 +38,7 @@ struct RecipeProblemsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
     }
 
     private var problemList: some View {

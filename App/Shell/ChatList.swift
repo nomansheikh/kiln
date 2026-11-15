@@ -81,5 +81,6 @@ struct ChatList: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
     }
 }

@@ -2,11 +2,12 @@ import SwiftUI
 
 /// The wrapping row of starter prompts shown in the hero layout.
 struct PromptSuggestionChips: View {
+    var suggestions = PromptSuggestion.all
     let onSelect: (PromptSuggestion) -> Void
 
     var body: some View {
         GenerateFlowLayout(spacing: 8) {
-            ForEach(PromptSuggestion.all) { suggestion in
+            ForEach(suggestions) { suggestion in
                 PromptSuggestionChip(suggestion: suggestion) { onSelect(suggestion) }
             }
         }

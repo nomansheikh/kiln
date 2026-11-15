@@ -13,6 +13,7 @@ struct AccentButtonStyle: ButtonStyle {
             .background(Theme.accent, in: Capsule())
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
             .pressScale(configuration.isPressed)
+            .pointerCursor()
     }
 }
 
@@ -28,6 +29,7 @@ struct SoftButtonStyle: ButtonStyle {
             .background(configuration.isPressed ? Theme.cardHover : Theme.card, in: Capsule())
             .opacity(isEnabled ? 1 : 0.45)
             .pressScale(configuration.isPressed)
+            .pointerCursor()
     }
 }
 
@@ -38,6 +40,7 @@ struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .pressScale(configuration.isPressed, to: scale)
+            .pointerCursor()
     }
 }
 

@@ -11,6 +11,7 @@ final class AppModel {
 
     let library: ModelLibrary
     let generation: GenerationStore
+    let speech: SpeechStore
     let gallery: GalleryLibrary
     let audio: AudioLibrary
     let chats: ChatLibrary
@@ -42,31 +43,21 @@ final class AppModel {
         let galleryDirectory = GalleryStore.defaultDirectory
         #endif
         let gallery = GalleryLibrary(store: GalleryStore(directory: galleryDirectory))
-        let audio = AudioLibrary(store: AudioStore(directory: AudioStore.defaultDirectory))
+        #if DEBUG
+        let audioDirectory = DebugSnapshot.audioDirectory ?? DebugSnapshot.sampleAudioDirectory ?? AudioStore.defaultDirectory
+        #else
+        let audioDirectory = AudioStore.defaultDirectory
+        #endif
+        let audio = AudioLibrary(store: AudioStore(directory: audioDirectory))
         let chats = ChatLibrary(store: ChatStore(directory: ChatStore.defaultDirectory))
+        let engine = EngineRouter(Self.engines(storage: storage))
         let generation = GenerationStore(
             library: library,
             gallery: gallery,
             audio: audio,
             chats: chats,
             attachments: AttachmentLibrary(directory: AttachmentLibrary.defaultDirectory),
-            engine: EngineRouter([
-                StableDiffusionCppEngine.engineID: StableDiffusionCppEngine(
-                    helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-engine")
-                        ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-engine"),
-                    storage: storage
-                ),
-                AudioCppEngine.engineID: AudioCppEngine(
-                    helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-audio")
-                        ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-audio"),
-                    storage: storage
-                ),
-                WhisperCppEngine.engineID: WhisperCppEngine(
-                    helperURL: Bundle.main.url(forAuxiliaryExecutable: "kiln-whisper")
-                        ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/kiln-whisper"),
-                    storage: storage
-                ),
-            ])
+            engine: engine
         )
 
         self.library = library
@@ -74,12 +65,31 @@ final class AppModel {
         self.audio = audio
         self.chats = chats
         self.generation = generation
+        let speech = SpeechStore(library: library, audio: audio, engine: engine)
+        self.speech = speech
+        // The engines hold one model in memory, so only one screen generates at a time.
+        generation.isEngineBusyElsewhere = { [weak speech] in speech?.isUsingEngine ?? false }
+        speech.isEngineBusyElsewhere = { [weak generation] in generation?.phase.isBusy ?? false }
         account = HubAccount(tokenStore: tokenStore, hub: hub)
 
-        library.onInstalledChange = { [weak generation] in
+        library.onInstalledChange = { [weak generation, weak speech] in
             generation?.selectDefaultRecipeIfNeeded()
+            speech?.selectDefaultRecipeIfNeeded()
         }
         refreshRecipeCatalogIfDue()
+    }
+
+    /// Every engine under the id recipes use for it, each with its helper inside the app.
+    private static func engines(storage: ModelStorage) -> [String: any InferenceEngine] {
+        func helper(_ name: String) -> URL {
+            Bundle.main.url(forAuxiliaryExecutable: name)
+                ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/\(name)")
+        }
+        return [
+            StableDiffusionCppEngine.engineID: StableDiffusionCppEngine(helperURL: helper("kiln-engine"), storage: storage),
+            WhisperCppEngine.engineID: WhisperCppEngine(helperURL: helper("kiln-whisper"), storage: storage),
+            AudioCppEngine.engineID: AudioCppEngine(helperURL: helper("kiln-audio"), storage: storage),
+        ]
     }
 
     // MARK: - Recipe updates
@@ -132,6 +142,12 @@ final class AppModel {
     func deleteGalleryItem(_ item: GalleryItem) throws {
         try gallery.delete(item)
         generation.forget(item)
+    }
+
+    /// Opens Models showing only the models for one task.
+    func browseModels(for task: ModelTask) {
+        UserDefaults.standard.set(task.rawValue, forKey: "models.taskFilter")
+        selection = .models
     }
 
     /// Uses a model on the Generate screen.

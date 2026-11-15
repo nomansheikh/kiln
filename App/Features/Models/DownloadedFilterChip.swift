@@ -25,6 +25,7 @@ struct DownloadedFilterChip: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .help("Show only models that are on this Mac")
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }

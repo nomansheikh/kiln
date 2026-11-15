@@ -17,6 +17,7 @@ struct ModelsSectionTitle: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .pointerCursor()
             .help(isExpanded.wrappedValue ? "Collapse \(text)" : "Expand \(text)")
             .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
         } else {

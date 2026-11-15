@@ -66,6 +66,7 @@ struct ComposerAttachment: View {
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
+        .pointerCursor()
         .menuIndicator(.hidden)
         .fixedSize()
         .help("How much the image may change")

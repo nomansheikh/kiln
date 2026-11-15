@@ -9,6 +9,10 @@ final class AudioPlayback: NSObject, AVAudioPlayerDelegate {
     /// Seconds from the start of the sound.
     private(set) var position: TimeInterval = 0
     private(set) var duration: TimeInterval
+    /// Playback speed, where 1 is the sound as it was made.
+    var rate: Float = 1 {
+        didSet { player?.rate = rate }
+    }
 
     private let url: URL
     private var player: AVAudioPlayer?
@@ -54,10 +58,17 @@ final class AudioPlayback: NSObject, AVAudioPlayerDelegate {
         position = player.currentTime
     }
 
+    /// Jumps forward, or back with a negative number of seconds.
+    func skip(by seconds: TimeInterval) {
+        seek(to: position + seconds)
+    }
+
     private func loadedPlayer() -> AVAudioPlayer? {
         if let player { return player }
         guard let loaded = try? AVAudioPlayer(contentsOf: url) else { return nil }
         loaded.delegate = self
+        loaded.enableRate = true
+        loaded.rate = rate
         loaded.prepareToPlay()
         duration = loaded.duration
         player = loaded
