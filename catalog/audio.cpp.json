@@ -382,7 +382,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-unified/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11920
+          "size_bytes": 11920,
+          "sha256": "49b8f3f126a0cb8146cd5a974cd48866acc4b292f8b59546fd51957f83251d5b"
         }
       ],
       "speech": {
@@ -411,7 +412,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-alg/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11792
+          "size_bytes": 11792,
+          "sha256": "a959e14efa69a068f1bd14ad5c335a82e3bcad5083ebd1c72f5c4eb3925f5c4e"
         }
       ],
       "speech": {
@@ -440,7 +442,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-egy/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11983
+          "size_bytes": 11983,
+          "sha256": "ceed48f51f0211ffbb8b36007ead3c9b8698fbda9709f184fd712bd3dcd095c5"
         }
       ],
       "speech": {
@@ -469,7 +472,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-irq/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11829
+          "size_bytes": 11829,
+          "sha256": "55484bc3dda8b8e6a7fbf04261b47a8788d4b553a85b93dc46dac6fd39c9fd88"
         }
       ],
       "speech": {
@@ -498,7 +502,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-mar/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11813
+          "size_bytes": 11813,
+          "sha256": "a49a0b74e12cb91de49a636f59c4045e3a1683d389fa6c223b53024faa9afbea"
         }
       ],
       "speech": {
@@ -527,7 +532,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-msa/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11698
+          "size_bytes": 11698,
+          "sha256": "4de4460ff1ef7cb40c2e564bc1ee2f3198164d10ce71380290986e483ba7e19c"
         }
       ],
       "speech": {
@@ -556,7 +562,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-sau/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11807
+          "size_bytes": 11807,
+          "sha256": "9bd4755a39ee21eafe78f54d6c32ae939f900775427f447598430c795c04362f"
         }
       ],
       "speech": {
@@ -585,7 +592,8 @@
           "repo": "trklou/audio.cpp",
           "file": "habibi-uae/vocab.txt",
           "revision": "4c220adc169f56a2012125aaab1ae821d790f6ca",
-          "size_bytes": 11823
+          "size_bytes": 11823,
+          "sha256": "6f249cb7a0fcef576d4e0281a9998b30a92048a72616f84020238bf743810d79"
         }
       ],
       "speech": {
@@ -2404,21 +2412,24 @@
           "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
           "file": "gguf/voices/manifest.json",
           "revision": "61b85e3d937fbbacb387714180e8182823512523",
-          "size_bytes": 3855
+          "size_bytes": 3855,
+          "sha256": "c11561e2b31636c1cd6d7244894342d37e03283171f9cfc4bd9fbb782debda7e"
         },
         {
           "role": "support",
           "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
           "file": "gguf/voices/minh_quan_pro/ref_codes.txt",
           "revision": "61b85e3d937fbbacb387714180e8182823512523",
-          "size_bytes": 4348
+          "size_bytes": 4348,
+          "sha256": "3e4e64aaaf657e68e906e16fdb7955e596f5b4ff94ef77dbd2313469312e5b2d"
         },
         {
           "role": "support",
           "repo": "pnnbao-ump/VieNeu-TTS-v3-Turbo",
           "file": "gguf/voices/minh_quan_pro/speaker.emb.txt",
           "revision": "61b85e3d937fbbacb387714180e8182823512523",
-          "size_bytes": 2206
+          "size_bytes": 2206,
+          "sha256": "f7bdb7235f5e3c14f9a45e60da8700df9b05eb6f880adf1cc143458c3c12b281"
         }
       ],
       "variants": [

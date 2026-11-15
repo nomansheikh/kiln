@@ -513,7 +513,7 @@ python3 scripts/recipe.py new \
 
 Before writing anything the script applies the validation rules above and the curated rules, and reports every problem it finds. If a file is not in the repo, it lists the `.gguf` and `.safetensors` files that are. On success it writes the recipe with `"$schema": "./schema.json"` as the first key, regenerates `index.json`, and prints the download size of the recipe or of each variant, which is a useful input when choosing `min_memory_gb`.
 
-The script cannot pin a file the Hub has no SHA-256 for (a file not stored with Git LFS). Model weights are stored with LFS, so this only happens when the path points at something else.
+The script cannot pin a file the Hub has no SHA-256 for (a file not stored with Git LFS). Model weights are stored with LFS, so this only happens when the path points at something else. The app does not download a file without a checksum, so a recipe written by hand must give `sha256` for every file.
 
 ### `check`
 

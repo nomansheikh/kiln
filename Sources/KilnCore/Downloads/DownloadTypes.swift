@@ -25,6 +25,7 @@ public enum DownloadError: Error, Equatable, LocalizedError {
     case network(String)
     case sizeMismatch(expected: Int64, actual: Int64)
     case checksumMismatch
+    case noChecksum(file: String)
     case notEnoughDiskSpace(needed: Int64, available: Int64)
 
     public var errorDescription: String? {
@@ -39,6 +40,8 @@ public enum DownloadError: Error, Equatable, LocalizedError {
             "The downloaded file is the wrong size (\(actual) bytes instead of \(expected)). It was removed; try again."
         case .checksumMismatch:
             "The downloaded file is corrupted (checksum mismatch). It was removed; try again."
+        case .noChecksum(let file):
+            "Kiln has no checksum for \(file), so it cannot tell whether the download is the right file. It was not downloaded."
         case .notEnoughDiskSpace(let needed, let available):
             "Not enough disk space: \(needed.formatted(.byteCount(style: .file))) needed, "
                 + "\(available.formatted(.byteCount(style: .file))) available."
