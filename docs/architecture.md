@@ -116,6 +116,7 @@ The helper stays alive between generations so the model stays loaded.
 - Library log lines at level info and above go to stderr as `[level] text`. The app keeps the last 40 lines to describe failures and to detect out-of-memory conditions.
 - One reader thread parses requests; one worker thread runs generations in order.
 - Closing stdin ends the helper. If writing an event fails because the app is gone, the helper exits.
+- An `error` event and the log line that explains it travel through different pipes, so the error can arrive first. `HelperSession` then waits up to three quarters of a second for a line that explains it before reporting the failure, and reports it at once when the reason is already there.
 
 ## The speech helper
 
