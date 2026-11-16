@@ -1,15 +1,14 @@
 import Foundation
 import ImageIO
-import KilnCore
 import UniformTypeIdentifiers
 
 /// Files attached to prompts. Each is copied into the app's own folder, so a
 /// chat keeps its file after the original is moved or deleted.
-struct AttachmentLibrary {
-    enum ImportError: Error, LocalizedError {
+public struct AttachmentLibrary: Sendable {
+    public enum ImportError: Error, LocalizedError, Equatable {
         case notAccepted([MediaKind])
 
-        var errorDescription: String? {
+        public var errorDescription: String? {
             guard case .notAccepted(let kinds) = self else { return nil }
             switch kinds {
             case []: return "This model does not take attachments."
@@ -21,10 +20,14 @@ struct AttachmentLibrary {
         }
     }
 
-    let directory: URL
+    public let directory: URL
+
+    public init(directory: URL) {
+        self.directory = directory
+    }
 
     /// `~/Library/Application Support/Kiln/attachments`
-    static var defaultDirectory: URL {
+    public static var defaultDirectory: URL {
         URL.applicationSupportDirectory.appendingPathComponent("Kiln/attachments", isDirectory: true)
     }
 
@@ -34,7 +37,7 @@ struct AttachmentLibrary {
     }
 
     /// Copies a file in and returns where the copy lives. Only files of the given kinds are taken.
-    func add(_ file: URL, accepting kinds: [MediaKind]) throws -> URL {
+    public func add(_ file: URL, accepting kinds: [MediaKind]) throws -> URL {
         let scoped = file.startAccessingSecurityScopedResource()
         defer { if scoped { file.stopAccessingSecurityScopedResource() } }
 
@@ -51,12 +54,12 @@ struct AttachmentLibrary {
     }
 
     /// The kind of a file, judged by its type. Nil when it is none Kiln knows.
-    static func kind(of file: URL) -> MediaKind? {
+    public static func kind(of file: URL) -> MediaKind? {
         MediaKind.allCases.first { Self.file(file, is: $0) }
     }
 
     /// The name the user knows an attached file by: the copy's name without its id.
-    static func displayName(of copy: URL) -> String {
+    public static func displayName(of copy: URL) -> String {
         let name = copy.lastPathComponent
         let idLength = UUID().uuidString.count
         guard name.count > idLength + 1, UUID(uuidString: String(name.prefix(idLength))) != nil,
@@ -65,14 +68,14 @@ struct AttachmentLibrary {
         return String(name.dropFirst(idLength + 1))
     }
 
-    func url(named fileName: String) -> URL {
+    public func url(named fileName: String) -> URL {
         directory.appendingPathComponent(fileName)
     }
 
     /// Whether a file can be attached as the given kind. An image is judged by
     /// whether it decodes, so one without a file extension still works; other
     /// kinds by their type.
-    static func accepts(_ file: URL, as kind: MediaKind) -> Bool {
+    public static func accepts(_ file: URL, as kind: MediaKind) -> Bool {
         guard kind == .image else { return self.file(file, is: kind) }
         guard let source = CGImageSourceCreateWithURL(file as CFURL, nil) else { return false }
         return CGImageSourceGetCount(source) > 0

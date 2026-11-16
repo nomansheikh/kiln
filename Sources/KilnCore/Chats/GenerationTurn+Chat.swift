@@ -1,9 +1,8 @@
-import KilnCore
 
 /// Converting thread turns to and from their saved form.
 extension GenerationTurn {
     /// A saved turn, with its image looked up in the gallery.
-    init(_ turn: ChatTurn, images: [GalleryItem], sounds: [AudioItem], attachments: AttachmentLibrary) {
+    public init(_ turn: ChatTurn, images: [GalleryItem], sounds: [AudioItem], attachments: AttachmentLibrary) {
         let state: State
         switch turn.outcome {
         case .image(let fileName):
@@ -38,7 +37,7 @@ extension GenerationTurn {
 
     /// The form written to disk. A turn still running is saved as stopped,
     /// which is what it will be if the app quits before it finishes.
-    var saved: ChatTurn {
+    public var saved: ChatTurn {
         let outcome: ChatTurn.Outcome
         switch state {
         case .finished(let item): outcome = .image(fileName: item.url.lastPathComponent)

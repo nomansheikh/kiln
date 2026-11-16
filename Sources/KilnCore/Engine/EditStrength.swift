@@ -1,12 +1,12 @@
 /// How much an attached image may change, in plain words.
-enum EditStrength: Double, CaseIterable, Identifiable {
+public enum EditStrength: Double, CaseIterable, Identifiable, Sendable {
     case subtle = 0.35
     case balanced = 0.6
     case strong = 0.8
 
-    var id: Double { rawValue }
+    public var id: Double { rawValue }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .subtle: "Subtle"
         case .balanced: "Balanced"
@@ -14,7 +14,7 @@ enum EditStrength: Double, CaseIterable, Identifiable {
         }
     }
 
-    var explanation: String {
+    public var explanation: String {
         switch self {
         case .subtle: "Keeps the picture, changes details"
         case .balanced: "Keeps the layout, reworks the look"

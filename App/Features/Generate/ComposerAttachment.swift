@@ -1,3 +1,4 @@
+import KilnCore
 import SwiftUI
 
 /// The file attached to the prompt being written and a way to remove it.
