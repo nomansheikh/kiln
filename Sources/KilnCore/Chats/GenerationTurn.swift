@@ -1,9 +1,8 @@
 import Foundation
-import KilnCore
 
 /// One exchange in the Generate thread: the prompt and what came back.
-struct GenerationTurn: Identifiable, Equatable {
-    enum State: Equatable {
+public struct GenerationTurn: Identifiable, Equatable, Sendable {
+    public enum State: Equatable, Sendable {
         case running
         case finished(GalleryItem)
         /// Text the model wrote, such as a transcript.
@@ -14,18 +13,18 @@ struct GenerationTurn: Identifiable, Equatable {
         case cancelled
     }
 
-    let id: UUID
-    let prompt: String
+    public let id: UUID
+    public let prompt: String
     /// What the turn asked the model to make.
-    let kind: MediaKind
+    public let kind: MediaKind
     /// Size of the requested image. Nil for other kinds of output.
-    let width: Int?
-    let height: Int?
+    public let width: Int?
+    public let height: Int?
     /// The file attached to the prompt, if any.
-    let attachment: URL?
-    var state: State
+    public let attachment: URL?
+    public var state: State
 
-    init(
+    public init(
         id: UUID = UUID(),
         prompt: String,
         kind: MediaKind = .image,
@@ -44,19 +43,19 @@ struct GenerationTurn: Identifiable, Equatable {
     }
 
     /// A finished turn rebuilt from a saved image.
-    init(_ item: GalleryItem) {
+    public init(_ item: GalleryItem) {
         let request = item.record.request
         self.init(
             id: item.id, prompt: request.prompt, width: request.image?.width, height: request.image?.height, state: .finished(item)
         )
     }
 
-    var image: GalleryItem? {
+    public var image: GalleryItem? {
         if case .finished(let item) = state { item } else { nil }
     }
 
     /// Width over height of the requested image. Square when there is no size.
-    var aspectRatio: CGFloat {
+    public var aspectRatio: CGFloat {
         guard let width, let height else { return 1 }
         return CGFloat(max(width, 1)) / CGFloat(max(height, 1))
     }

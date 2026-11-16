@@ -1,9 +1,8 @@
 import Foundation
-import KilnCore
 
 /// Turns an engine error into what the thread shows.
-enum GenerationFailure {
-    static func message(for error: any Error, recipe: ModelRecipe) -> String {
+public enum GenerationFailure {
+    public static func message(for error: any Error, recipe: ModelRecipe) -> String {
         // A lone file that will not load is almost always one part of a larger
         // model, downloaded by itself from the Hugging Face list.
         if case EngineError.modelLoadFailed = error, recipe.components.count == 1, recipe.outputKind == .image {

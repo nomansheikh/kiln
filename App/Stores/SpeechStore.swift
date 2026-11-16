@@ -88,20 +88,17 @@ final class SpeechStore {
     }
 
     var canGenerate: Bool {
-        !isUsingEngine && !isEngineBusyElsewhere() && selectedRecipe != nil && !needsInstruction && voiceProblem == nil && speakerProblem == nil
-            && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !isUsingEngine && !isEngineBusyElsewhere() && draft.canSend
     }
 
     func selectRecipe(_ recipe: ModelRecipe?) {
+        var draft = draft
+        draft.select(recipe)
+        apply(draft)
+    }
+
+    func setRecipe(_ recipe: ModelRecipe?) {
         recipeID = recipe?.id
-        // Keep the chosen voice when the new model has it too.
-        if let recipe, voice.map({ !recipe.voices.contains($0) }) ?? true {
-            voice = recipe.defaultVoice
-        }
-        // A language the new model does not offer goes back to "Auto".
-        if let language, recipe?.languages?.contains(language) != true {
-            self.language = nil
-        }
     }
 
     /// Picks an installed voice model when the current choice is missing or was deleted.
@@ -116,19 +113,14 @@ final class SpeechStore {
     func generate() {
         guard canGenerate, let recipe = selectedRecipe else { return }
         let sent = text
-        // A script's speakers each have a voice; other texts have one voice.
-        let settings = isScript
-            ? scriptSettings
-            : SpeechSettings(voice: sentReference == nil ? voice : nil, instruction: sentInstruction, reference: sentReference)
-        let request = GenerationRequest(
-            prompt: sent.trimmingCharacters(in: .whitespacesAndNewlines), speech: settings, language: language
-        )
+        let request = draft.request
         text = ""
         errorMessage = nil
         playback?.pause()
         activity = .loadingModel
         task = Task {
             let started = Date()
+            var madeClip = false
             do {
                 for try await event in engine.speak(recipe: recipe, request: request) {
                     switch event {
@@ -142,10 +134,13 @@ final class SpeechStore {
                         )
                         show(try audio.add(sound, record: record))
                         playback?.play()
+                        madeClip = true
                     case .finished:
                         errorMessage = "The model did not produce audio."
                     }
                 }
+                // A stream whose consumer was cancelled ends quietly instead of throwing.
+                if Task.isCancelled, !madeClip { restore(sent) }
             } catch is CancellationError {
                 restore(sent)
             } catch {
@@ -202,13 +197,13 @@ final class SpeechStore {
 
     /// Puts a clip's text and voice back in the editor.
     func reuse(_ item: AudioItem) {
-        text = item.record.request.prompt
+        var draft = draft
         if let recipe = recipes.first(where: { $0.id == item.record.recipeID }) {
-            selectRecipe(recipe)
-            restoreVoice(of: item.record.request.speech, for: recipe)
-            restoreCast(of: item.record.request.speech)
-            restoreStyle(item.record.request.speech?.instruction, for: recipe)
+            draft.reuse(item.record.request, madeWith: recipe)
+        } else {
+            draft.text = item.record.request.prompt
         }
+        apply(draft)
     }
 
     func delete(_ item: AudioItem) {

@@ -24,24 +24,6 @@ extension ModelTask {
 
 /// How the app shows and recognises each kind of content.
 extension MediaKind {
-    /// The file type a file of this kind conforms to.
-    var contentType: UTType {
-        switch self {
-        case .image: .image
-        case .audio: .audio
-        case .text: .plainText
-        }
-    }
-
-    /// Name for messages, such as "Images".
-    var title: String {
-        switch self {
-        case .image: "Images"
-        case .audio: "Audio"
-        case .text: "Text"
-        }
-    }
-
     /// Symbol standing for a file of this kind.
     var symbolName: String {
         switch self {

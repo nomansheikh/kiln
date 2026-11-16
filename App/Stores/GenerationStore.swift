@@ -141,7 +141,8 @@ final class GenerationStore {
                     }
                 }
             }
-            return .failed("The engine finished without producing an image.")
+            // A stream whose consumer was cancelled ends quietly instead of throwing.
+            return Task.isCancelled ? .cancelled : .failed("The engine finished without producing an image.")
         } catch is CancellationError {
             return .cancelled
         } catch {

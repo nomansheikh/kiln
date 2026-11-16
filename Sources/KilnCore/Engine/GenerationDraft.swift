@@ -1,28 +1,51 @@
 import Foundation
-import KilnCore
 
 /// What the Generate screen is editing.
-struct GenerationDraft: Equatable {
-    var recipeID: String?
-    var prompt = ""
-    var negativePrompt = ""
-    var width = 1024
-    var height = 1024
-    var steps = 20
-    var cfg = 7.0
-    var sampler = "euler"
-    var randomSeed = true
-    var seed: Int64 = 42
+public struct GenerationDraft: Equatable, Sendable {
+    public var recipeID: String?
+    public var prompt = ""
+    public var negativePrompt = ""
+    public var width = 1024
+    public var height = 1024
+    public var steps = 20
+    public var cfg = 7.0
+    public var sampler = "euler"
+    public var randomSeed = true
+    public var seed: Int64 = 42
     /// An image the prompt should rework instead of starting from nothing.
-    var attachment: URL?
-    var editStrength = EditStrength.balanced
+    public var attachment: URL?
+    public var editStrength = EditStrength.balanced
     /// The voice a speech model speaks in. Nil uses the model's own default.
-    var voice: String?
+    public var voice: String?
     /// Code of the language a speech model works in. Nil lets the model decide.
-    var language: String?
+    public var language: String?
+
+    public init() {}
+
+    /// Switches to another model: its recommended settings are applied, and a
+    /// voice, language or attachment it cannot use is dropped.
+    public mutating func select(_ recipe: ModelRecipe?) {
+        recipeID = recipe?.id
+        if let defaults = recipe?.defaults {
+            apply(defaults)
+        }
+        // Keep the chosen voice when the new model has it too.
+        if let recipe, voice.map({ !recipe.voices.contains($0) }) ?? true {
+            voice = recipe.defaultVoice
+        }
+        // A language the new model does not offer goes back to "Auto".
+        if let language, recipe?.languages?.contains(language) != true {
+            self.language = nil
+        }
+        // An attachment the new model cannot take would only make the next prompt fail.
+        if let attachment, let recipe,
+           !recipe.inputKinds.contains(where: { AttachmentLibrary.accepts(attachment, as: $0) }) {
+            self.attachment = nil
+        }
+    }
 
     /// Applies a recipe's recommended settings, keeping the prompt.
-    mutating func apply(_ defaults: ModelRecipe.ImageDefaults) {
+    public mutating func apply(_ defaults: ModelRecipe.ImageDefaults) {
         width = defaults.width
         height = defaults.height
         steps = defaults.steps
@@ -31,7 +54,7 @@ struct GenerationDraft: Equatable {
     }
 
     /// Restores everything from a past generation, with its exact seed.
-    mutating func apply(_ request: GenerationRequest) {
+    public mutating func apply(_ request: GenerationRequest) {
         prompt = request.prompt
         guard let image = request.image else { return }
         negativePrompt = image.negativePrompt
@@ -46,7 +69,7 @@ struct GenerationDraft: Equatable {
 
     /// The request to send to a model: the prompt, the attachment, and the
     /// settings of the model's kind.
-    func request(for recipe: ModelRecipe) -> GenerationRequest {
+    public func request(for recipe: ModelRecipe) -> GenerationRequest {
         var request = GenerationRequest(
             prompt: prompt.trimmingCharacters(in: .whitespacesAndNewlines), attachment: attachment, language: language
         )
@@ -69,14 +92,4 @@ struct GenerationDraft: Equatable {
         }
         return request
     }
-}
-
-/// What the running generation is doing.
-enum GenerationPhase: Equatable {
-    case idle
-    case starting
-    case loadingModel
-    case running(GenerationProgress)
-
-    var isBusy: Bool { self != .idle }
 }

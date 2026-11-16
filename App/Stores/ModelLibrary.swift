@@ -26,8 +26,7 @@ final class ModelLibrary {
     private(set) var downloadStatuses: [String: DownloadStatus] = [:]
     /// Speed and time left for each download that is transferring.
     private(set) var downloadSpeeds: [String: DownloadSpeed] = [:]
-    @ObservationIgnored private var rateEstimators: [String: TransferRateEstimator] = [:]
-    @ObservationIgnored private var speedsPublishedAt = Date.distantPast
+    @ObservationIgnored private var speedTracker = DownloadSpeedTracker()
 
     /// Called after the set of installed models changes.
     @ObservationIgnored var onInstalledChange: (() -> Void)?
@@ -44,33 +43,23 @@ final class ModelLibrary {
 
     // MARK: - Reading
 
-    /// Installed models that can generate images. A lone part of a model is left out.
-    var installedRecipes: [ModelRecipe] {
-        recipes.filter { installedIDs.contains($0.id) && !$0.isIncompleteSingleFile }
+    /// The library at this moment, as the value that answers questions about it.
+    /// The rules are KilnCore's, where they are tested.
+    var catalog: ModelCatalog {
+        ModelCatalog(
+            recipes: recipes, userRecipeIDs: userRecipeIDs, catalogIDs: catalogIDs,
+            installedIDs: installedIDs, downloadStatuses: downloadStatuses
+        )
     }
 
-    /// The recipe shipped with the app that includes files from this Hugging Face repo, if any.
-    func curatedRecipe(forRepo repo: String) -> ModelRecipe? {
-        recipes.first { recipe in
-            !userRecipeIDs.contains(recipe.id) && !catalogIDs.contains(recipe.id)
-                && recipe.components.contains { $0.repo == repo }
-        }
-    }
+    /// Installed models that can be used. A lone part of a model is left out.
+    var installedRecipes: [ModelRecipe] { catalog.installedRecipes }
 
     /// Recipes with a download queued or in progress.
-    var activeDownloads: [(recipe: ModelRecipe, status: DownloadStatus)] {
-        recipes.compactMap { recipe in
-            guard let status = downloadStatuses[recipe.id], status.isActive else { return nil }
-            return (recipe, status)
-        }
-    }
+    var activeDownloads: [(recipe: ModelRecipe, status: DownloadStatus)] { catalog.activeDownloads }
 
     /// Every recipe with a download to show, including paused, failed and finished ones.
-    var downloadEntries: [(recipe: ModelRecipe, status: DownloadStatus)] {
-        recipes
-            .compactMap { recipe in downloadStatuses[recipe.id].map { (recipe, $0) } }
-            .sorted { $0.1.isActive && !$1.1.isActive }
-    }
+    var downloadEntries: [(recipe: ModelRecipe, status: DownloadStatus)] { catalog.downloadEntries }
 
     func isInstalled(_ recipe: ModelRecipe) -> Bool {
         installedIDs.contains(recipe.id)
@@ -123,7 +112,7 @@ final class ModelLibrary {
     /// in place of a known model's denoiser when the repo is a version of that model,
     /// otherwise a single-file recipe.
     func downloadFromHub(_ file: HFFile, in info: HFModelInfo) throws {
-        let recipe = familyRecipe(for: info)?.adapted(to: file, in: info) ?? ModelRecipe.singleFile(file, in: info)
+        let recipe = catalog.familyRecipe(for: info)?.adapted(to: file, in: info) ?? ModelRecipe.singleFile(file, in: info)
         try recipeStore.save(recipe)
         reloadRecipes()
         download(recipe)
@@ -170,33 +159,14 @@ final class ModelLibrary {
                 status.state == .completed && downloadStatuses[id]?.state != .completed
             }
             downloadStatuses = statuses
-            updateSpeeds(from: statuses)
+            speedTracker.update(from: statuses)
+            // The tracker holds its readout steady, so views are told only when it changes.
+            if speedTracker.speeds != downloadSpeeds {
+                downloadSpeeds = speedTracker.speeds
+            }
             if finished {
                 refreshInstalled()
             }
-        }
-    }
-
-    private func updateSpeeds(from statuses: [String: DownloadStatus]) {
-        var speeds: [String: DownloadSpeed] = [:]
-        for (id, status) in statuses where status.state == .downloading {
-            var estimator = rateEstimators[id] ?? TransferRateEstimator()
-            estimator.record(bytes: status.receivedBytes)
-            rateEstimators[id] = estimator
-            if let rate = estimator.bytesPerSecond {
-                speeds[id] = DownloadSpeed(
-                    bytesPerSecond: rate,
-                    secondsRemaining: status.totalBytes.flatMap { estimator.secondsRemaining(until: $0) }
-                )
-            }
-        }
-        // A paused or finished transfer starts its estimate afresh next time.
-        rateEstimators = rateEstimators.filter { speeds[$0.key] != nil || statuses[$0.key]?.state == .downloading }
-        // Progress arrives many times a second; a steadier readout is easier to read.
-        let now = Date()
-        if Set(speeds.keys) != Set(downloadSpeeds.keys) || now.timeIntervalSince(speedsPublishedAt) >= 1 {
-            downloadSpeeds = speeds
-            speedsPublishedAt = now
         }
     }
 

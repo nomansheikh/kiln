@@ -24,7 +24,9 @@ struct HubResultCard: View {
 
     /// The one answer shown for this repo: what the user can do with it.
     private var support: HubRepoSupport {
-        model.library.support(forRepo: summary.id, info: info, failed: failure != nil)
+        model.library.catalog.support(
+            forRepo: summary.id, info: info, failed: failure != nil, usableBytes: model.library.memory.usableBytes
+        )
     }
 
     private var isUnsupported: Bool {

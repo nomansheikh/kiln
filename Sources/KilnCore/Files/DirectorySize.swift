@@ -1,12 +1,12 @@
 import Foundation
 
 /// Measures how much disk space a folder takes.
-enum DirectorySize {
+public enum DirectorySize {
     /// The allocated size of every regular file under `directory`, in bytes.
     ///
     /// Synchronous on purpose: directory enumerators cannot be iterated from
     /// async code. Call it off the main actor.
-    static func bytes(in directory: URL) -> Int64 {
+    public static func bytes(in directory: URL) -> Int64 {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .totalFileAllocatedSizeKey]
         guard let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: Array(keys)) else {
             return 0

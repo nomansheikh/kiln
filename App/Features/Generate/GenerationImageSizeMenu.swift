@@ -1,3 +1,4 @@
+import KilnCore
 import SwiftUI
 
 /// The composer's chip that shows the output size and picks another from the presets.
