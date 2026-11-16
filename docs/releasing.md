@@ -74,6 +74,16 @@ credentials need to be stored.
 
    Publishing creates the `v0.1.0` tag. The app's notice of a new version reads the
    latest published release, so a draft or a prerelease is not announced to users.
+10. Update the Homebrew cask. In the tap repository
+    ([nomansheikh/homebrew-tap](https://github.com/nomansheikh/homebrew-tap)), set
+    `version` and `sha256` in `Casks/kiln.rb` to the new release, then check it as a
+    user would:
+
+    ```sh
+    brew style --cask nomansheikh/tap/kiln
+    brew audit --cask nomansheikh/tap/kiln
+    brew install --cask nomansheikh/tap/kiln
+    ```
 
 ## With the release script
 
@@ -163,6 +173,7 @@ that requires approval.
 - Automatic updates. The app says when a newer version has been published and links
   to it; it does not download or install one. Sparkle would be the way to do that and
   needs its own signing key and an appcast published with each release.
-- A Homebrew cask. It needs the disk image's address and SHA-256 from a published
-  release.
+- Homebrew's official list. Kiln is installed from the maintainer's own tap. The
+  official list asks an author's own app for 225 stars, 90 forks or 90 watchers, and a
+  repository at least 30 days old.
 - An Intel build. Kiln is Apple Silicon only.
