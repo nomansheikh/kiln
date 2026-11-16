@@ -120,6 +120,7 @@ final class SpeechStore {
         activity = .loadingModel
         task = Task {
             let started = Date()
+            var madeClip = false
             do {
                 for try await event in engine.speak(recipe: recipe, request: request) {
                     switch event {
@@ -133,10 +134,13 @@ final class SpeechStore {
                         )
                         show(try audio.add(sound, record: record))
                         playback?.play()
+                        madeClip = true
                     case .finished:
                         errorMessage = "The model did not produce audio."
                     }
                 }
+                // A stream whose consumer was cancelled ends quietly instead of throwing.
+                if Task.isCancelled, !madeClip { restore(sent) }
             } catch is CancellationError {
                 restore(sent)
             } catch {
