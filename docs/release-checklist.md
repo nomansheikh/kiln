@@ -1,6 +1,6 @@
 # Release checklist
 
-What to check before a release. The core library has unit tests; the app itself has none, so the second half of this page is done by hand in the running app. Tick each line, and write down the Mac and the macOS version it was done on.
+What to check before a release. The core library and the app's stores have unit tests; the views have none, so the second half of this page is done by hand in the running app. Tick each line, and write down the Mac and the macOS version it was done on.
 
 ## Run
 
@@ -10,10 +10,11 @@ python3 scripts/recipe.py check
 ./scripts/check-conventions.sh
 ./scripts/build-engine.sh
 xcodegen generate
+xcodebuild -scheme Kiln -configuration Debug -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO test
 xcodebuild -scheme Kiln -configuration Release -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
 ```
 
-- [ ] All six end without an error, and `recipe.py check` ends with `OK`.
+- [ ] All seven end without an error, and `recipe.py check` ends with `OK`.
 - [ ] CI is green on the commit being released.
 
 ## Click through

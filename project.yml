@@ -20,6 +20,9 @@ targets:
   Kiln:
     type: application
     platform: macOS
+    scheme:
+      testTargets:
+        - KilnAppTests
     sources:
       - path: App
       - path: recipes
@@ -70,3 +73,25 @@ targets:
               codesign --force --sign "$identity" --options runtime --timestamp "$bundled"
             fi
           done
+
+  # Tests for the app's stores. The stores are compiled into the test bundle
+  # itself, so the tests run without launching the app.
+  KilnAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: App/Stores
+        excludes:
+          - AppModel.swift
+          - UpdateStore.swift
+      - path: App/Features/Generate/AudioPlayback.swift
+      - path: App/Features/Models/ModelLibrary+RecipeImport.swift
+      - path: Tests/KilnAppTests
+    dependencies:
+      - package: Kiln
+        product: KilnCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: codes.noman.kiln.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"

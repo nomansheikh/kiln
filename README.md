@@ -155,7 +155,7 @@ xcodegen generate
 Then open `Kiln.xcodeproj` in Xcode and run the `Kiln` scheme, or build from the command line with the line CI uses:
 
 ```sh
-xcodebuild -scheme Kiln -configuration Debug -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
+xcodebuild -scheme Kiln -configuration Debug -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO test
 ```
 
 Run the core library tests with:

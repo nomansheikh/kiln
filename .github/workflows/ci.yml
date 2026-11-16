@@ -135,11 +135,12 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build app
+      # Builds the app, then runs the tests of its stores.
+      - name: Build app and test its stores
         run: >
           xcodebuild
           -scheme Kiln
           -configuration Debug
           -destination 'platform=macOS,arch=arm64'
           CODE_SIGNING_ALLOWED=NO
-          build
+          test
