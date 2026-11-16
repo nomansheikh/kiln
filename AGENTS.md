@@ -300,6 +300,7 @@ import Testing
 - Test doubles and fixtures live in `Tests/KilnCoreTests/Support/`: `RecipeFixtures.swift` (`makeRecipe`, `curatedRecipesDirectory`), `MockTransport.swift`, `StubURLProtocol.swift`, `FakeDownloader.swift`, `EngineFixture.swift`. Reuse them; add a new double there, not inside a test file.
 - Tests must not use the network, real model files or the real helper. The boundaries are protocols (`HTTPTransport`, `FileDownloading`, `TokenStore`, `InferenceEngine`).
 - The app's stores are tested in `Tests/KilnAppTests/`, against `StoreFixture`: a folder of their own, a `FakeEngine` and a downloader that writes files at once. A store test must not delete a clip, an image or a voice through a store, because that moves the file to the Trash of whoever runs the tests. Run `xcodegen generate` after adding a test file there.
+- `HelperTests`, in the same folder, starts the three built helpers for real, without a model: each must say it is ready inside its sandbox, answer a request it cannot read without stopping, and refuse to run with half a sandbox. Extend it when a helper's start-up or protocol changes. What a helper does with a model is still checked by hand.
 - The views have no tests. Keep rules in KilnCore, where a store asks a tested value (`SpeechDraft`, `GenerationDraft`, `ModelCatalog`), and keep a store to holding state and calling the engine.
 
 ### Screenshots
