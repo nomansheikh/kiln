@@ -4,33 +4,6 @@ import KilnCore
 /// Speaking in one of the user's own voices, for a model that can copy a
 /// voice from a recording.
 extension SpeechStore {
-    /// True when the selected model can copy a voice.
-    var copiesVoices: Bool {
-        selectedRecipe?.speech?.reference != nil
-    }
-
-    /// The chosen voice of the user's own, when the selected model can use it.
-    var savedVoice: SavedVoice? {
-        guard copiesVoices, let savedVoiceID else { return nil }
-        return voices.voices.first { $0.id == savedVoiceID }
-    }
-
-    /// The recording the selected model is given, if any.
-    var sentReference: VoiceReference? {
-        savedVoice?.reference(in: voices.store)
-    }
-
-    /// Why the model cannot speak yet, as far as its voice goes. Nil when it can.
-    var voiceProblem: String? {
-        // A script's speakers have voices of their own. See `speakerProblem`.
-        guard let speech = selectedRecipe?.speech, !isScript else { return nil }
-        if let savedVoice {
-            return speech.referenceText == .required && savedVoice.transcript.isEmpty
-                ? "This model needs the words spoken in \u{201C}\(savedVoice.name)\u{201D} before it can copy the voice." : nil
-        }
-        return speech.reference == .required ? "This model speaks in a voice it copies. Add a voice first." : nil
-    }
-
     /// Saves a recording as a voice and selects it, for the speaker it was added for if there is one.
     func addVoice(recording: URL, name: String, transcript: String) throws {
         let voice = try voices.add(recording: recording, name: name, transcript: transcript)
@@ -86,17 +59,6 @@ extension SpeechStore {
             try voices.delete(voice)
         } catch {
             errorMessage = error.localizedDescription
-        }
-    }
-
-    /// Puts a clip's voice back: the user's own if it still exists, else the model's.
-    func restoreVoice(of settings: SpeechSettings?, for recipe: ModelRecipe) {
-        if let file = settings?.reference?.file.lastPathComponent,
-           let saved = voices.voices.first(where: { voices.store.recording(of: $0).lastPathComponent == file }) {
-            savedVoiceID = saved.id
-        } else if let voice = settings?.voice, recipe.voices.contains(voice) {
-            self.voice = voice
-            savedVoiceID = nil
         }
     }
 }
