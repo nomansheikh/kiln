@@ -13,8 +13,7 @@ extension GenerationStore {
     /// Picks an installed model when the current choice is missing or was deleted.
     func selectDefaultRecipeIfNeeded() {
         if let id = draft.recipeID, library.installedIDs.contains(id) { return }
-        let installed = library.installedRecipes
-        selectRecipe(installed.first { $0.outputKind == .image } ?? installed.first)
+        selectRecipe(library.catalog.defaultRecipe)
     }
 
     // MARK: - Attaching a file

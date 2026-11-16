@@ -60,9 +60,9 @@ KilnCore has no dependencies outside Apple's frameworks and does not import Swif
 
 | Module | Main types | Responsibility |
 | --- | --- | --- |
-| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator`, `VariantSelection` | Recipe schema and validation, loading bundled and user recipes and the generated catalogue of models without a recipe, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate, which variant of a recipe is used. See [recipes.md](recipes.md). |
+| `Recipes/` | `ModelRecipe`, `RecipeStore`, `MemoryFitEstimator`, `VariantSelection`, `ModelCatalog` | Recipe schema and validation, loading bundled and user recipes and the generated catalogue of models without a recipe, building a recipe from a Hub file (single-file, or completed from the curated recipe of the same model), memory-fit estimate, which variant of a recipe is used, and the questions the app asks about its models (which are installed, what the Models list shows, what a Hugging Face repo can be used for). See [recipes.md](recipes.md). |
 | `HuggingFace/` | `HFClient`, `HFModelSummary`, `HFModelInfo`, `HFFile`, `KeychainTokenStore` | Read-only Hub API client and access-token storage. |
-| `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator`, `DownloadSpeed` | Download queue, resumable transfers, verification, on-disk layout, speed estimate and its wording. |
+| `Downloads/` | `DownloadManager`, `FileDownloader`, `ModelStorage`, `DownloadStatus`, `TransferRateEstimator`, `DownloadSpeedTracker`, `DownloadSpeed` | Download queue, resumable transfers, verification, on-disk layout, speed estimate and its wording. |
 | `Engine/` | `InferenceEngine`, `GenerationRequest`, `EngineRouter`, `HelperSession`, `StableDiffusionCppEngine`, `WhisperCppEngine`, `AudioCppEngine`, `AudioSamples`, `HelperProcess`, `EngineMessage`, `GenerationDraft`, `SpeechDraft`, `GenerationFailure` | Generation API, routing each recipe to its engine, helper process management, decoding audio for speech models, wire format, what the Generate and Speech composers send, what a failed run is reported as. |
 | `Audio/` | `GeneratedAudio`, `AudioStore`, `AudioItem` | Sound a model made, WAV encoding, saving and listing sounds with their settings. |
 | `Gallery/` | `GalleryStore`, `ImageCodec`, `PNGText`, `GenerationRecord` | Saving outputs (PNG encoding with embedded settings for images), reading an image file as raw RGB, listing and deleting items. |
@@ -384,7 +384,7 @@ Status per recipe is one of queued, downloading, verifying, paused, completed or
 
 ### Speed and time left
 
-`TransferRateEstimator` averages the bytes received over a sliding window (8 seconds by default). It gives no speed until its samples span at least one second, or while no bytes are arriving, and starts over when the byte count drops. In the app, `ModelLibrary` keeps one estimator per transferring download and publishes a `DownloadSpeed` (bytes per second and, when the total size is known, seconds remaining) at most once a second.
+`TransferRateEstimator` averages the bytes received over a sliding window (8 seconds by default). It gives no speed until its samples span at least one second, or while no bytes are arriving, and starts over when the byte count drops. `DownloadSpeedTracker` keeps one estimator per transferring download and gives a `DownloadSpeed` (bytes per second and, when the total size is known, seconds remaining) that changes at most once a second; `ModelLibrary` feeds it the statuses and publishes the result.
 
 ## New versions
 
@@ -466,7 +466,7 @@ App/
 
 | Store | Owns |
 | --- | --- |
-| `ModelLibrary` | Recipes and recipe load problems, the set of installed recipes, download statuses and speeds; import, download of a file from the Hub, delete. Wraps `RecipeStore`, `ModelStorage`, `DownloadManager`, `HFClient` and `MemoryFitEstimator`. |
+| `ModelLibrary` | Recipes and recipe load problems, the set of installed recipes, download statuses and speeds; import, download of a file from the Hub, delete. Wraps `RecipeStore`, `ModelStorage`, `DownloadManager`, `HFClient` and `MemoryFitEstimator`. Questions about that state are answered by its `catalog`, a KilnCore `ModelCatalog`. |
 | `GenerationStore` | The draft being edited (`GenerationDraft`), the thread on screen (`GenerationTurn`), the running phase and step preview, and which recipe is loaded in memory. Runs generations through `InferenceEngine`, saves results to the gallery and the thread to its chat. |
 | `SpeechStore` | The Speech screen: the text, the voice model and voice, what a running generation is doing, the clip being played, each clip's waveform, the playback speed and voice samples. Runs text to speech through `InferenceEngine` and saves results to `AudioLibrary`. What is sent, whether it can be sent and why not are decided by KilnCore's `SpeechDraft`, a plain value the store builds from its fields, so those rules are unit-tested. |
 | `AudioLibrary` | Generated sound; add, delete, reveal in Finder. Wraps `AudioStore`. |
@@ -475,7 +475,7 @@ App/
 | `HubAccount` | Whether a token is saved; save, remove, verify. Wraps `TokenStore` and `HFClient`. |
 | `UpdateStore` | Whether a newer version of Kiln exists, the version the user dismissed, and the setting that turns the check off. Wraps `ReleaseCheck`. |
 
-Smaller value types live beside them: `GenerationPhase` and `SidebarItem`. The values that carry rules are in KilnCore, where they are unit-tested: `GenerationDraft`, `SpeechDraft`, `GenerationTurn`, `EditStrength` (Subtle 0.35, Balanced 0.6, Strong 0.8, sent as `strength`), `DownloadSpeed`, `VariantSelection` and `AttachmentLibrary`. A store holds one and observes it; it does not repeat its rules.
+Smaller value types live beside them: `GenerationPhase` and `SidebarItem`. The values that carry rules are in KilnCore, where they are unit-tested: `GenerationDraft`, `SpeechDraft`, `GenerationTurn`, `EditStrength` (Subtle 0.35, Balanced 0.6, Strong 0.8, sent as `strength`), `DownloadSpeed`, `VariantSelection`, `ModelCatalog` and `AttachmentLibrary`. A store holds one and observes it; it does not repeat its rules.
 
 The engines hold one model in memory, so only one screen generates at a time: `GenerationStore` and `SpeechStore` each refuse to start while the other is busy (`isEngineBusyElsewhere`, wired in `AppModel`). The Generate menu's commands act on the screen in front.
 

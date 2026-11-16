@@ -31,10 +31,10 @@ struct HubRepoAction: View {
     @ViewBuilder
     private func fileControl(_ file: HFFile, _ info: HFModelInfo, help: String) -> some View {
         let library = model.library
-        switch library.availability(of: file, in: info) {
+        switch library.catalog.availability(of: file, in: info) {
         case .installed:
             Button {
-                if let recipe = library.recipe(for: file, in: info) { model.use(recipe) }
+                if let recipe = library.catalog.recipe(for: file, in: info) { model.use(recipe) }
             } label: {
                 Label("Use", systemImage: "wand.and.stars")
             }

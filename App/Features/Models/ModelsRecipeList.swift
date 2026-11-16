@@ -19,19 +19,7 @@ struct ModelsRecipeList: View {
 
     private var visibleRecipes: [ModelRecipe] {
         let library = model.library
-        return library.recipes.filter { recipe in
-            (task == nil || recipe.task == task) && (!showsDownloadedOnly || library.isInstalled(recipe))
-                && (query.isEmpty || matches(recipe))
-        }
-    }
-
-    /// Whether a recipe's name, id or one of its Hugging Face repos contains the search text.
-    /// A pasted link to a repo matches by the repo it names.
-    private func matches(_ recipe: ModelRecipe) -> Bool {
-        let text = HFClient.repoID(in: query) ?? query
-        let files = model.library.variants(of: recipe).flatMap(\.components) + recipe.components
-        return recipe.name.localizedCaseInsensitiveContains(text) || recipe.id.localizedCaseInsensitiveContains(text)
-            || files.contains { $0.repo.localizedCaseInsensitiveContains(text) }
+        return library.catalog.listed(task: task, downloadedOnly: showsDownloadedOnly, query: query, variants: library.variants(of:))
     }
 
     var body: some View {
