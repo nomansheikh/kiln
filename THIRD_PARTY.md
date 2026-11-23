@@ -2,7 +2,7 @@
 
 Kiln itself is MIT licensed (see [LICENSE](LICENSE)). The Swift app and the `KilnCore` library use only Apple system frameworks and have no third-party Swift dependencies.
 
-The app bundles three helper programs. `kiln-whisper` and `kiln-audio` are covered in [their own sections](#kiln-whisper) at the end.
+The app bundles four helper programs. `kiln-whisper`, `kiln-audio` and `kiln-trellis` are covered in [their own sections](#kiln-whisper) at the end.
 
 The `kiln-engine` helper is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/CMakeLists.txt](Engine/CMakeLists.txt): Metal on, examples off, WebP off, WebM off, no CUDA.
 
@@ -161,3 +161,28 @@ The headers in `external/sentencepiece/third_party/darts_clone/` (BSD 3-Clause) 
 audio.cpp can be built with eSpeak-ng, which is GPL-3.0-or-later. Kiln does not enable that option (`AUDIOCPP_STATIC_ESPEAK` is off), so no GPL code is in the helper. Model families that need eSpeak, such as Kokoro for English, are left out of Kiln's model lists for that reason. audio.cpp's eSpeak adapter can also load an eSpeak library that is already installed on the Mac; Kiln ships no such library and offers no model that asks for it.
 
 Model and voice files are not part of the app. Recipes download them from Hugging Face; their licences are stated in each recipe's `license_note`.
+
+## kiln-trellis
+
+The `kiln-trellis` helper (3D objects) is statically linked against the components below. This list covers what is compiled into the helper with the options set in [Engine/trellis/CMakeLists.txt](Engine/trellis/CMakeLists.txt): Metal on, WebP off, native retopology off (it is not available on macOS), no server. It was read from the build files and the sources, not from the object files of a build.
+
+Paths are relative to `Vendor/trellis.cpp/`, a git submodule. This section was last checked against submodule commit `c0bed38c1578f7e36e3e50c8ff1e38fa0d47583f` (tag `v0.8.1`) on 2026-11-23.
+
+| Component | License | Upstream | License verified from |
+| --- | --- | --- | --- |
+| trellis.cpp (`src/`, `include/`, including `src/trellis_cli.cpp` and `src/trellis_args.cpp`, which are compiled directly into the helper) | MIT, Copyright (c) 2026 Piotr Wilkin | https://github.com/pwilkin/trellis.cpp | `LICENSE` |
+| ggml, the fork trellis.cpp builds against (`thirdparty/ggml/`, a submodule at commit `f8697b33795db2ee6a2569b40853ca6aaa69f9b9`), including its CPU, BLAS (Apple Accelerate) and Metal backends | MIT, Copyright (c) 2023-2026 The ggml authors | https://github.com/pwilkin/ggml (branch `trellis`), a fork of https://github.com/ggml-org/ggml | `thirdparty/ggml/LICENSE` |
+| xatlas (`thirdparty/xatlas/`) | MIT, Copyright (c) 2018-2020 Jonathan Young. It carries the notices of the work it builds on: thekla_atlas (MIT, Copyright (c) 2013 Thekla, Inc; Copyright NVIDIA Corporation 2006, Ignacio Castano), Fast-BVH (MIT, Copyright (c) 2012 Brandon Pelfrey) and code by Bruno Levy (BSD-style, Copyright (c) 2004-2010). | https://github.com/jpcy/xatlas | comments in `xatlas.cpp` |
+| meshoptimizer, the simplifier only (`thirdparty/meshoptimizer/`) | MIT, Copyright (c) 2016-2025 Arseny Kapoulkine | https://github.com/zeux/meshoptimizer | `LICENSE.md` in that folder |
+| Fast Quadric Mesh Simplification (`thirdparty/fqms/Simplify.h`) | MIT, Copyright 2015-2019 Spacerat and contributors; the file itself names Sven Forstmann, 2014 | https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification | `LICENSE.md` in that folder and the comment in the file |
+| stb_image 2.28 and stb_image_write 1.16 (`thirdparty/stb/`) | MIT (Copyright (c) 2017 Sean Barrett) or public domain, at the user's choice | https://github.com/nothings/stb | notice at the end of each file |
+| stb_image_resize 0.90 (`thirdparty/stb/`) | Public domain, with a licence to use it where that is not recognized; by Jorge L Rodriguez | https://github.com/nothings/stb | comment in the file |
+| JSON for Modern C++ (`Vendor/whisper.cpp/examples/json.hpp`, version 3.11.2). Included only by `Engine/trellis/main.cpp`. | MIT, Copyright 2013-2022 Niels Lohmann | https://github.com/nlohmann/json | SPDX header in the file |
+
+The YaRN RoPE notice listed above for ggml applies to this copy as well, as far as the fork keeps those files; the fork's own changes were not searched for further notices.
+
+trellis.cpp's sources carry no licence notices of their own beyond the `LICENSE` file. Its README says it ports the reference implementation at [microsoft/TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (MIT), and its Pixal3D notes say parts are ported from [TencentARC/Pixal3D](https://github.com/TencentARC/Pixal3D) (MIT) and [valeoai/NAF](https://github.com/valeoai/NAF) (Apache-2.0). Those are ports written for trellis.cpp, not copied files; the three projects are named here because the helper's behaviour derives from them.
+
+`thirdparty/cpp-httplib/` is in the tree and used only by trellis.cpp's server, which Kiln does not build.
+
+Model files are not part of the app. The 3D recipes download them from Hugging Face; their licences, which differ from part to part, are stated in each recipe's `license_note`.

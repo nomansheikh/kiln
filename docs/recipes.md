@@ -39,10 +39,10 @@ That command produces exactly [`recipes/sdxl-base-1.0.json`](../recipes/sdxl-bas
 | `$schema` | string | no | `"./schema.json"`, so editors validate and autocomplete the file. The app ignores it. |
 | `id` | string | yes | Unique identifier. Also the file name (`<id>.json`). |
 | `name` | string | yes | Display name. |
-| `engine` | string | yes | Inference engine: `sd.cpp` (stable-diffusion.cpp, makes images), `whisper.cpp` (speech to text) or `audio.cpp` (text to speech). |
+| `engine` | string | yes | Inference engine: `sd.cpp` (stable-diffusion.cpp, makes images), `whisper.cpp` (speech to text), `audio.cpp` (text to speech) or `trellis.cpp` (3D objects from a picture). |
 | `components` | array of [component](#components) | yes | Files to download. At least one, unless the recipe has [variants](#variants), in which case these are the files shared by every variant and the array may be empty. The key must be present either way. |
-| `output` | string | no | What the model produces: `image`, `audio` or `text`. `image` when absent. See [kinds](#kinds-of-model). |
-| `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same three values. See [kinds](#kinds-of-model). |
+| `output` | string | no | What the model produces: `image`, `audio`, `text` or `mesh` (a 3D object). `image` when absent. See [kinds](#kinds-of-model). |
+| `accepts` | array of strings | no | Kinds of file the model takes as an attachment, from the same values. See [kinds](#kinds-of-model). |
 | `defaults` | [defaults](#defaults) object | for image models | Recommended generation settings of an image model. Required when `output` is `image`. |
 | `speech` | object | for audio.cpp | How a model that speaks is run: `family`, and optionally `voices` and `voice`. See [speech](#speech). |
 | `languages` | array of strings | no | Codes of the languages the user may choose between, such as `en`, for a speech model that works in several. The app offers them in a language menu with "Auto" first. Leave it out for a model that works in one language or decides by itself. |
@@ -61,6 +61,7 @@ A recipe with an `engine` Kiln does not include still loads, but generating with
 | --- | --- | --- |
 | `image` | `["image"]`, an image to rework | No |
 | `audio`, `text` | `[]`, no attachment | When it takes an attachment and one is attached, as speech to text does |
+| `mesh` | `[]`; a curated recipe states `["image"]` | Only with a picture attached. The 3D screen runs these models, not Generate. |
 
 Each engine makes one kind, and a curated recipe must state it:
 
@@ -69,6 +70,7 @@ Each engine makes one kind, and a curated recipe must state it:
 | `sd.cpp` | `image` (or absent) | absent | required | the roles in [Roles](#roles) |
 | `whisper.cpp` | `text` | `["audio"]` | not allowed | one `model` file in whisper.cpp's ggml format |
 | `audio.cpp` | `audio` | absent | not allowed | one `model` file in audio.cpp's GGUF format, any number of `voice` files, and `speech` |
+| `trellis.cpp` | `mesh` | `["image"]` | not allowed | one `model` file and the model's other files as `support`, each under the name trellis.cpp opens it by. See [3D models](#3d-models). |
 
 A speech-to-text recipe looks like this:
 
@@ -123,9 +125,9 @@ Each role may appear at most once in a list of components, except `voice` and `s
 | `clip_l` | CLIP-L text encoder (Flux and SD3 families) | `clip_l` | `clip_l_path` |
 | `clip_g` | CLIP-G text encoder (SD3 family) | `clip_g` | `clip_g_path` |
 | `t5xxl` | T5-XXL text encoder (Flux and SD3 families) | `t5xxl` | `t5xxl_path` |
-| `model` | The main file of a model whose engine needs no other kind of file. Used by `whisper.cpp` and `audio.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe` and `speak`) | none |
+| `model` | The main file of a model whose engine needs no other kind of file. Used by `whisper.cpp`, `audio.cpp` and `trellis.cpp` recipes, not by `sd.cpp`. | (the `model` field of `transcribe` and `speak`) | none |
 | `voice` | A voice a speech model can speak in, named after the file. Used by `audio.cpp` recipes. May repeat. | (found by the engine beside the model file) | none |
-| `support` | Another file the engine finds beside the model, such as a tokenizer or a configuration. Used by `audio.cpp`. May repeat; no two may share a path. | (found by the engine beside the model file) | none |
+| `support` | Another file the engine finds beside the model, such as a tokenizer or a configuration. Used by `audio.cpp` and `trellis.cpp`. May repeat; no two may share a path. | (found by the engine beside the model file) | none |
 
 Roles a recipe does not use are left unset. There is no role for a LoRA or a vision projector, so a model that needs one of those cannot be described yet. The mapping lives in `generateCommand` in [`EngineProtocol.swift`](../Sources/KilnCore/Engine/EngineProtocol.swift) and `load_model` in [`Engine/main.cpp`](../Engine/main.cpp).
 
@@ -203,6 +205,40 @@ Each voice has its own licence, which may differ from the model's. Include only 
   "variants": [ … one `model` file each … ]
 }
 ```
+
+## 3D models
+
+A recipe for the `trellis.cpp` engine makes a 3D object from one picture. It has no settings block: the settings are the engine's own, the same for every model, and the user changes them on the 3D screen.
+
+trellis.cpp opens every file by a fixed name inside one folder, so the names of a recipe's files are part of the recipe:
+
+| File name | What it is |
+| --- | --- |
+| `ss_flow.gguf` | The flow that lays out the rough structure. Give it the role `model`. |
+| `shape_flow_512.gguf`, `shape_flow_1024.gguf` | The flows that work out the shape. |
+| `tex_flow_512.gguf`, `tex_flow_1024.gguf` | The flows that colour it. |
+| `ss_dec.gguf`, `shape_dec.gguf`, `tex_dec.gguf` | The decoders. |
+| `dinov3.gguf` | The image encoder. |
+| `birefnet.gguf` | The background remover. |
+
+Every file but the first has the role `support`. The files may sit in a folder of a repo (`q4/ss_flow.gguf`): only the last part of the path is the name. They may also come from several repos, in which case the app links them into one folder when it runs the model, so no two may have the same name.
+
+The app reads two things from the names, and a recipe has no field for either:
+
+- **The family.** A recipe whose `model` file is named with the `pixal3d_` prefix is run as Pixal3D, a fine-tune of TRELLIS.2 whose flow files carry that prefix (`pixal3d_ss_flow.gguf` and so on, plus `pixal3d_naf.gguf`); its decoders, image encoder and background remover are TRELLIS.2's, under their plain names. Any other recipe is run as TRELLIS.2.
+- **The levels of detail.** Standard (512) is offered only when the recipe has a `tex_flow_512.gguf`. Pixal3D publishes none, so it starts at Fine (1024).
+
+```sh
+python3 scripts/recipe.py new \
+  --id trellis-2 --name "TRELLIS.2" --engine trellis.cpp \
+  --variant q4 "Q4 (smallest)" min_memory_gb=16 \
+    model=ilintar/trellis2-gguf:q4/ss_flow.gguf \
+    support=ilintar/trellis2-gguf:q4/shape_flow_512.gguf \
+    ... \
+  --license-note "..."
+```
+
+The script writes `"output": "mesh"` and `"accepts": ["image"]` itself and rejects the image settings. State the licence of every part in `license_note`: the model, the decoders it reuses, the background remover and the image encoder each have their own.
 
 ## The catalogue
 
@@ -442,7 +478,7 @@ Two things check every file in `recipes/` on each push: the test `everyCuratedRe
 The test requires:
 
 - the file name without `.json` equals the recipe `id`
-- `engine` is `sd.cpp`, `whisper.cpp` or `audio.cpp`
+- `engine` is `sd.cpp`, `whisper.cpp`, `audio.cpp` or `trellis.cpp`
 - every component of every variant (or of the recipe, when it has no variants) has `revision`, `size_bytes` and `sha256`
 - `recipes/index.json` lists exactly the recipe files
 
@@ -477,7 +513,7 @@ Each file is written as `ROLE=OWNER/REPO:PATH`, where `PATH` is the file's path 
 | `--name NAME` | Display name. Required. |
 | `--component ROLE=OWNER/REPO:PATH` | A file every install needs. Repeat for each file. |
 | `--variant ID "NAME" [min_memory_gb=N] ROLE=OWNER/REPO:PATH ...` | One variant: its id, its name, optionally its minimum memory, then its files. Repeat for each variant. |
-| `--engine NAME` | `sd.cpp` (the default), `whisper.cpp` or `audio.cpp`. For the last two the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
+| `--engine NAME` | `sd.cpp` (the default), `whisper.cpp`, `audio.cpp` or `trellis.cpp`. For the last three the script writes `output` (and `accepts`) itself and takes none of the image settings below. |
 | `--instruction optional\|required`, `--style NAME=WORD,WORD`, `--tags TAG ...` | For `audio.cpp`: `speech.instruction`, one group of `speech.styles` (repeat for each group) and `speech.tags`. See [Expression](#expression). |
 | `--reference optional\|required`, `--reference-text optional\|required` | For `audio.cpp`: `speech.reference` and `speech.reference_text`. See [Copying a voice](#copying-a-voice). |
 | `--speakers MAX`, `--speaker-line LINE` | For `audio.cpp`: `speech.speakers`, given together. See [Several speakers](#several-speakers). |

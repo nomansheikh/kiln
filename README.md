@@ -1,8 +1,8 @@
 # Kiln
 
-Kiln is a native macOS app that downloads models from Hugging Face and runs them on your own Mac. It makes images with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), turns speech into text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) and reads text aloud with [audio.cpp](https://github.com/0xShug0/audio.cpp).
+Kiln is a native macOS app that downloads models from Hugging Face and runs them on your own Mac. It makes images with [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), turns speech into text with [whisper.cpp](https://github.com/ggml-org/whisper.cpp), reads text aloud with [audio.cpp](https://github.com/0xShug0/audio.cpp) and makes 3D objects from pictures with [trellis.cpp](https://github.com/pwilkin/trellis.cpp).
 
-It is for people with an Apple Silicon Mac who want to try image and speech models locally without setting up Python or a command line. It is written in Swift 6 and SwiftUI and is MIT licensed.
+It is for people with an Apple Silicon Mac who want to try image, speech and 3D models locally without setting up Python or a command line. It is written in Swift 6 and SwiftUI and is MIT licensed.
 
 ![The Generate screen: a prompt and the image made from it](docs/screenshots/generate.png)
 
@@ -37,13 +37,22 @@ Text to speech:
 - **Designed voices.** Describe a voice and a model that can make one up speaks a sample. Keep it, and every model that copies voices can speak in it.
 - **Marks and notes.** A sound is written in the text as one word in brackets, such as `[laughs]`. Kiln rewrites it to the model's own tag, for example `[laughter]`, and leaves it out for a model that has no such sound. A note after a speaker's name says how a line is said: `Anna (whispering): …`. A model that can be directed also gets a Style control, and no model gets a control it does not support.
 
+3D objects:
+
+- **Picture to 3D.** On the 3D screen, choose or drop a picture of one object and send it. The result is a textured object that can be turned, zoomed and looked at in colour, as plain clay or as a wireframe.
+- **Description to 3D.** With an image model installed, describe the object instead. Kiln draws a picture first and shows it for approval, then makes the object from it.
+- **Make 3D from an image.** A generated image, in a chat or in the gallery, has a "Make 3D" button that takes it to the 3D screen.
+- **Detail and settings.** Three levels of detail (Standard, Fine, Ultra, where the model has them), and under "Advanced" the seed, steps, guidance, how the object is cut out of its picture and the texture size.
+- **Keeps working in the background.** While an object is being made, earlier ones can be looked at; the new one is marked when it is ready.
+- **Export.** Save an object as GLB, USDZ or OBJ. Each object is kept as a GLB file with its settings beside it.
+
 All speech models:
 
 - **Language.** A model that works in several languages gets a language menu listing what it supports, with "Auto" first.
 
 Models:
 
-- **Curated recipes.** A recipe is a JSON file that lists every file a model needs, pinned to a commit, a size and a SHA-256, with its recommended settings. A recipe is one click to download. The 31 recipes in [`recipes/`](recipes) are listed below.
+- **Curated recipes.** A recipe is a JSON file that lists every file a model needs, pinned to a commit, a size and a SHA-256, with its recommended settings. A recipe is one click to download. The 33 recipes in [`recipes/`](recipes) are listed below.
 - **More models.** Most of the generated entries have never been run. MOSS-TTS-Nano, Soprano (on the CPU, after crashing on the GPU) and Whisper Tiny were downloaded and run, and their output transcribes back to the input. An untested entry may fail to load or need a setting Kiln does not offer.
 - **Search.** The search field matches Kiln's own models by name or by the Hugging Face repo their files come from. A repo id such as `owner/name`, or a pasted link to its page, finds that repo on Hugging Face.
 - **Hugging Face list.** The Models screen lists the most downloaded text-to-image repos and searches the Hub. Each repo shows its `.safetensors` and `.gguf` files, which can be downloaded one at a time.
@@ -59,6 +68,7 @@ Models:
 | Images (19) | `animagine-xl-4.0`, `chroma1-hd`, `flux.1-dev`, `flux.1-schnell`, `flux.2-klein-4b`, `flux.2-klein-9b`, `flux.3-image-klein`, `juggernaut-xl-v9`, `noobai-xl-1.1`, `qwen-image-2.1-turbo-uncensored`, `qwen-image-2.1-turbo`, `qwen-image-2.1`, `qwen-image`, `realvisxl-v5.0`, `sd-1.5`, `sd-3.5-large`, `sdxl-base-1.0`, `sdxl-turbo`, `z-image-turbo` |
 | Speech to text (5) | `whisper-base`, `whisper-large-v3-turbo`, `whisper-large-v3`, `whisper-medium`, `whisper-small` |
 | Text to speech (7) | `chatterbox`, `omnivoice`, `pocket-tts-english`, `qwen3-tts-1.7b-base`, `qwen3-tts-1.7b-customvoice`, `vibevoice-1.5b`, `voxcpm2` |
+| 3D objects (2) | `pixal3d`, `trellis-2` |
 
 What the curated voice recipes can do differs:
 
@@ -111,13 +121,16 @@ Kiln is early. Read this before relying on it.
 - **More models.** Most of the 71 generated entries have never been run. MOSS-TTS-Nano, Soprano (on the CPU, after crashing on the GPU), Qwen3-TTS CustomVoice (now a curated recipe), VibeVoice 1.5B and Whisper Tiny were downloaded and run, and their output transcribes back to the input. An untested entry may fail to load or need a setting Kiln does not offer.
 - **Own voices, designed voices and scripts.** A script has been read line by line with PocketTTS (through the app) and with OmniVoice using a designed voice per speaker, and in one take with VibeVoice; the results transcribe back to the script. Whether a copied or designed voice sounds like its source was judged from pitch measurements, not by a listening test.
 - **Image to image and the step preview** are implemented and unit-tested at the protocol level. They are not confirmed with a real model.
-- **Tests.** The core library has unit tests (`swift test`). The SwiftUI app has none.
-- **CI.** A GitHub Actions workflow runs on every pull request and every push to `main`: a conventions check, the recipe check against Hugging Face, and a build job that runs the core tests, builds the three helpers and builds the app. The built helpers are cached between runs.
+- **3D objects.** TRELLIS.2 (the Q4 files) and Pixal3D have each made objects through the app. Measured with the engine's command-line tool on the M5 Ultra, a Fine object takes about eight to nine minutes and about 8 GB of memory with either model; Standard with TRELLIS.2 takes about three minutes and 6 GB. Ultra detail has not been run with either model, the larger TRELLIS.2 file sets (Q8 and full precision) have not been downloaded, and neither model has been run on a 16 GB Mac. Saving as USDZ and OBJ has not been checked in another program.
+- **Tests.** The core library has unit tests (`swift test`), and the app's stores have their own, run by `xcodebuild`. The views have none.
+- **CI.** A GitHub Actions workflow runs on every pull request and every push to `main`: a conventions check, the recipe check against Hugging Face, and a build job that runs the core tests, builds the four helpers, builds the app and runs the store tests. The built helpers are cached between runs.
 
 Known limits:
 
 - One model is in memory at a time, and one screen generates at a time.
 - The memory-fit label is a heuristic based on file sizes. It does not count the memory a generation needs on top of the weights.
+- trellis.cpp cannot stop a run in progress or report one. Stopping an object ends its helper, and the model is loaded again for the next one.
+- A 3D object is made from one picture of one object. What the picture does not show, the model makes up.
 - audio.cpp cannot stop a run in progress. A stopped clip ends for the app at once; the helper is ended if the run has not finished within a few seconds.
 - Not every audio.cpp model works on the GPU. A speech model that brings its helper down on the GPU is run again on the CPU.
 - A model that reads a whole script in one take has a limit on speakers (four for VibeVoice) and ignores per-line notes.
@@ -145,7 +158,7 @@ git submodule update --init --recursive
 
 brew install cmake xcodegen
 
-# Build the three helpers (output: build/engine/kiln-engine, build/whisper/kiln-whisper and build/audio/kiln-audio)
+# Build the four helpers (output: build/engine/kiln-engine, build/whisper/kiln-whisper, build/audio/kiln-audio and build/trellis/kiln-trellis)
 ./scripts/build-engine.sh
 
 # Generate Kiln.xcodeproj from project.yml
@@ -171,22 +184,22 @@ Building a disk image without a Developer ID is described in [docs/releasing.md]
 | Path | Contents |
 | --- | --- |
 | `App/` | SwiftUI app: `Stores/`, `Features/`, `Shell/`, `DesignSystem/`, `Support/` |
-| `Sources/KilnCore/` | UI-free core library: recipes, Hugging Face client, downloads, engine clients, gallery, audio, chats |
-| `Engine/` | The three C++ helpers: `kiln-engine` (stable-diffusion.cpp), `kiln-whisper` in `whisper/` (whisper.cpp) and `kiln-audio` in `audio/` (audio.cpp) |
+| `Sources/KilnCore/` | UI-free core library: recipes, Hugging Face client, downloads, engine clients, gallery, audio, 3D objects, chats |
+| `Engine/` | The four C++ helpers: `kiln-engine` (stable-diffusion.cpp), `kiln-whisper` in `whisper/` (whisper.cpp), `kiln-audio` in `audio/` (audio.cpp) and `kiln-trellis` in `trellis/` (trellis.cpp) |
 | `recipes/` | Curated recipes bundled into the app |
 | `catalog/` | Generated lists of models that have no recipe (`scripts/catalog.py`) |
-| `Tests/` | Unit tests for KilnCore |
+| `Tests/` | Unit tests for KilnCore, and tests of the app's stores |
 | `docs/` | Architecture, recipe reference and the release process |
 | `scripts/` | Recipe, catalogue, build and release scripts |
-| `Vendor/stable-diffusion.cpp`, `Vendor/whisper.cpp`, `Vendor/audio.cpp` | Git submodules |
+| `Vendor/stable-diffusion.cpp`, `Vendor/whisper.cpp`, `Vendor/audio.cpp`, `Vendor/trellis.cpp` | Git submodules |
 
 ## How it works
 
 - A recipe names the files a model needs on Hugging Face and its settings.
 - `DownloadManager` fetches each missing file into `<file>.partial`, resumes with HTTP `Range` requests, verifies size and SHA-256, then moves the file into place.
-- Each engine runs in its own helper process: `kiln-engine` for images, `kiln-whisper` for speech to text and `kiln-audio` for text to speech. A crash in a helper does not take the app down.
+- Each engine runs in its own helper process: `kiln-engine` for images, `kiln-whisper` for speech to text, `kiln-audio` for text to speech and `kiln-trellis` for 3D objects. A crash in a helper does not take the app down.
 - The app and a helper exchange one JSON object per line over stdin and stdout. A helper keeps its model loaded between requests.
-- A finished image is written as a PNG into the gallery folder with its settings embedded in text chunks. A finished clip is written as a WAV file with a JSON file of its settings beside it.
+- A finished image is written as a PNG into the gallery folder with its settings embedded in text chunks. A finished clip is written as a WAV file with a JSON file of its settings beside it, and a finished 3D object as a GLB file with one.
 
 Details, including the helper protocol, are in [docs/architecture.md](docs/architecture.md).
 
