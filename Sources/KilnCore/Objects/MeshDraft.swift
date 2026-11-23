@@ -86,9 +86,13 @@ public struct MeshDraft: Sendable, Equatable {
         image.map { GenerationRequest(prompt: "", attachment: $0, mesh: settings) }
     }
 
-    /// Switches to another model. The settings are the engine's, so they stay.
+    /// Switches to another model. The settings are the engine's, so they stay,
+    /// except a level of detail the model does not have.
     public mutating func select(_ recipe: ModelRecipe?) {
         recipeID = recipe?.id
+        if let details = recipe?.meshDetails, !details.contains(detail), let first = details.first {
+            detail = first
+        }
     }
 
     /// Puts back what a past object was made with, with its exact seed.

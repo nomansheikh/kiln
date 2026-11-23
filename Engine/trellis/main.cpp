@@ -110,6 +110,10 @@ void shape(const json& request) {
     params.image  = request.at("image").get<std::string>();
     params.output = request.at("output").get<std::string>();
     params.seed   = request.value("seed", 0u);
+    // Pixal3D is the same model with other flow files, which the folder holds under its prefix.
+    if (request.value("family", std::string("trellis")) == "pixal3d") {
+        params.family = trellis::ModelFamily::Pixal3D;
+    }
     // 512 is the light path; 1024 and 1536 refine a 512 result.
     params.set_res(request.value("resolution", 1024));
     params.steps = request.value("steps", 0);

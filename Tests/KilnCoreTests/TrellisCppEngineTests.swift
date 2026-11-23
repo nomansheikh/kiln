@@ -74,15 +74,43 @@ import Testing
         }
     }
 
-    @Test func aModelSpreadOverSeveralFoldersCannotRun() async throws {
+    @Test func aModelSpreadOverSeveralFoldersRunsFromAFolderOfLinks() async throws {
         var scattered = fixture.recipe
         scattered.components[1].file = "dinov3.gguf"
-        let file = fixture.storage.url(for: scattered.components[1])
-        try Data("weights".utf8).write(to: file)
-        let engine = try fixture.engine(onShape: fixture.success)
+        try Data("weights".utf8).write(to: fixture.storage.url(for: scattered.components[1]))
+        // The helper lists the folder it was given, then succeeds.
+        let listing = fixture.root.appendingPathComponent("listing.txt")
+        let engine = try fixture.engine(onShape: """
+        models=$(printf '%s' "$line" | sed -E 's/.*"models":"([^"]*)".*/\\1/')
+        ls "$models" > "\(listing.path)"
+        cat "$models/dinov3.gguf" >> "\(listing.path)"
+        \(fixture.success)
+        """)
 
         #expect(engine.modelsFolder(of: scattered) == nil)
-        await #expect(throws: EngineError.self) { try await run(engine, request, recipe: scattered) }
+        _ = try await run(engine, request, recipe: scattered)
+
+        #expect(try String(contentsOf: listing, encoding: .utf8) == "dinov3.gguf\nss_flow.gguf\nweights")
+        // The links go when the job ends; the files they pointed at stay.
+        let scratch = try FileManager.default.contentsOfDirectory(atPath: fixture.root.appendingPathComponent("scratch").path)
+        #expect(scratch.isEmpty)
+        #expect(FileManager.default.fileExists(atPath: fixture.storage.url(for: scattered.components[1]).path))
+    }
+
+    @Test func twoFilesWithOneNameInDifferentFoldersCannotRun() async throws {
+        var clashing = fixture.recipe
+        clashing.components[1].file = "ss_flow.gguf"
+        try Data("weights".utf8).write(to: fixture.storage.url(for: clashing.components[1]))
+        let engine = try fixture.engine(onShape: fixture.success)
+
+        await #expect(throws: EngineError.self) { try await run(engine, request, recipe: clashing) }
+    }
+
+    @Test func theRequestNamesTheModelFamily() throws {
+        let folder = URL(fileURLWithPath: "/models")
+        let file = URL(fileURLWithPath: "/scratch/a")
+        let line = try EngineMessage.shapeCommand(models: folder, family: "pixal3d", image: file, output: file, settings: MeshSettings(seed: 1))
+        #expect(String(decoding: line, as: UTF8.self).contains(#""family":"pixal3d""#))
     }
 
     @Test func anObjectThatIsNotAGLBFileIsRefused() async throws {
