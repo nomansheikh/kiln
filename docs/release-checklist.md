@@ -21,6 +21,8 @@ xcodebuild -scheme Kiln -configuration Release -destination 'platform=macOS,arch
 
 Use the build that will be released, not a debug build.
 
+- [ ] Before starting, with Kiln closed, remove the helpers' scratch folders with `rm -rf "$TMPDIR"kiln-*`, so each helper starts as it does on a new Mac. Files left there by an earlier build have hidden a failure before.
+
 ### First launch
 
 - [ ] The app opens to the Generate screen with no model, and points to Models.
