@@ -11,7 +11,7 @@ struct GenerateView: View {
 
     var body: some View {
         let isEmpty = model.generation.turns.isEmpty
-        let hasModels = !model.library.installedRecipes.isEmpty
+        let hasModels = !model.library.catalog.chatRecipes.isEmpty
 
         VStack(spacing: 0) {
             HStack {

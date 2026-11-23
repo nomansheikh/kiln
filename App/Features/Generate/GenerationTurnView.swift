@@ -117,6 +117,7 @@ struct GenerationFailureMessage: View {
         case .image: "The image could not be created"
         case .audio: "The audio could not be created"
         case .text: "The text could not be created"
+        case .mesh: "The 3D object could not be created"
         }
     }
 }

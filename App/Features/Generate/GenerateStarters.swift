@@ -6,7 +6,7 @@ struct GenerateStarters: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        if model.library.installedRecipes.isEmpty {
+        if model.library.catalog.chatRecipes.isEmpty {
             HStack(spacing: 4) {
                 Text("No models installed yet.")
                     .foregroundStyle(.secondary)

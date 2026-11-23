@@ -5,6 +5,8 @@ import KilnCore
 struct GalleryItemActions {
     let reuseSettings: @MainActor (GalleryItem) -> Void
     let copyImage: @MainActor (GalleryItem) -> Void
+    /// Opens the 3D screen with the image ready to be made into an object.
+    let makeObject: @MainActor (GalleryItem) -> Void
     let showInFinder: @MainActor (GalleryItem) -> Void
     /// Asks for confirmation first; the screen owns the dialog.
     let delete: @MainActor (GalleryItem) -> Void

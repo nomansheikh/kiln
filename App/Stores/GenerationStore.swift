@@ -138,6 +138,8 @@ final class GenerationStore {
                     case .text(let text): return .text(text)
                     case .image(let image): return .finished(try gallery.add(image, record: record))
                     case .audio(let sound): return .audio(try audio.add(sound, record: record))
+                    // 3D models are run from the 3D screen, which has the viewer for them.
+                    case .mesh: return .failed("This model makes 3D objects. Use it on the 3D screen.")
                     }
                 }
             }

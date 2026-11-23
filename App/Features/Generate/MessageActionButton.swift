@@ -29,8 +29,7 @@ struct MessageActionButton: View {
                 .symbolEffect(.bounce, value: bounces ? clicks : 0)
         }
         .buttonStyle(PressableButtonStyle())
-        .help(help)
-        .accessibilityLabel(help)
+        .hint(help)
     }
 }
 

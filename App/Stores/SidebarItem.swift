@@ -1,6 +1,6 @@
 /// The app's top-level screens.
 enum SidebarItem: String, CaseIterable, Identifiable {
-    case generate, speech, models, gallery, settings
+    case generate, speech, objects, models, gallery, settings
 
     var id: String { rawValue }
 
@@ -8,6 +8,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .generate: "Generate"
         case .speech: "Speech"
+        case .objects: "3D"
         case .models: "Models"
         case .gallery: "Gallery"
         case .settings: "Settings"
