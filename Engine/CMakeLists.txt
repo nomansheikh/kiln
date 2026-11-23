@@ -10,6 +10,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(SD_METAL ON CACHE BOOL "" FORCE)
+# The helper runs on every Apple Silicon Mac, not only on the one that built it.
+# Left on, ggml builds for the chip it is compiled on, and an M1 lacks
+# instructions a newer chip has.
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
 set(SD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SD_WEBP OFF CACHE BOOL "" FORCE)
 set(SD_WEBM OFF CACHE BOOL "" FORCE)

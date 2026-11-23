@@ -12,6 +12,10 @@ endif()
 # One self-contained binary: the app bundles and signs a single file per helper.
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(GGML_METAL ON CACHE BOOL "" FORCE)
+# The helper runs on every Apple Silicon Mac, not only on the one that built it.
+# Left on, ggml builds for the chip it is compiled on, and an M1 lacks
+# instructions a newer chip has.
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
 set(GGML_METAL_EMBED_LIBRARY ON CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
