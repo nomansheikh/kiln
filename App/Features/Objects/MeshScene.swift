@@ -135,14 +135,15 @@ enum MeshScene {
     }
 
     /// The room the object stands in, as a picture wrapped around it: pale above, dim below.
-    private static let studio: NSImage = {
+    /// Made for each scene: it is tiny, and a shared image would be shared mutable state.
+    private static var studio: NSImage {
         let size = NSSize(width: 64, height: 32)
         return NSImage(size: size, flipped: false) { rect in
             NSGradient(colors: [NSColor(white: 0.22, alpha: 1), NSColor(white: 0.62, alpha: 1), NSColor(white: 0.98, alpha: 1)])?
                 .draw(in: rect, angle: 90)
             return true
         }
-    }()
+    }
 
     private static func source(_ data: Data, _ semantic: SCNGeometrySource.Semantic, components: Int, count: Int) -> SCNGeometrySource {
         SCNGeometrySource(
