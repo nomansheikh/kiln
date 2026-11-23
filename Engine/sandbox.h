@@ -11,6 +11,7 @@
 #pragma once
 
 #include <sandbox.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <climits>
@@ -81,6 +82,11 @@ inline bool enter_sandbox(int argc, char** argv, std::string& error) {
         error = "--sandbox needs the models folder and the scratch folder";
         return false;
     }
+    // An engine may unpack small files into the temporary folder, as audio.cpp does
+    // with what a model file carries inside it. The system's own is outside the
+    // sandbox, so the scratch folder stands in for it; it has to exist to be used.
+    mkdir(argv[3], 0700);
+    setenv("TMPDIR", sandbox_real_path(argv[3]).c_str(), 1);
     const std::string profile = sandbox_profile(argv[2], argv[3]);
     char* message = nullptr;
     // Deprecated since macOS 10.8 without a replacement for a command-line tool;
