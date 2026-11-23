@@ -7,6 +7,7 @@ Kiln has three parts:
 - **kiln-engine** (`Engine/`), a C++ helper process that runs stable-diffusion.cpp with the Metal backend and makes images
 - **kiln-whisper** (`Engine/whisper/`), a second helper process that runs whisper.cpp and turns speech into text
 - **kiln-audio** (`Engine/audio/`), a third helper process that runs audio.cpp and turns text into speech
+- **kiln-trellis** (`Engine/trellis/`), a fourth helper process that runs trellis.cpp and makes a 3D object from a picture
 
 ```
 +--------------------------- Kiln.app ----------------------------+
@@ -24,6 +25,7 @@ Kiln has three parts:
 |    Engine       EngineRouter, HelperSession, and one engine     |
 |                 class per helper                                |
 |    Audio        GeneratedAudio, AudioStore                      |
+|    Objects      MeshStore, MeshFile, MeshDraft                  |
 |    Gallery      GalleryStore, ImageCodec, PNGText               |
 |    Files        UserFile                                        |
 |    Chats        ChatStore, Chat                                 |
@@ -32,10 +34,11 @@ Kiln has three parts:
          | stdin: JSON requests      | stdout: JSON events
          v                           | stderr: logs
 +-----------------------------------------------------------------+
-|  Three separate helper processes, each with its own ggml:      |
+|  Four separate helper processes, each with its own ggml:       |
 |  kiln-engine   stable-diffusion.cpp   images                    |
 |  kiln-whisper  whisper.cpp            speech to text            |
 |  kiln-audio    audio.cpp              text to speech            |
+|  kiln-trellis  trellis.cpp            3D objects                |
 +-----------------------------------------------------------------+
 
 ~/Library/Application Support/Kiln/
@@ -43,6 +46,7 @@ Kiln has three parts:
     recipes/<id>.json                imported and single-file recipes
     gallery/*.png                    generated images
     audio/*.wav, *.json              generated sound, each with its settings
+    objects/*.glb, *.json, *.png     generated 3D objects, each with its settings and a picture of it
     chats/<uuid>.json                saved chats
     attachments/<uuid>[-<name>].<ext>   files attached to prompts
 
@@ -52,6 +56,8 @@ Kiln has three parts:
     <uuid>.f32, <uuid>.txt                     files exchanged with kiln-whisper
 <temporary directory>/kiln-audio/
     <uuid>.f32                                 file exchanged with kiln-audio
+<temporary directory>/kiln-trellis/
+    <uuid>.png, <uuid>.glb, <uuid>-models/     files exchanged with kiln-trellis
 ```
 
 ## KilnCore modules
@@ -87,9 +93,9 @@ The access token is optional. `KeychainTokenStore` keeps it as a generic passwor
 
 ### Engines and kinds
 
-A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio or text; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`: an image, which the gallery saves; text, which is kept in the chat turn; or audio, which `AudioStore` saves.
+A recipe's `output` and `accepts` fields say what kind of content the model makes and takes (image, audio, text or a 3D object, called `mesh`; see [recipes.md](recipes.md#kinds-of-model)). A `GenerationRequest` has the parts every kind shares, the prompt and an optional attachment, plus the settings of its kind, `image` for an image model. A finished generation yields a `GenerationOutput`: an image, which the gallery saves; text, which is kept in the chat turn; audio, which `AudioStore` saves; or a 3D object, which `MeshStore` saves.
 
-The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Three are registered: `sd.cpp` (`StableDiffusionCppEngine`, images), `whisper.cpp` (`WhisperCppEngine`, speech to text) and `audio.cpp` (`AudioCppEngine`, text to speech).
+The app talks to one `InferenceEngine`, an `EngineRouter` that sends each recipe to the engine named by its `engine` field. Four are registered: `sd.cpp` (`StableDiffusionCppEngine`, images), `whisper.cpp` (`WhisperCppEngine`, speech to text), `audio.cpp` (`AudioCppEngine`, text to speech) and `trellis.cpp` (`TrellisCppEngine`, 3D objects).
 
 Each engine class prepares the files and the command for one job and hands them to a `HelperSession`, which owns the helper process: launching it, reading its events and log, cancelling, classifying a crash, and removing the job's scratch files. An engine only interprets the events that are its own, such as a finished image. Before it starts an engine other than the one used last, the router shuts the previous one down, so only one model is in memory at a time. "Unload from Memory" shuts down every engine.
 
@@ -109,7 +115,7 @@ The helper stays alive between generations so the model stays loaded.
 ### Process lifecycle
 
 - The helper is launched lazily on the first generation (`HelperProcess.launch`), with pipes for stdin, stdout and stderr.
-- It is started with `--sandbox <models folder> <scratch folder>` and a short list of environment variables instead of the app's own. The first thing a helper does is enter a sandbox built from those two folders ([`Engine/sandbox.h`](../Engine/sandbox.h), shared by the three helpers): no network, no new processes, no reading under `/Users` or `/Volumes` outside the models and scratch folders, no writing outside the scratch folder and the system's per-user cache. A helper that cannot enter it exits. Run by hand without the argument, a helper is not confined. [SECURITY.md](../SECURITY.md) states what this does and does not protect.
+- It is started with `--sandbox <models folder> <scratch folder>` and a short list of environment variables instead of the app's own. The first thing a helper does is enter a sandbox built from those two folders ([`Engine/sandbox.h`](../Engine/sandbox.h), shared by the four helpers): no network, no new processes, no reading under `/Users` or `/Volumes` outside the models and scratch folders, no writing outside the scratch folder and the system's per-user cache. A helper that cannot enter it exits. Run by hand without the argument, a helper is not confined. [SECURITY.md](../SECURITY.md) states what this does and does not protect.
 - Every file a helper is given or asked to write is in the engine's scratch folder, which is why the sandbox can be that narrow: the app decodes attached audio and images itself and writes them there. `HelperSession` reads a result only from a file that belongs to the job; an event naming another file fails the job and stops the helper (a preview naming one is skipped).
 - At startup it duplicates the real stdout for events and points file descriptor 1 at stderr, so anything a library prints to stdout cannot corrupt the event stream.
 - It registers a log callback, and a preview callback that asks the library for a latent-to-RGB projection (`PREVIEW_PROJ`) of the denoised image after every step.
@@ -167,6 +173,34 @@ Events are `ready`, `loading`, `progress` (stage `speaking`, no measurable total
 Not every audio.cpp model works on Metal yet: Soprano, for one, brings the helper down on the GPU and runs correctly on the CPU. So when the helper crashes during a GPU run, `AudioCppEngine` runs the same request once more with `"backend":"cpu"`, and keeps that model on the CPU for as long as the app is open. A crash on the CPU is reported as a crash.
 
 `AudioCppEngine` refuses an empty text (`missingText`) and a voice the recipe does not list (`unknownVoice`), checks that the output file holds exactly `frames * channels` floats, and yields a `GeneratedAudio`. Recipe validation restricts `speech.family` and voice names to letters, digits, dots, dashes and underscores, because the engine builds a file path from a voice name.
+
+## The 3D helper
+
+`kiln-trellis` is [`Engine/trellis/main.cpp`](../Engine/trellis/main.cpp), linked statically against trellis.cpp (`Vendor/trellis.cpp`, a submodule pinned to a release tag, with its own fork of ggml as a submodule inside it) with Metal on and WebP off, so the object's textures are PNG images, which macOS reads. It takes one request:
+
+```json
+{"type":"shape","models":"/…/models/ilintar/trellis2-gguf/q4","family":"trellis","image":"/tmp/kiln-trellis/<uuid>.png","output":"/tmp/kiln-trellis/<uuid>.glb","resolution":1024,"seed":42,"steps":12,"structure_guidance":7.5,"shape_guidance":7.5,"cutout":"auto","texture_size":0}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `models` | The folder holding every file of the model. trellis.cpp opens each file by a fixed name inside one folder. |
+| `family` | `trellis` for TRELLIS.2 or `pixal3d` for Pixal3D, a fine-tune that uses other flow files, named with a `pixal3d_` prefix. Optional; `trellis` when absent. |
+| `image` | The picture of the object, as a PNG file. The app writes it: an attachment may be in any format macOS reads. |
+| `output` | The GLB file to write. |
+| `resolution` | Side of the grid the object is built in: 512, 1024 or 1536. The app calls these Standard, Fine and Ultra. |
+| `seed`, `steps` | The seed, and the number of steps of each of the model's flows (the engine's default is 12). |
+| `structure_guidance`, `shape_guidance` | How closely the rough structure and the shape follow the picture. |
+| `cutout` | How the object is cut out of the picture: `auto` (keep the picture's own transparency, else use the background-removal model), `birefnet` or `threshold` (treat white as empty). |
+| `texture_size` | Side of the colour image in pixels. Zero lets the engine choose by resolution. |
+
+Events are `ready`, `loading`, `progress` (stage `step`), then `object` (`{"type":"object","path":…}`) or `error`, then `idle`. trellis.cpp has no progress callback: it prints a line per stage and per flow step, which the helper reads from a pipe and folds into one count. It cannot stop a run either, so on `cancel` during a run the helper answers `cancelled` and exits; the next request starts it again.
+
+`TrellisCppEngine` passes the folder the recipe's files are in. When they come from several repos, as Pixal3D's do (its own flows, and the decoders, image encoder and background remover it shares with TRELLIS.2), it makes a folder of links to them in the scratch folder for the length of the job; two files with the same name cannot be linked, so such a recipe does not run. It reads the family and the levels of detail from the recipe's file names (`ModelRecipe+Mesh.swift`): a main file with the `pixal3d_` prefix is Pixal3D, and Standard is offered only to a model with a `tex_flow_512.gguf`, which Pixal3D does not publish. It checks that the result is a GLB file and yields a `GeneratedMesh`.
+
+trellis.cpp 0.8.1 writes a Pixal3D object lying on its back, because it writes every object as if its grid were TRELLIS.2's. The engine corrects that after 0.8.1 ([pwilkin/trellis.cpp#58](https://github.com/pwilkin/trellis.cpp/pull/58)); until the submodule moves past it, `GLBUpright` turns the points and normals of a Pixal3D object a quarter about the x axis. Remove it with that update, or the object is turned twice.
+
+macOS cannot open a GLB file with Model I/O, so KilnCore reads the engine's output itself: `MeshFile` (with `GLBChunks`) takes the positions, normals, texture positions, triangles and the two texture images out of the file, checking every offset against the file's length. The app builds a SceneKit scene from that.
 
 ## Helper protocol
 
@@ -399,7 +433,7 @@ Kiln has no updater. It only tells the user that a newer version exists, so that
 
 ## Chats, attachments and gallery storage
 
-There is no database. Each of the three folders is its own source of truth.
+There is no database. Each folder is its own source of truth.
 
 ### Gallery
 
@@ -423,6 +457,10 @@ Listing the gallery reads only the chunks before the pixel data of each `.png` f
 ### Audio
 
 Generated sound is a 16-bit PCM WAV file in `~/Library/Application Support/Kiln/audio/`, named like a gallery image. A WAV file has no place for settings, so `AudioStore` writes a JSON file of the same name beside it with the `GenerationRecord` and the sound's length. A WAV without a readable JSON file is not listed. Deleting an item deletes both files.
+
+### Objects
+
+A generated 3D object is a GLB file in `~/Library/Application Support/Kiln/objects/`, named like a gallery image, with a JSON file of the same name beside it holding its `GenerationRecord` (`MeshStore`). A GLB without a readable JSON file is not listed. The app renders a picture of each object once, for the shelf, and keeps it beside the object as a PNG. Deleting an object moves the GLB and its JSON file to the Trash and removes the picture, which can be made again.
 
 ### Chats
 
@@ -454,7 +492,7 @@ The app target is `App/`. It contains no engine, network or file-format logic of
 App/
   KilnApp.swift     scene, menu commands, debug launch arguments
   Stores/           observable state, one store per feature
-  Features/         Generate/, Speech/, Models/ (+ Hub/), Gallery/, Settings/
+  Features/         Generate/, Speech/, Objects/, Models/ (+ Hub/), Gallery/, Settings/
   Shell/            window, sidebar, chat list, Downloads/
   DesignSystem/     Theme, Motion, button styles, shared small views
   Support/          AppDelegate, KeyboardNavigationMonitor, DebugSnapshot
@@ -470,6 +508,8 @@ App/
 | `GenerationStore` | The draft being edited (`GenerationDraft`), the thread on screen (`GenerationTurn`), the running phase and step preview, and which recipe is loaded in memory. Runs generations through `InferenceEngine`, saves results to the gallery and the thread to its chat. |
 | `SpeechStore` | The Speech screen: the text, the voice model and voice, what a running generation is doing, the clip being played, each clip's waveform, the playback speed and voice samples. Runs text to speech through `InferenceEngine` and saves results to `AudioLibrary`. What is sent, whether it can be sent and why not are decided by KilnCore's `SpeechDraft`, a plain value the store builds from its fields, so those rules are unit-tested. |
 | `AudioLibrary` | Generated sound; add, delete, reveal in Finder. Wraps `AudioStore`. |
+| `ObjectsStore` | The 3D screen: the picture, description and settings being edited (`MeshDraft`), what a running generation is doing, the picture waiting for approval, and the object on the stage. Makes objects through `InferenceEngine` and saves them to `MeshLibrary`. A description is first drawn by an installed image model, and the picture held up for approval. |
+| `MeshLibrary` | Generated 3D objects; add, delete, reveal in Finder. Wraps `MeshStore`. |
 | `GalleryLibrary` | The gallery items; add, delete, copy to the pasteboard, reveal in Finder. Wraps `GalleryStore`. |
 | `ChatLibrary` | The saved chats; save, rename, archive, delete. Wraps `ChatStore`. |
 | `HubAccount` | Whether a token is saved; save, remove, verify. Wraps `TokenStore` and `HFClient`. |
@@ -477,7 +517,7 @@ App/
 
 Smaller value types live beside them: `GenerationPhase` and `SidebarItem`. The values that carry rules are in KilnCore, where they are unit-tested: `GenerationDraft`, `SpeechDraft`, `GenerationTurn`, `EditStrength` (Subtle 0.35, Balanced 0.6, Strong 0.8, sent as `strength`), `DownloadSpeed`, `VariantSelection`, `ModelCatalog` and `AttachmentLibrary`. A store holds one and observes it; it does not repeat its rules.
 
-The engines hold one model in memory, so only one screen generates at a time: `GenerationStore` and `SpeechStore` each refuse to start while the other is busy (`isEngineBusyElsewhere`, wired in `AppModel`). The Generate menu's commands act on the screen in front.
+The engines hold one model in memory, so only one screen generates at a time: `GenerationStore`, `SpeechStore` and `ObjectsStore` each refuse to start while another is busy (`isEngineBusyElsewhere`, wired in `AppModel`). The Generate menu's commands act on the screen in front.
 
 Some behaviour worth knowing when reading `GenerationStore`:
 
@@ -493,6 +533,7 @@ Each screen has a folder under `App/Features/` with one primary view per file.
 
 - **Generate:** the thread (`GenerationThread`, `GenerationTurnView`), the composer (`PromptComposer`) with attachment, size menu and advanced settings, the progress placeholder that shows step previews (`GenerationPlaceholder`), and the actions under a finished image.
 - **Speech:** a screen for text to speech, laid out like Generate: the model capsule (`SpeechModelMenu`), a centred greeting and composer with starter texts while there are no clips, then the composer at the top with every clip under it, newest first (`SpeechClipList`). Sending empties the composer (`SpeechComposer`), as in a chat; the text comes back if the clip fails or is stopped, and any clip's text can be put back with "Use this text again". Its chips choose the voice (`SpeechVoiceChip`, opening `SpeechVoiceList`) and the playback speed. Each clip is a card (`SpeechClipCard`) with a play button, a waveform to scrub through (`WaveformView`, drawn from `AudioWaveform.peaks`), the text it was made from and its actions; the clip being made is a `SpeechWorkingCard`. A new clip plays as soon as it is ready. In the voice list each voice has a play button: the first time, a short sample is generated and kept in `~/Library/Caches/Kiln/voice-samples/`, so later auditions are instant. Speech models can also be used from the chat thread; both write to the same audio folder.
+- **3D (`Objects/`):** a stage showing the object in a SceneKit view that turns it slowly until it is touched (`ObjectsStage`, `MeshStageView`, `MeshScene`), with Colour, Clay and Wireframe looks; a shelf of past objects with a tile for the one being made (`ObjectsShelf`); and a composer that takes a picture or a description, the level of detail and the advanced settings (`ObjectsComposer`). An object can be saved as GLB, USDZ or OBJ (`MeshExporter`). The viewer ignores the file's metalness, which the model sets unreliably.
 - **Models:** recipe cards with download controls and the memory-fit label, a "More models" section for the catalogue (folded until opened, with a note that its entries are untested), a search field that filters Kiln's own models by name before showing Hugging Face results, the "Import Recipe" button, and under `Hub/` the Hugging Face list and search. `HubSearchModel` is a view-local observable that holds the debounced search and the file lists of opened repos.
 - **Gallery:** the grid, the detail panel and the item actions.
 - **Settings:** cards for the Hugging Face token, hardware, storage folders and app information, which holds the switch for the check for new versions.

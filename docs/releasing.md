@@ -37,12 +37,12 @@ credentials need to be stored.
 5. Choose Product, Archive, then Distribute App, Direct Distribution. Xcode uploads the
    archive for notarization and gives back a notarized `Kiln.app` to export. For 0.1.0
    this took seconds.
-6. Check the three helpers inside it. They are copied in and signed by a build script
+6. Check the four helpers inside it. They are copied in and signed by a build script
    with the identity the build uses, so with the signing above they come out signed like
    the app. Each must show the Developer ID authority, the `runtime` flag and a timestamp:
 
    ```sh
-   for helper in kiln-engine kiln-whisper kiln-audio; do
+   for helper in kiln-engine kiln-whisper kiln-audio kiln-trellis; do
      codesign -dvv "Kiln.app/Contents/MacOS/$helper" 2>&1 | grep -E "Authority=Developer ID|flags=|Timestamp="
    done
    spctl --assess --type execute --verbose Kiln.app

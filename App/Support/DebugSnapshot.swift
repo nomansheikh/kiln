@@ -58,7 +58,7 @@ enum DebugSnapshot {
         return SidebarItem(rawValue: arguments[index + 1])
     }
 
-    private static func directory(after flag: String) -> URL? {
+    static func directory(after flag: String) -> URL? {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
         return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
@@ -124,6 +124,7 @@ enum DebugSnapshot {
         if ProcessInfo.processInfo.arguments.contains("--sample-working") {
             model.speech.loadPreview(activity: .speaking)
         }
+        loadSampleBuilding(into: model)
         // Every snapshot has the default window size, whatever size the window was left at.
         let window = NSApp.windows.first { $0.isVisible && $0.contentView != nil }
         let savedFrame = window?.frame

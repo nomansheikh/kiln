@@ -8,6 +8,8 @@ public struct GenerationProgress: Sendable, Equatable {
         case decoding
         case transcribing
         case speaking
+        /// One step of several in making a 3D object.
+        case building
         case other(String)
     }
 
@@ -47,6 +49,7 @@ public enum GenerationOutput: Sendable, Hashable {
     case image(GeneratedImage)
     case text(String)
     case audio(GeneratedAudio)
+    case mesh(GeneratedMesh)
 }
 
 public enum GenerationEvent: Sendable, Equatable {
@@ -62,6 +65,7 @@ public enum EngineError: Error, Equatable, LocalizedError {
     case unsupportedEngine(String)
     case missingComponents([String])
     case unreadableSourceImage
+    case missingSourceImage
     case missingAudio
     case missingText
     case missingInstruction
@@ -90,6 +94,8 @@ public enum EngineError: Error, Equatable, LocalizedError {
             "This model is missing files: \(files.joined(separator: ", ")). Download it again from Models."
         case .unreadableSourceImage:
             "The attached image could not be read. Try a PNG or JPEG file."
+        case .missingSourceImage:
+            "This model makes a 3D object from a picture. Attach an image first."
         case .missingAudio:
             "This model turns speech into text. Attach an audio file first."
         case .missingText:

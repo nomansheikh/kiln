@@ -12,6 +12,8 @@ enum EngineMessage {
         case text(path: String)
         /// Finished sound, in a file of raw interleaved 32-bit floats.
         case audio(path: String, sampleRate: Int, channels: Int, frames: Int)
+        /// A finished 3D object, in a GLB file.
+        case object(path: String)
         case cancelled
         case error(code: String, message: String)
         case idle
@@ -19,7 +21,8 @@ enum EngineMessage {
         /// The file the helper says it wrote, for the events that name one.
         var path: String? {
             switch self {
-            case .image(let path, _, _, _), .preview(let path, _, _, _), .audio(let path, _, _, _), .text(let path): path
+            case .image(let path, _, _, _), .preview(let path, _, _, _), .audio(let path, _, _, _), .text(let path),
+                 .object(let path): path
             default: nil
             }
         }
@@ -71,6 +74,8 @@ enum EngineMessage {
                 return nil
             }
             return .audio(path: path, sampleRate: sampleRate, channels: channels, frames: frames)
+        case "object":
+            return raw.path.map { .object(path: $0) }
         case "cancelled":
             return .cancelled
         case "error":
@@ -200,6 +205,7 @@ enum EngineMessage {
         case "vae_decode": .decoding
         case "transcribing": .transcribing
         case "speaking": .speaking
+        case "step": .building
         default: .other(name)
         }
     }

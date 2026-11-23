@@ -21,6 +21,7 @@ extension GenerationPhase {
             case .decoding: "Finishing up"
             case .transcribing: "Transcribing"
             case .speaking: "Generating speech"
+            case .building: "Building the 3D object"
             case .other(let name): name
             }
         }
@@ -35,7 +36,7 @@ extension GenerationPhase {
             switch progress.stage {
             case .sampling where progress.total > 0:
                 "Step \(min(progress.completed, progress.total)) of \(progress.total)"
-            case .transcribing:
+            case .transcribing, .building:
                 progress.fraction.map { $0.formatted(.percent.precision(.fractionLength(0))) }
             default:
                 nil

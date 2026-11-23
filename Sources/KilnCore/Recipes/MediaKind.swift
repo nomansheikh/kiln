@@ -5,6 +5,8 @@ public enum MediaKind: String, Codable, Sendable, CaseIterable {
     case image
     case audio
     case text
+    /// A 3D object: a surface with its colours, as a GLB file.
+    case mesh
 }
 
 extension MediaKind {
@@ -14,6 +16,7 @@ extension MediaKind {
         case .image: .image
         case .audio: .audio
         case .text: .plainText
+        case .mesh: UTType(filenameExtension: "glb") ?? .data
         }
     }
 
@@ -23,6 +26,7 @@ extension MediaKind {
         case .image: "Images"
         case .audio: "Audio"
         case .text: "Text"
+        case .mesh: "3D objects"
         }
     }
 }

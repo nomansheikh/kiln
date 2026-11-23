@@ -28,6 +28,7 @@ struct GalleryView: View {
         GalleryItemActions(
             reuseSettings: { model.reuseSettings(of: $0) },
             copyImage: { model.gallery.copyToPasteboard($0) },
+            makeObject: { model.makeObject(from: $0.url) },
             showInFinder: { model.gallery.revealInFinder($0) },
             delete: { pendingDelete = $0 }
         )

@@ -76,6 +76,8 @@ public struct ModelRecipe: Codable, Sendable, Identifiable, Equatable {
     /// Whether a prompt is enough, or needed, to start. A model that does not make
     /// images can run on an attachment alone, as speech to text does.
     public func canRun(prompt: String, hasAttachment: Bool) -> Bool {
+        // A 3D object is made from a picture; words alone are not enough.
+        if outputKind == .mesh { return hasAttachment }
         let hasPrompt = !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         if hasPrompt { return true }
         return hasAttachment && outputKind != .image && !inputKinds.isEmpty

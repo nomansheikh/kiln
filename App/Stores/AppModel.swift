@@ -14,6 +14,8 @@ final class AppModel {
     let speech: SpeechStore
     let gallery: GalleryLibrary
     let audio: AudioLibrary
+    let objects: MeshLibrary
+    let studio: ObjectsStore
     let chats: ChatLibrary
     let account: HubAccount
     let updates = UpdateStore()
@@ -61,6 +63,12 @@ final class AppModel {
         let chatsDirectory = ChatStore.defaultDirectory
         #endif
         let chats = ChatLibrary(store: ChatStore(directory: chatsDirectory))
+        #if DEBUG
+        let objectsDirectory = DebugSnapshot.objectsDirectory ?? MeshStore.defaultDirectory
+        #else
+        let objectsDirectory = MeshStore.defaultDirectory
+        #endif
+        let objects = MeshLibrary(store: MeshStore(directory: objectsDirectory))
         let engine = EngineRouter(Self.engines(storage: storage))
         let generation = GenerationStore(
             library: library,
@@ -74,6 +82,7 @@ final class AppModel {
         self.library = library
         self.gallery = gallery
         self.audio = audio
+        self.objects = objects
         self.chats = chats
         self.generation = generation
         #if DEBUG
@@ -85,14 +94,27 @@ final class AppModel {
             library: library, audio: audio, voices: VoiceLibrary(store: VoiceStore(directory: voicesDirectory)), engine: engine
         )
         self.speech = speech
+        let studio = ObjectsStore(
+            library: library, objects: objects, gallery: gallery,
+            attachments: AttachmentLibrary(directory: AttachmentLibrary.defaultDirectory), engine: engine
+        )
+        self.studio = studio
         // The engines hold one model in memory, so only one screen generates at a time.
-        generation.isEngineBusyElsewhere = { [weak speech] in speech?.isUsingEngine ?? false }
-        speech.isEngineBusyElsewhere = { [weak generation] in generation?.phase.isBusy ?? false }
+        generation.isEngineBusyElsewhere = { [weak speech, weak studio] in
+            (speech?.isUsingEngine ?? false) || (studio?.isGenerating ?? false)
+        }
+        speech.isEngineBusyElsewhere = { [weak generation, weak studio] in
+            (generation?.phase.isBusy ?? false) || (studio?.isGenerating ?? false)
+        }
+        studio.isEngineBusyElsewhere = { [weak generation, weak speech] in
+            (generation?.phase.isBusy ?? false) || (speech?.isUsingEngine ?? false)
+        }
         account = HubAccount(tokenStore: tokenStore, hub: hub)
 
-        library.onInstalledChange = { [weak generation, weak speech] in
+        library.onInstalledChange = { [weak generation, weak speech, weak studio] in
             generation?.selectDefaultRecipeIfNeeded()
             speech?.selectDefaultRecipeIfNeeded()
+            studio?.selectDefaultRecipeIfNeeded()
         }
         refreshRecipeCatalogIfDue()
         updates.start()
@@ -108,6 +130,7 @@ final class AppModel {
             StableDiffusionCppEngine.engineID: StableDiffusionCppEngine(helperURL: helper("kiln-engine"), storage: storage),
             WhisperCppEngine.engineID: WhisperCppEngine(helperURL: helper("kiln-whisper"), storage: storage),
             AudioCppEngine.engineID: AudioCppEngine(helperURL: helper("kiln-audio"), storage: storage),
+            TrellisCppEngine.engineID: TrellisCppEngine(helperURL: helper("kiln-trellis"), storage: storage),
         ]
     }
 
@@ -163,6 +186,12 @@ final class AppModel {
         generation.forget(item)
     }
 
+    /// Opens the 3D screen with a picture ready to be turned into an object.
+    func makeObject(from picture: URL) {
+        studio.setPicture(picture)
+        selection = .objects
+    }
+
     /// Opens Models showing only the models for one task.
     func browseModels(for task: ModelTask) {
         UserDefaults.standard.set(task.rawValue, forKey: "models.taskFilter")
@@ -175,6 +204,9 @@ final class AppModel {
         if recipe.task == .textToSpeech {
             speech.selectRecipe(recipe)
             selection = .speech
+        } else if recipe.task == .objects {
+            studio.selectRecipe(recipe)
+            selection = .objects
         } else {
             generation.selectRecipe(recipe)
             selection = .generate

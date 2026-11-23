@@ -59,6 +59,17 @@ Use the build that will be released, not a debug build.
 - [ ] Delete a clip and a voice: both go to the Trash, and "Put Back" in the Finder restores them.
 - [ ] "Use this text again" on a clip fills the composer and restores its voices.
 
+### 3D
+
+- [ ] Drop a picture of one object on the 3D screen and send it at Standard detail: the stage shows the work, then the object, which turns until it is dragged.
+- [ ] Switch between Colour, Clay and Wireframe, pause the turning and reset the view.
+- [ ] Describe an object with no picture: an image model draws one, "Draw Another" draws again and "Make It 3D" makes the object.
+- [ ] While an object is being made, open an earlier one from the shelf: the work goes on, and the new object is marked when it is ready.
+- [ ] Stop an object part-way: the picture returns to the composer, and the next object works.
+- [ ] With Pixal3D selected, Standard detail is not offered, and the object stands upright.
+- [ ] Save an object as GLB, USDZ and OBJ, and open each in another program.
+- [ ] "Make 3D" on a generated image, in a chat and in the gallery, opens the 3D screen with that image.
+
 ### When things go wrong
 
 - [ ] Pick a model too large for the Mac and generate: the app says it ran out of memory and stays usable.
@@ -70,5 +81,5 @@ Use the build that will be released, not a debug build.
 ### The release build itself
 
 - [ ] On an account that has never run Kiln, open the disk image, drag the app to Applications and open it. Gatekeeper lets it open without a warning about an unidentified developer.
-- [ ] Generate with each kind of model once. This is the check that the three helpers start inside their sandbox in a signed build.
+- [ ] Generate with each kind of model once. This is the check that the four helpers start inside their sandbox in a signed build.
 - [ ] In Settings, "Check for new versions" is on; with it off, no request goes to `api.github.com`.

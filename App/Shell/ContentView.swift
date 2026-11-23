@@ -23,6 +23,7 @@ struct ContentView: View {
                 switch model.selection ?? .generate {
                 case .generate: GenerateView()
                 case .speech: SpeechView()
+                case .objects: ObjectsView()
                 case .models: ModelsView()
                 case .gallery: GalleryView()
                 case .settings: SettingsView()

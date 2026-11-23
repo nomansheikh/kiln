@@ -58,13 +58,13 @@ targets:
         script: |
           set -e
           if [ ! -x "$SRCROOT/build/engine/kiln-engine" ] || [ ! -x "$SRCROOT/build/whisper/kiln-whisper" ] \
-            || [ ! -x "$SRCROOT/build/audio/kiln-audio" ]; then
+            || [ ! -x "$SRCROOT/build/audio/kiln-audio" ] || [ ! -x "$SRCROOT/build/trellis/kiln-trellis" ]; then
             "$SRCROOT/scripts/build-engine.sh"
           fi
           # Each helper is signed here with the hardened runtime; Xcode then signs the app around them.
           # Notarization also needs a secure timestamp, which ad hoc signing cannot have.
           identity="${EXPANDED_CODE_SIGN_IDENTITY:--}"
-          for helper in engine/kiln-engine whisper/kiln-whisper audio/kiln-audio; do
+          for helper in engine/kiln-engine whisper/kiln-whisper audio/kiln-audio trellis/kiln-trellis; do
             bundled="$BUILT_PRODUCTS_DIR/$EXECUTABLE_FOLDER_PATH/$(basename "$helper")"
             cp -f "$SRCROOT/build/$helper" "$bundled"
             if [ "$identity" = "-" ]; then

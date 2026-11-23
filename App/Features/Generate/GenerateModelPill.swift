@@ -6,7 +6,7 @@ struct GenerateModelPill: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let installed = model.library.installedRecipes
+        let installed = model.library.catalog.chatRecipes
         if installed.isEmpty {
             Button { model.selection = .models } label: {
                 label("No model")

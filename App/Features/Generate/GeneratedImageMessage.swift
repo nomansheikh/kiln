@@ -39,6 +39,9 @@ struct GeneratedImageMessage: View {
                 MessageActionButton(systemImage: "pencil", help: "Edit this image") {
                     try? model.generation.attach(item.url)
                 }
+                MessageActionButton(systemImage: "cube", help: "Make 3D") {
+                    model.makeObject(from: item.url)
+                }
                 MessageActionButton(systemImage: "arrow.clockwise", help: "Generate again", bounces: true) {
                     regenerate()
                 }

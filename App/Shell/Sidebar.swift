@@ -24,14 +24,17 @@ struct Sidebar: View {
                 SidebarRow(title: "Speech", symbol: "waveform", shortcut: "\u{2318}2", selected: model.selection == .speech) {
                     model.selection = .speech
                 }
-                SidebarRow(title: "Models", symbol: "square.grid.2x2", shortcut: "\u{2318}3", selected: model.selection == .models,
+                SidebarRow(title: "3D", symbol: "cube", shortcut: "\u{2318}3", selected: model.selection == .objects) {
+                    model.selection = .objects
+                }
+                SidebarRow(title: "Models", symbol: "square.grid.2x2", shortcut: "\u{2318}4", selected: model.selection == .models,
                            badge: model.library.activeDownloads.count) {
                     model.selection = .models
                 }
-                SidebarRow(title: "Gallery", symbol: "photo.on.rectangle", shortcut: "\u{2318}4", selected: model.selection == .gallery) {
+                SidebarRow(title: "Gallery", symbol: "photo.on.rectangle", shortcut: "\u{2318}5", selected: model.selection == .gallery) {
                     model.selection = .gallery
                 }
-                SidebarRow(title: "Settings", symbol: "gearshape", shortcut: "\u{2318}5", selected: model.selection == .settings) {
+                SidebarRow(title: "Settings", symbol: "gearshape", shortcut: "\u{2318}6", selected: model.selection == .settings) {
                     model.selection = .settings
                 }
             }

@@ -9,6 +9,7 @@ extension ModelTask {
         case .speechToText: "Speech to text"
         case .textToSpeech: "Text to speech"
         case .text: "Text"
+        case .objects: "3D objects"
         }
     }
 
@@ -18,6 +19,7 @@ extension ModelTask {
         case .speechToText: "waveform"
         case .textToSpeech: "speaker.wave.2"
         case .text: "text.bubble"
+        case .objects: "cube"
         }
     }
 }
@@ -30,6 +32,7 @@ extension MediaKind {
         case .image: "photo"
         case .audio: "waveform"
         case .text: "doc.text"
+        case .mesh: "cube"
         }
     }
 
@@ -39,6 +42,7 @@ extension MediaKind {
         case .image: "Describe an image"
         case .audio: "Type what to say"
         case .text: "Ask anything"
+        case .mesh: "Attach a picture of one object"
         }
     }
 }

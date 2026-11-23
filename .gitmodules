@@ -7,3 +7,6 @@
 [submodule "Vendor/audio.cpp"]
 	path = Vendor/audio.cpp
 	url = https://github.com/0xShug0/audio.cpp
+[submodule "Vendor/trellis.cpp"]
+	path = Vendor/trellis.cpp
+	url = https://github.com/pwilkin/trellis.cpp

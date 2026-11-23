@@ -16,7 +16,8 @@ struct KilnApp: App {
                 .task {
                     // A download or a generation keeps the app alive after its window closes.
                     AppDelegate.hasWorkInProgress = { [model] in
-                        model.generation.phase.isBusy || model.speech.isUsingEngine || !model.library.activeDownloads.isEmpty
+                        model.generation.phase.isBusy || model.speech.isUsingEngine || model.studio.isGenerating
+                            || !model.library.activeDownloads.isEmpty
                     }
                 }
                 #if DEBUG
@@ -36,21 +37,23 @@ struct KilnApp: App {
                     .keyboardShortcut("n", modifiers: .command)
             }
             CommandMenu("Generate") {
-                // Both commands act on the screen in front: Speech, or the chat.
+                // Both commands act on the screen in front: Speech, 3D, or the chat.
                 let onSpeech = model.selection == .speech
-                Button(onSpeech ? "Generate Speech" : "Generate") {
-                    onSpeech ? model.speech.generate() : model.generation.generate()
+                let on3D = model.selection == .objects
+                Button(onSpeech ? "Generate Speech" : on3D ? "Make 3D Object" : "Generate") {
+                    if onSpeech { model.speech.generate() } else if on3D { model.studio.generate() } else { model.generation.generate() }
                 }
                 .keyboardShortcut(.return, modifiers: .command)
-                .disabled(onSpeech ? !model.speech.canGenerate : !model.generation.canGenerate)
+                .disabled(onSpeech ? !model.speech.canGenerate : on3D ? !model.studio.canGenerate : !model.generation.canGenerate)
                 Button("Stop") {
-                    onSpeech ? model.speech.cancel() : model.generation.cancel()
+                    if onSpeech { model.speech.cancel() } else if on3D { model.studio.cancel() } else { model.generation.cancel() }
                 }
                 .keyboardShortcut(".", modifiers: .command)
-                .disabled(onSpeech ? !model.speech.isGenerating : !model.generation.phase.isBusy)
+                .disabled(onSpeech ? !model.speech.isGenerating : on3D ? !model.studio.isGenerating : !model.generation.phase.isBusy)
                 Divider()
                 Button("Unload Model from Memory") { model.generation.unloadModel() }
-                    .disabled(model.generation.phase.isBusy || model.speech.isUsingEngine || model.generation.loadedRecipeID == nil)
+                    .disabled(model.generation.phase.isBusy || model.speech.isUsingEngine || model.studio.isGenerating
+                        || model.generation.loadedRecipeID == nil)
             }
             CommandGroup(after: .sidebar) {
                 ForEach(Array(SidebarItem.allCases.enumerated()), id: \.element) { index, item in

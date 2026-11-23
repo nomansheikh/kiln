@@ -14,6 +14,11 @@ struct GalleryItemMenu: View {
             Label("Reuse Settings", systemImage: "arrow.uturn.backward")
         }
         Button {
+            actions.makeObject(item)
+        } label: {
+            Label("Make 3D", systemImage: "cube")
+        }
+        Button {
             actions.copyImage(item)
         } label: {
             Label("Copy Image", systemImage: "doc.on.doc")

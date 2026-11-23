@@ -32,6 +32,7 @@ ENGINES = {
     "sd.cpp": {"output": "image", "accepts": None},
     "whisper.cpp": {"output": "text", "accepts": ["audio"]},
     "audio.cpp": {"output": "audio", "accepts": None},
+    "trellis.cpp": {"output": "mesh", "accepts": ["image"]},
 }
 ENGINE = "sd.cpp"
 SCHEMA_REFERENCE = "./schema.json"
@@ -49,7 +50,7 @@ RECIPE_KEYS = {
     "license_note", "min_memory_gb", "variants", "tested", "base_model",
 }
 # MediaKind
-KINDS = ["image", "audio", "text"]
+KINDS = ["image", "audio", "text", "mesh"]
 COMPONENT_KEYS = {"role", "repo", "file", "revision", "size_bytes", "sha256"}
 DEFAULTS_KEYS = {
     "steps", "cfg", "sampler", "width", "height",

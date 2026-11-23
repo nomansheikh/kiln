@@ -16,6 +16,14 @@ struct GalleryDetailActionBar: View {
             }
             .buttonStyle(AccentButtonStyle())
 
+            Button {
+                actions.makeObject(item)
+            } label: {
+                Label("Make 3D", systemImage: "cube")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SoftButtonStyle())
+
             HStack(spacing: 8) {
                 Button {
                     actions.copyImage(item)

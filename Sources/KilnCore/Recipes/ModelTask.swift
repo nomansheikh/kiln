@@ -4,6 +4,7 @@ public enum ModelTask: String, Sendable, CaseIterable {
     case speechToText
     case textToSpeech
     case text
+    case objects
 }
 
 extension ModelRecipe {
@@ -13,6 +14,7 @@ extension ModelRecipe {
         case .image: .images
         case .audio: .textToSpeech
         case .text: inputKinds.contains(.audio) ? .speechToText : .text
+        case .mesh: .objects
         }
     }
 }

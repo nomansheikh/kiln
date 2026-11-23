@@ -119,6 +119,7 @@ jobs:
             build/engine/kiln-engine
             build/whisper/kiln-whisper
             build/audio/kiln-audio
+            build/trellis/kiln-trellis
           key: helpers-${{ runner.os }}-${{ runner.arch }}-${{ steps.helpers-key.outputs.toolchain }}-${{ hashFiles('Engine/**', 'scripts/build-engine.sh') }}
 
       - name: Build the helpers
@@ -127,7 +128,7 @@ jobs:
 
       - name: Check the helpers
         run: |
-          for helper in engine/kiln-engine whisper/kiln-whisper audio/kiln-audio; do
+          for helper in engine/kiln-engine whisper/kiln-whisper audio/kiln-audio trellis/kiln-trellis; do
             test -x "build/$helper" || { echo "::error::build/$helper is missing"; exit 1; }
             file "build/$helper"
           done
