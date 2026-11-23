@@ -118,7 +118,7 @@ struct ObjectsComposer: View {
     private var detailMenu: some View {
         let studio = model.studio
         return Menu {
-            ForEach(MeshSettings.Detail.allCases) { option in
+            ForEach(studio.selectedRecipe?.meshDetails ?? MeshSettings.Detail.allCases) { option in
                 Button {
                     studio.draft.detail = option
                 } label: {

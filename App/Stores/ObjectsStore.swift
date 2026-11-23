@@ -48,36 +48,6 @@ final class ObjectsStore {
         selectDefaultRecipeIfNeeded()
     }
 
-    // MARK: - Model
-
-    /// Installed models that make 3D objects.
-    var recipes: [ModelRecipe] {
-        library.installedRecipes.filter { $0.task == .objects }
-    }
-
-    var selectedRecipe: ModelRecipe? {
-        recipes.first { $0.id == draft.recipeID }
-    }
-
-    func selectRecipe(_ recipe: ModelRecipe?) {
-        draft.select(recipe)
-    }
-
-    /// Picks an installed model when the current choice is missing or was deleted.
-    func selectDefaultRecipeIfNeeded() {
-        if selectedRecipe != nil { return }
-        selectRecipe(recipes.first)
-    }
-
-    /// Installed models that draw images, for making a picture from a description.
-    var pictureRecipes: [ModelRecipe] {
-        library.installedRecipes.filter { $0.task == .images && $0.defaults != nil }
-    }
-
-    var pictureRecipe: ModelRecipe? {
-        pictureRecipes.first { $0.id == pictureRecipeID } ?? pictureRecipes.first
-    }
-
     // MARK: - Picture
 
     /// Takes a picture to make an object from. It is copied, so the object can
@@ -234,10 +204,9 @@ final class ObjectsStore {
 
     /// Puts back the picture and settings an object was made with.
     func reuse(_ item: MeshItem) {
-        if let recipe = recipes.first(where: { $0.id == item.record.recipeID }) {
-            selectRecipe(recipe)
-        }
         draft.reuse(item.record.request)
+        // After the settings, so a level of detail the model in use lacks is not kept.
+        selectRecipe(recipes.first { $0.id == item.record.recipeID } ?? selectedRecipe)
     }
 
     func delete(_ item: MeshItem) {
