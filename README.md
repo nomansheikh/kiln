@@ -13,7 +13,9 @@ It is for people with an Apple Silicon Mac who want to try image, speech and 3D 
 
 ![The Speech screen: text to read aloud, a voice, and the clips made so far](docs/screenshots/speech.png)
 
-The images in these screenshots were generated in Kiln with the Qwen-Image 2.1 Turbo Uncensored recipe. The clips on the Speech screen are sample clips made for the screenshot.
+![The 3D screen: an object made from a picture, on a stage that turns, with earlier objects under it](docs/screenshots/objects.png)
+
+The images in these screenshots were generated in Kiln with the Qwen-Image 2.1 Turbo Uncensored recipe. The clips on the Speech screen are sample clips made for the screenshot. The object on the 3D screen was made in Kiln with TRELLIS.2 from the sample picture that trellis.cpp ships.
 
 ## What it can do
 
