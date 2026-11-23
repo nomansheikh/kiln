@@ -6,16 +6,18 @@ import SceneKit
 /// Makes the small picture of an object that lists show, and keeps it beside
 /// the object so that it is rendered only once.
 enum MeshThumbnail {
-    /// The picture of an object, rendered and saved if it is not there yet. Call it off the main thread.
-    static func image(of item: MeshItem, side: CGFloat = 480) -> NSImage? {
+    /// The file holding the picture of an object, rendered and saved first if it is
+    /// not there yet. Call it off the main thread. It answers with the file and not
+    /// the image, because an image may not be handed from one thread to another.
+    static func file(of item: MeshItem, side: CGFloat = 480) -> URL? {
         let file = MeshStore.picture(of: item.url)
-        if let saved = NSImage(contentsOf: file) { return saved }
+        if FileManager.default.fileExists(atPath: file.path) { return file }
         guard let data = try? Data(contentsOf: item.url), let mesh = try? MeshFile(glb: data) else { return nil }
         let image = render(MeshScene.make(from: mesh), side: side)
-        if let tiff = image.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
-            try? png.write(to: file, options: .atomic)
-        }
-        return image
+        guard let tiff = image.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]),
+              (try? png.write(to: file, options: .atomic)) != nil
+        else { return nil }
+        return file
     }
 
     /// A still of a scene from its own camera, on a clear background.

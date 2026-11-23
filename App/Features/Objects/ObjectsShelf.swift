@@ -84,7 +84,8 @@ struct ObjectTile: View {
         .hint(isNew ? "New: just finished" : "Made \(item.record.createdAt.formatted(date: .abbreviated, time: .shortened))", alignment: .topLeading)
         .task(id: item.id) {
             let item = item
-            picture = await Task.detached(priority: .utility) { MeshThumbnail.image(of: item) }.value
+            let file = await Task.detached(priority: .utility) { MeshThumbnail.file(of: item) }.value
+            picture = file.flatMap(NSImage.init(contentsOf:))
         }
     }
 }
