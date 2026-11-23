@@ -51,7 +51,8 @@ import Testing
         for file in files {
             let recipe = try RecipeStore.decode(Data(contentsOf: file))
             #expect(recipe.id == file.deletingPathExtension().lastPathComponent, "file name must match the recipe id")
-            #expect([StableDiffusionCppEngine.engineID, WhisperCppEngine.engineID, AudioCppEngine.engineID].contains(recipe.engine))
+            #expect([StableDiffusionCppEngine.engineID, WhisperCppEngine.engineID, AudioCppEngine.engineID, TrellisCppEngine.engineID]
+                .contains(recipe.engine))
             // Curated recipes must be fully pinned so downloads can be verified.
             // With variants, every variant has to be complete and pinned.
             let installs = recipe.hasVariants ? recipe.resolvedVariants : [recipe]

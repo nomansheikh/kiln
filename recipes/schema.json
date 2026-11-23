@@ -23,7 +23,7 @@
     },
     "engine": {
       "description": "Inference engine. Kiln includes \"sd.cpp\" (stable-diffusion.cpp, makes images), \"whisper.cpp\" (speech to text) and \"audio.cpp\" (text to speech), and curated recipes must use one of them.",
-      "enum": ["sd.cpp", "whisper.cpp", "audio.cpp"]
+      "enum": ["sd.cpp", "whisper.cpp", "audio.cpp", "trellis.cpp"]
     },
     "components": {
       "description": "Files every install of the model needs, one per role. With \"variants\", these are the files shared by all variants and the list may be empty; without variants it needs at least one entry.",
@@ -32,13 +32,13 @@
     },
     "output": {
       "description": "What the model produces: image, audio or text. Image when absent. It must match the engine: image for sd.cpp, text for whisper.cpp, audio for audio.cpp.",
-      "enum": ["image", "audio", "text"]
+      "enum": ["image", "audio", "text", "mesh"]
     },
     "accepts": {
       "description": "Kinds of file the model takes as an attachment. When absent, an image model takes an image to rework and other models take none. An empty array means the model takes no attachment.",
       "type": "array",
       "uniqueItems": true,
-      "items": { "enum": ["image", "audio", "text"] }
+      "items": { "enum": ["image", "audio", "text", "mesh"] }
     },
     "defaults": { "$ref": "#/$defs/defaults" },
     "speech": {
@@ -163,6 +163,17 @@
         "properties": {
           "output": { "const": "text" },
           "accepts": { "const": ["audio"] },
+          "defaults": false
+        }
+      }
+    },
+    {
+      "if": { "properties": { "engine": { "const": "trellis.cpp" } }, "required": ["engine"] },
+      "then": {
+        "required": ["output", "accepts"],
+        "properties": {
+          "output": { "const": "mesh" },
+          "accepts": { "const": ["image"] },
           "defaults": false
         }
       }
