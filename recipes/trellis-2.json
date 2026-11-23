@@ -8,7 +8,7 @@
   "accepts": [
     "image"
   ],
-  "license_note": "TRELLIS.2 and the TRELLIS decoder it reuses are by Microsoft, under the MIT License. The background remover is BiRefNet, under the MIT License. The image encoder is Meta's DINOv3 ViT-L, under the DINOv3 License (https://ai.meta.com/resources/models-and-libraries/dinov3-license), which has terms of its own: read it before commercial use. The files were converted to GGUF by ilintar, whose page says the source models' licences apply.",
+  "license_note": "TRELLIS.2 and the TRELLIS decoder it reuses are by Microsoft, under the MIT License. The background remover is BiRefNet, under the MIT License. The image encoder is Meta's DINOv3 ViT-L, under the DINOv3 License (https://ai.meta.com/resources/models-and-libraries/dinov3-license), which has terms of its own: it forbids military, nuclear and weapons uses and uses that trade controls prohibit, and anyone who passes the file on must include the licence and show \"Built with DINOv3\". The files were converted to GGUF by ilintar, whose page says the source models' licences apply.",
   "variants": [
     {
       "id": "full",

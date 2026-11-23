@@ -89,6 +89,6 @@
   "accepts": [
     "image"
   ],
-  "license_note": "Pixal3D is by Tencent ARC, under the MIT License; its files were converted to GGUF by vegax87, whose page states the MIT License. Its feature upsampler is NAF by valeo.ai, under the Apache License 2.0. It reuses TRELLIS.2's decoders, by Microsoft, under the MIT License, and BiRefNet, the background remover, under the MIT License. The image encoder is Meta's DINOv3 ViT-L, under the DINOv3 License (https://ai.meta.com/resources/models-and-libraries/dinov3-license), which has terms of its own: read it before commercial use. Those shared files were converted to GGUF by ilintar, whose page says the source models' licences apply.",
+  "license_note": "Pixal3D is by Tencent ARC, under the MIT License; its files were converted to GGUF by vegax87, whose page states the MIT License. Its feature upsampler is NAF by valeo.ai, under the Apache License 2.0. It reuses TRELLIS.2's decoders, by Microsoft, under the MIT License, and BiRefNet, the background remover, under the MIT License. The image encoder is Meta's DINOv3 ViT-L, under the DINOv3 License (https://ai.meta.com/resources/models-and-libraries/dinov3-license), which has terms of its own: it forbids military, nuclear and weapons uses and uses that trade controls prohibit, and anyone who passes the file on must include the licence and show \"Built with DINOv3\". Those shared files were converted to GGUF by ilintar, whose page says the source models' licences apply.",
   "min_memory_gb": 16
 }
