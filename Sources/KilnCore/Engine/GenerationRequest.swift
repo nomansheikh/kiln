@@ -9,16 +9,20 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     public var image: ImageSettings?
     /// Settings for a model that speaks. Nil for other kinds.
     public var speech: SpeechSettings?
+    /// Settings for a model that makes 3D objects. Nil for other kinds.
+    public var mesh: MeshSettings?
     /// Code of the language to work in, such as `en`. Nil lets the model decide.
     public var language: String?
 
     public init(
-        prompt: String, attachment: URL? = nil, image: ImageSettings? = nil, speech: SpeechSettings? = nil, language: String? = nil
+        prompt: String, attachment: URL? = nil, image: ImageSettings? = nil, speech: SpeechSettings? = nil,
+        mesh: MeshSettings? = nil, language: String? = nil
     ) {
         self.prompt = prompt
         self.attachment = attachment
         self.image = image
         self.speech = speech
+        self.mesh = mesh
         self.language = language
     }
 
@@ -37,7 +41,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case prompt, attachment, image, speech, language
+        case prompt, attachment, image, speech, mesh, language
         /// Records written before requests had kinds kept the image settings at the
         /// top level and called the attachment `sourceImage`.
         case sourceImage, width
@@ -54,6 +58,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
             image = try ImageSettings(from: decoder)
         }
         speech = try container.decodeIfPresent(SpeechSettings.self, forKey: .speech)
+        mesh = try container.decodeIfPresent(MeshSettings.self, forKey: .mesh)
         language = try container.decodeIfPresent(String.self, forKey: .language)
     }
 
@@ -63,6 +68,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
         try container.encodeIfPresent(attachment, forKey: .attachment)
         try container.encodeIfPresent(image, forKey: .image)
         try container.encodeIfPresent(speech, forKey: .speech)
+        try container.encodeIfPresent(mesh, forKey: .mesh)
         try container.encodeIfPresent(language, forKey: .language)
     }
 }

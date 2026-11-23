@@ -36,9 +36,15 @@ public struct ModelCatalog: Sendable, Equatable {
         recipes.filter { installedIDs.contains($0.id) && !$0.isIncompleteSingleFile }
     }
 
+    /// Installed models the Generate screen can run. Those that make 3D objects
+    /// have a screen of their own.
+    public var chatRecipes: [ModelRecipe] {
+        installedRecipes.filter { $0.task != .objects }
+    }
+
     /// The model the Generate screen starts with: an image model if one is installed.
     public var defaultRecipe: ModelRecipe? {
-        let installed = installedRecipes
+        let installed = chatRecipes
         return installed.first { $0.outputKind == .image } ?? installed.first
     }
 

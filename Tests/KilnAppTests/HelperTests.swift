@@ -1,11 +1,11 @@
 import Foundation
 import Testing
 
-/// The three built helpers, started for real but without a model: how each
+/// The four built helpers, started for real but without a model: how each
 /// starts, what it answers to a request it cannot read, and how it ends. The
 /// app build, which runs before these tests, makes the helpers when they are missing.
 @Suite struct HelperTests {
-    static let helpers = ["engine/kiln-engine", "whisper/kiln-whisper", "audio/kiln-audio"]
+    static let helpers = ["engine/kiln-engine", "whisper/kiln-whisper", "audio/kiln-audio", "trellis/kiln-trellis"]
 
     /// `build/` at the repository root.
     private static let buildDirectory = URL(fileURLWithPath: #filePath)

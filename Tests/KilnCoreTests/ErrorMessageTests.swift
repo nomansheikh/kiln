@@ -8,6 +8,7 @@ import Testing
 @Suite struct ErrorMessageTests {
     private static let engine: [EngineError] = [
         .busy, .unsupportedEngine("llama.cpp"), .missingComponents(["vae.safetensors", "llm.gguf"]), .unreadableSourceImage,
+        .missingSourceImage,
         .missingAudio, .missingText, .missingInstruction, .missingReference, .missingReferenceText, .unreadableReference,
         .tooManySpeakers(4), .missingSpeakerVoice("Anna"), .scriptStopped(finished: 2, total: 5, detail: "out of memory"),
         .unknownVoice("zed"), .unreadableAudio, .helperUnavailable("The file is missing."), .modelLoadFailed(detail: "bad file"),
@@ -29,6 +30,7 @@ import Testing
     private static let others: [any LocalizedError] = [
         VoiceError.missingName, ReleaseCheckError.http(status: 502), ReleaseCheckError.unreadableResponse,
         RecipeStore.ImportError.idTaken("sdxl"), AttachmentLibrary.ImportError.notAccepted([.audio]), KeychainError(status: -25300),
+        MeshFileError.notGLB, MeshFileError.unsupported("it holds no surface"),
     ]
 
     static let all: [any LocalizedError] = engine + hub + downloads + recipes + others

@@ -3,11 +3,12 @@
 #   build/engine/kiln-engine    stable-diffusion.cpp, makes images
 #   build/whisper/kiln-whisper  whisper.cpp, turns speech into text
 #   build/audio/kiln-audio      audio.cpp, turns text into speech
+#   build/trellis/kiln-trellis  trellis.cpp, turns an image into a 3D object
 set -eu
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
-for library in stable-diffusion.cpp whisper.cpp audio.cpp; do
+for library in stable-diffusion.cpp whisper.cpp audio.cpp trellis.cpp; do
     if [ ! -f "$root/Vendor/$library/CMakeLists.txt" ]; then
         echo "error: $library is missing. Run: git submodule update --init --recursive" >&2
         exit 1
@@ -22,3 +23,6 @@ cmake --build "$root/build/whisper" --target kiln-whisper -j "$(sysctl -n hw.ncp
 
 cmake -S "$root/Engine/audio" -B "$root/build/audio" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$root/build/audio" --target kiln-audio -j "$(sysctl -n hw.ncpu)"
+
+cmake -S "$root/Engine/trellis" -B "$root/build/trellis" -DCMAKE_BUILD_TYPE=Release
+cmake --build "$root/build/trellis" --target kiln-trellis -j "$(sysctl -n hw.ncpu)"
