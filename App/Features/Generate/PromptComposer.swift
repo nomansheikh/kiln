@@ -13,15 +13,18 @@ struct PromptComposer: View {
     @State private var isPickingFile = false
     @State private var isDropTarget = false
     @State private var attachError: String?
+    @State private var recorder = MicrophoneRecorder()
     @FocusState private var promptFocused: Bool
 
     var body: some View {
         @Bindable var generation = model.generation
+        @Bindable var recorder = recorder
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
         let attachment = generation.draft.attachment
         let recipe = generation.selectedRecipe
         let output = recipe?.outputKind ?? .image
         let inputKinds = recipe?.inputKinds ?? []
+        let wantsRecording = output == .text && inputKinds == [.audio] && attachment == nil
 
         VStack(alignment: .leading, spacing: 6) {
             if let attachment {
@@ -33,19 +36,31 @@ struct PromptComposer: View {
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.92, anchor: .topLeading)))
             }
 
-            TextField(placeholder(output: output, hasAttachment: attachment != nil), text: $generation.draft.prompt, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 15))
-                // Two lines tall when empty, so there is visible room to write.
-                .lineLimit(2...8)
-                .focused($promptFocused)
-                .onSubmit(send)
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
+            // A model that turns a recording into text has nothing to read until it is given one.
+            if wantsRecording {
+                RecordingDropArea(isTargeted: isDropTarget, recorder: recorder) {
+                    isPickingFile = true
+                } recorded: { file in
+                    attach(file)
+                    // The attachments folder has its own copy now.
+                    try? FileManager.default.removeItem(at: file)
+                }
                 .padding(.bottom, 4)
+            } else {
+                TextField(placeholder(output: output, hasAttachment: attachment != nil), text: $generation.draft.prompt, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 15))
+                    // Two lines tall when empty, so there is visible room to write.
+                    .lineLimit(2...8)
+                    .focused($promptFocused)
+                    .onSubmit(send)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+            }
 
             HStack(spacing: 6) {
-                if !inputKinds.isEmpty {
+                if !inputKinds.isEmpty, !wantsRecording {
                     attachButton(for: inputKinds)
                 }
                 if output == .image {
@@ -84,6 +99,11 @@ struct PromptComposer: View {
         } isTargeted: { isDropTarget = $0 }
         .fileImporter(isPresented: $isPickingFile, allowedContentTypes: inputKinds.map(\.contentType)) { result in
             if case .success(let file) = result { attach(file) }
+        }
+        .alert("Could Not Record", isPresented: Binding(isPresenting: $recorder.errorMessage)) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(recorder.errorMessage ?? "")
         }
         .alert("Could Not Attach File", isPresented: Binding(isPresenting: $attachError)) {
             Button("OK", role: .cancel) {}

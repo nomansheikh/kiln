@@ -50,6 +50,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: App/Kiln.entitlements
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Kiln records from the microphone when you press Record, to turn what you say into text. The recording stays on this Mac."
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_APP_SANDBOX: NO
     postBuildScripts:
