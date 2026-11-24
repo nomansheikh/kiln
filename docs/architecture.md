@@ -53,7 +53,7 @@ Kiln has three parts:
 <temporary directory>/kiln-engine/
     <uuid>.raw, <uuid>.preview, <uuid>.init    files exchanged with kiln-engine
 <temporary directory>/kiln-whisper/
-    <uuid>.f32, <uuid>.txt                     files exchanged with kiln-whisper
+    <uuid>.f32, <uuid>.json                    files exchanged with kiln-whisper
 <temporary directory>/kiln-audio/
     <uuid>.f32                                 file exchanged with kiln-audio
 <temporary directory>/kiln-trellis/
@@ -131,7 +131,7 @@ The helper stays alive between generations so the model stays loaded.
 It follows the same lifecycle and line protocol as `kiln-engine`, with one request of its own:
 
 ```json
-{"type":"transcribe","model":"/…/ggml-large-v3-turbo.bin","audio":"/tmp/kiln-whisper/<uuid>.f32","prompt":"","language":"auto","output":"/tmp/kiln-whisper/<uuid>.txt"}
+{"type":"transcribe","model":"/…/ggml-large-v3-turbo.bin","audio":"/tmp/kiln-whisper/<uuid>.f32","prompt":"","language":"auto","output":"/tmp/kiln-whisper/<uuid>.json"}
 ```
 
 | Field | Meaning |
@@ -140,9 +140,9 @@ It follows the same lifecycle and line protocol as `kiln-engine`, with one reque
 | `audio` | File of raw 32-bit little-endian float samples, mono, 16 kHz. The app decodes the attached file with AVFoundation (`AudioSamples`), so the helper needs no audio codecs. |
 | `prompt` | Optional words to expect, such as names. Passed to whisper.cpp as the initial prompt. |
 | `language` | Code of the spoken language, or `auto` to detect it. |
-| `output` | File the helper writes the transcript to, as UTF-8. |
+| `output` | File the helper writes the transcript to, as JSON: `{"segments":[{"start_ms":0,"end_ms":3000,"text":" Good morning."}]}`, the segments in order with their times in milliseconds from the start of the audio. |
 
-Timestamps are not produced. The language is detected unless the user picks one: a recipe's `languages` field lists what the model supports, the composer offers them in a menu with "Auto" first, and an engine passes the choice on only when the recipe lists it. `kiln-audio`'s `speak` request takes the same optional `language` field. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), then one of `text` (`{"type":"text","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
+Each segment has the times whisper.cpp gives it; times of single words are not asked for. `EngineMessage.transcript(from:)` reads the file into a `Transcript` (`Sources/KilnCore/Transcripts/`), which trims each segment, drops the empty ones and can write itself as SubRip or WebVTT subtitles. The language is detected unless the user picks one: a recipe's `languages` field lists what the model supports, the composer offers them in a menu with "Auto" first, and an engine passes the choice on only when the recipe lists it. `kiln-audio`'s `speak` request takes the same optional `language` field. Events are `ready`, `loading`, `progress` (stage `transcribing`, `completed` out of 100), a `segment` for each stretch of speech as it is written down (`{"type":"segment","start_ms":0,"end_ms":3000,"text":" Good morning."}`, which the thread shows as the transcript grows), then one of `transcript` (`{"type":"transcript","path":…}`), `cancelled` or `error`, then `idle`. `cancel` sets a flag that whisper.cpp's abort callback reads.
 
 `WhisperCppEngine` requires an attachment (`missingAudio` otherwise), writes the samples and reads the transcript in its scratch folder, and removes both files when the job ends. A file AVFoundation cannot decode fails with `unreadableAudio` before the helper is started.
 
@@ -469,7 +469,7 @@ A generated 3D object is a GLB file in `~/Library/Application Support/Kiln/objec
 A `Chat` has an `id`, a `title`, `createdAt`, `updatedAt`, an `isArchived` flag and a list of turns. The title defaults to the first prompt, shortened to a single line of about 48 characters. A `ChatTurn` stores the prompt, the requested width and height (for an image; absent for other kinds), an optional `attachmentFileName`, and an outcome:
 
 - `image`: the file name of the result inside the gallery folder
-- `text`: the text the model wrote, such as a transcript, stored in the chat itself
+- `text`: the text the model wrote, such as a transcript, stored in the chat itself. A transcript's timed segments are stored beside it in the turn's optional `segments`, so a chat saved by a version from before segments, or opened by one, still shows the words
 - `audio`: the file name of the sound inside the audio folder
 - `failed`: the error message
 - `cancelled`
@@ -483,6 +483,8 @@ The chat is created when its first prompt is sent and saved again when each turn
 ### Attachments
 
 `AttachmentLibrary` (in KilnCore's `Files/`) copies every attached file into `attachments/`, so a chat keeps it after the original file is moved or deleted. An image is stored as `<uuid>.<ext>`; any other file as `<uuid>-<original name>.<ext>`, because it is shown in the thread by name. A file is accepted only as one of the kinds in the selected recipe's `accepts`: an image when ImageIO can open it, another kind when its file type conforms to that kind. Switching to a model that cannot take the attached file removes the attachment from the draft. Chat turns refer to the copy by file name. Kiln does not currently delete attachment copies.
+
+A recording made with the microphone is an attachment like any other. `MicrophoneRecorder` (in `App/Features/Generate/`) records AAC into the temporary folder while the composer's Record button is down, and the finished file is attached and the temporary one removed. Its name and the scale of its level meter are rules in KilnCore (`MicrophoneRecording`). The app declares `NSMicrophoneUsageDescription` and, for the hardened runtime, the `com.apple.security.device.audio-input` entitlement (`App/Kiln.entitlements`).
 
 ## The app layer
 

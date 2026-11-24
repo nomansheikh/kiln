@@ -49,6 +49,12 @@ credentials need to be stored.
    xcrun stapler validate Kiln.app
    ```
 
+   The app itself must carry the microphone entitlement, or Record gets silence under the hardened runtime:
+
+   ```sh
+   codesign -d --entitlements - Kiln.app 2>/dev/null | grep audio-input
+   ```
+
    If a helper is signed with anything else, notarization fails or the helper does not
    start on another Mac. Fix the signing in `project.yml` ("Bundle the helpers") before
    going on.

@@ -45,7 +45,10 @@ Use the build that will be released, not a debug build.
 
 ### Speech to text
 
-- [ ] Attach an audio file to a Whisper model and send it: the transcript appears.
+- [ ] With a Whisper model, press Record: macOS asks for the microphone the first time, the meter moves while you speak, Cancel throws the recording away, and Done attaches it. Refuse the permission once and check the message says where to allow it.
+- [ ] Attach an audio file to a Whisper model and send it: the transcript appears as rows, each with the time it starts at.
+- [ ] Click a row: the recording plays from there and the row being spoken is highlighted. Switch to one paragraph and back.
+- [ ] Save the transcript as text and as subtitles (.srt), and open the subtitles beside the recording in a player.
 - [ ] Choose a language, and send again.
 
 ### Text to speech
