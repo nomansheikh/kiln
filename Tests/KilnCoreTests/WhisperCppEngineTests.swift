@@ -24,8 +24,9 @@ import Testing
         let engine = try fixture.engine(onTranscribe: """
         echo '{"type":"loading"}'
         echo '{"type":"progress","stage":"transcribing","completed":50,"total":100}'
-        printf '  Hello there.\\n' > "$output"
-        echo "{\\"type\\":\\"text\\",\\"path\\":\\"$output\\"}"
+        echo '{"type":"segment","start_ms":0,"end_ms":1500,"text":"  Hello there."}'
+        printf '{"segments":[{"start_ms":0,"end_ms":1500,"text":"  Hello there."},{"start_ms":1500,"end_ms":3200,"text":" How are you?"}]}' > "$output"
+        echo "{\\"type\\":\\"transcript\\",\\"path\\":\\"$output\\"}"
         echo '{"type":"idle"}'
         """)
 
@@ -34,23 +35,40 @@ import Testing
         #expect(events == [
             .loadingModel,
             .progress(.init(stage: .transcribing, completed: 50, total: 100)),
-            .finished(.text("Hello there.")),
+            .segment(.init(start: 0, end: 1.5, text: "  Hello there.")),
+            .finished(.transcript(Transcript(segments: [
+                .init(start: 0, end: 1.5, text: "Hello there."),
+                .init(start: 1.5, end: 3.2, text: "How are you?"),
+            ]))),
         ])
         #expect(leftovers.isEmpty)
+        await engine.shutdown()
+    }
+
+    @Test func aResultThatIsNotATranscriptFailsTheJob() async throws {
+        let engine = try fixture.engine(onTranscribe: """
+        printf 'Hello there.' > "$output"
+        echo "{\\"type\\":\\"transcript\\",\\"path\\":\\"$output\\"}"
+        echo '{"type":"idle"}'
+        """)
+
+        await #expect(throws: EngineError.invalidOutput) {
+            try await run(engine, GenerationRequest(prompt: "", attachment: fixture.audio))
+        }
         await engine.shutdown()
     }
 
     @Test func handsTheHelperSixteenKilohertzMonoSamples() async throws {
         // The helper reports the size of the samples file as the transcript.
         let engine = try fixture.engine(onTranscribe: """
-        wc -c < "$audio" | tr -d ' \\n' > "$output"
-        echo "{\\"type\\":\\"text\\",\\"path\\":\\"$output\\"}"
+        printf '{"segments":[{"start_ms":0,"end_ms":1000,"text":"%s"}]}' "$(wc -c < "$audio" | tr -d ' \\n')" > "$output"
+        echo "{\\"type\\":\\"transcript\\",\\"path\\":\\"$output\\"}"
         echo '{"type":"idle"}'
         """)
 
         let events = try await run(engine, GenerationRequest(prompt: "", attachment: fixture.audio))
 
-        guard case .finished(.text(let size)) = events.last, let bytes = Int(size) else {
+        guard case .finished(.transcript(let size)) = events.last, let bytes = Int(size.text) else {
             Issue.record("no transcript: \(events)")
             return
         }
@@ -96,14 +114,14 @@ import Testing
         let marker = fixture.root.appendingPathComponent("crashed-once")
         let engine = try fixture.engine(onTranscribe: """
         if [ ! -f "\(marker.path)" ]; then touch "\(marker.path)"; exit 1; fi
-        printf 'Second try.' > "$output"
-        echo "{\\"type\\":\\"text\\",\\"path\\":\\"$output\\"}"
+        printf '{"segments":[{"start_ms":0,"end_ms":900,"text":"Second try."}]}' > "$output"
+        echo "{\\"type\\":\\"transcript\\",\\"path\\":\\"$output\\"}"
         echo '{"type":"idle"}'
         """)
         let request = GenerationRequest(prompt: "", attachment: fixture.audio)
 
         await #expect(throws: EngineError.crashed(detail: "")) { try await run(engine, request) }
-        #expect(try await run(engine, request).last == .finished(.text("Second try.")))
+        #expect(try await run(engine, request).last == .finished(.transcript(Transcript(segments: [.init(start: 0, end: 0.9, text: "Second try.")]))))
         await engine.shutdown()
     }
 }

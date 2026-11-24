@@ -64,6 +64,9 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
     public var outcome: Outcome
     /// File name of the image attached to the prompt, inside the attachments folder.
     public var attachmentFileName: String?
+    /// The timed segments of a transcript, whose words are also the `text` outcome, so that
+    /// a version of the app from before segments still shows them.
+    public var segments: [Transcript.Segment]?
 
     public init(
         id: UUID = UUID(),
@@ -72,9 +75,11 @@ public struct ChatTurn: Codable, Sendable, Identifiable, Equatable {
         width: Int? = nil,
         height: Int? = nil,
         outcome: Outcome,
-        attachmentFileName: String? = nil
+        attachmentFileName: String? = nil,
+        segments: [Transcript.Segment]? = nil
     ) {
         self.attachmentFileName = attachmentFileName
+        self.segments = segments
         self.id = id
         self.prompt = prompt
         self.kind = kind

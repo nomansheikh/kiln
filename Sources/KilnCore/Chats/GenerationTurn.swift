@@ -7,6 +7,8 @@ public struct GenerationTurn: Identifiable, Equatable, Sendable {
         case finished(GalleryItem)
         /// Text the model wrote, such as a transcript.
         case text(String)
+        /// What was said in the attached recording, with times.
+        case transcript(Transcript)
         /// Sound the model made, such as speech.
         case audio(AudioItem)
         case failed(String)

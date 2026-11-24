@@ -100,7 +100,7 @@ final class ObjectsStore {
             do {
                 for try await event in engine.generate(recipe: recipe, request: request) {
                     switch event {
-                    case .loadingModel, .preview: break
+                    case .loadingModel, .preview, .segment: break
                     case .progress(let progress): activity = .building(progress)
                     case .finished(.mesh(let mesh)):
                         let record = GenerationRecord(
@@ -140,7 +140,7 @@ final class ObjectsStore {
             do {
                 for try await event in engine.generate(recipe: recipe, request: request) {
                     switch event {
-                    case .loadingModel, .preview: break
+                    case .loadingModel, .preview, .segment: break
                     case .progress(let progress): activity = .picturing(progress)
                     case .finished(.image(let image)):
                         let record = GenerationRecord(

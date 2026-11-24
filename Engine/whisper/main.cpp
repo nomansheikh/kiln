@@ -71,6 +71,24 @@ void on_progress(whisper_context*, whisper_state*, int progress, void*) {
     emit({{"type", "progress"}, {"stage", "transcribing"}, {"completed", std::min(progress, 100)}, {"total", 100}});
 }
 
+// Each stretch of speech is reported as soon as it is written down, so the app can
+// show the transcript growing. The finished file still carries all of them.
+void on_segment(whisper_context*, whisper_state* state, int n_new, void*) {
+    const int count = whisper_full_n_segments_from_state(state);
+    for (int i = std::max(count - n_new, 0); i < count; i++) {
+        const char* text = whisper_full_get_segment_text_from_state(state, i);
+        if (text == nullptr) {
+            continue;
+        }
+        emit({
+            {"type", "segment"},
+            {"start_ms", whisper_full_get_segment_t0_from_state(state, i) * 10},
+            {"end_ms", whisper_full_get_segment_t1_from_state(state, i) * 10},
+            {"text", text},
+        });
+    }
+}
+
 bool should_abort(void*) {
     return g_cancelled;
 }
@@ -133,10 +151,12 @@ void transcribe(const json& request) {
     params.print_progress      = false;
     params.print_realtime      = false;
     params.print_timestamps    = false;
-    params.no_timestamps       = true;
+    // Each segment comes back with the time it starts and ends at.
+    params.no_timestamps       = false;
     params.language            = language.c_str();
     params.initial_prompt      = prompt.empty() ? nullptr : prompt.c_str();
     params.progress_callback   = on_progress;
+    params.new_segment_callback = on_segment;
     params.abort_callback      = should_abort;
 
     const int status = whisper_full(g_ctx, params, samples.data(), static_cast<int>(samples.size()));
@@ -149,21 +169,29 @@ void transcribe(const json& request) {
         return;
     }
 
-    std::string text;
-    const int segments = whisper_full_n_segments(g_ctx);
-    for (int i = 0; i < segments; i++) {
-        const char* segment = whisper_full_get_segment_text(g_ctx, i);
-        if (segment != nullptr) {
-            text += segment;
+    // The transcript as a list of segments, each with its times in milliseconds
+    // from the start of the audio. whisper.cpp counts in hundredths of a second.
+    json segments = json::array();
+    const int count = whisper_full_n_segments(g_ctx);
+    for (int i = 0; i < count; i++) {
+        const char* text = whisper_full_get_segment_text(g_ctx, i);
+        if (text == nullptr) {
+            continue;
         }
+        segments.push_back({
+            {"start_ms", whisper_full_get_segment_t0(g_ctx, i) * 10},
+            {"end_ms", whisper_full_get_segment_t1(g_ctx, i) * 10},
+            {"text", text},
+        });
     }
 
     const std::string output = request.at("output").get<std::string>();
     std::ofstream file(output, std::ios::binary | std::ios::trunc);
-    file << text;
+    // Speech that is not valid UTF-8 is replaced, not allowed to fail the whole transcript.
+    file << json({{"segments", segments}}).dump(-1, ' ', false, json::error_handler_t::replace);
     file.close();
     if (file.good()) {
-        emit({{"type", "text"}, {"path", output}});
+        emit({{"type", "transcript"}, {"path", output}});
     } else {
         emit_error("write_failed", "The text could not be written to " + output + ".");
     }

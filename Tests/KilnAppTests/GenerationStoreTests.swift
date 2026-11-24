@@ -119,10 +119,11 @@ import Testing
     }
 
     @Test func aTranscriptAndAClipEachLandInTheThread() async throws {
-        fixture.engine.answer(.finished(.text("Hello there.")))
+        let transcript = Transcript(segments: [.init(start: 0, end: 1.2, text: "Hello there.")])
+        fixture.engine.answer(.finished(.transcript(transcript)))
         store.selectRecipe(StoreFixture.writer)
         try await send("Write this down.")
-        #expect(store.turns.last?.state == .text("Hello there."))
+        #expect(store.turns.last?.state == .transcript(transcript))
         #expect(store.turns.last?.kind == .text)
 
         fixture.engine.answer(.finished(.audio(StoreFixture.sound)))

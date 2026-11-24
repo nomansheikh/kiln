@@ -61,7 +61,7 @@ public final class WhisperCppEngine: InferenceEngine {
 
             try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
             let audio = scratchDirectory.appendingPathComponent("\(id.uuidString).f32")
-            let output = scratchDirectory.appendingPathComponent("\(id.uuidString).txt")
+            let output = scratchDirectory.appendingPathComponent("\(id.uuidString).json")
             try AudioSamples.write(attachment, to: audio)
             let command = try EngineMessage.transcribeCommand(
                 model: storage.url(for: model), audio: audio, prompt: request.prompt,
@@ -69,9 +69,13 @@ public final class WhisperCppEngine: InferenceEngine {
             )
 
             await session.run(id: id, command: command, files: [audio, output], continuation: continuation) { event in
-                guard case .text(let path) = event else { return nil }
-                guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return .fail(.invalidOutput) }
-                return .finish(.text(text.trimmingCharacters(in: .whitespacesAndNewlines)))
+                if case .segment(let start, let end, let text) = event {
+                    return .yield(.segment(Transcript.Segment(start: start / 1000, end: end / 1000, text: text)))
+                }
+                guard case .transcript(let path) = event else { return nil }
+                guard let data = FileManager.default.contents(atPath: path),
+                      let transcript = EngineMessage.transcript(from: data) else { return .fail(.invalidOutput) }
+                return .finish(.transcript(transcript))
             }
         } catch {
             continuation.finish(throwing: error)
