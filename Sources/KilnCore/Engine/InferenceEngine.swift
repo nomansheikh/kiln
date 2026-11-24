@@ -48,6 +48,8 @@ public struct GeneratedImage: Sendable, Hashable {
 public enum GenerationOutput: Sendable, Hashable {
     case image(GeneratedImage)
     case text(String)
+    /// What was said in a recording, with times.
+    case transcript(Transcript)
     case audio(GeneratedAudio)
     case mesh(GeneratedMesh)
 }
@@ -57,6 +59,8 @@ public enum GenerationEvent: Sendable, Equatable {
     case progress(GenerationProgress)
     /// A rough, low-resolution look at the image so far.
     case preview(GeneratedImage)
+    /// One more stretch of speech of the transcript being written.
+    case segment(Transcript.Segment)
     case finished(GenerationOutput)
 }
 

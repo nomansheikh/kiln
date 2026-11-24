@@ -126,7 +126,7 @@ final class SpeechStore {
                     switch event {
                     case .loadingModel: activity = .loadingModel
                     case .progress: activity = .speaking
-                    case .preview: break
+                    case .preview, .segment: break
                     case .finished(.audio(let sound)):
                         let record = GenerationRecord(
                             recipeID: recipe.id, recipeName: recipe.name, request: request,

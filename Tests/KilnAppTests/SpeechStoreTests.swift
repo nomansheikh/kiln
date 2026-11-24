@@ -177,7 +177,7 @@ import Testing
     }
 
     @Test func aRecordingsWordsAreWrittenDownByAnInstalledModel() async throws {
-        fixture.engine.answer(.finished(.text(" Hello there. ")))
+        fixture.engine.answer(.finished(.transcript(Transcript(segments: [.init(start: 0, end: 1, text: " Hello there. ")]))))
         #expect(store.transcriber?.id == "writer")
         let words = try await store.transcribe(try fixture.recording(), language: nil)
         #expect(words.trimmingCharacters(in: .whitespaces) == "Hello there.")

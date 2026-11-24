@@ -37,6 +37,12 @@ import Testing
         let turns = [
             GenerationTurn(prompt: "A fox.", width: 1024, height: 512, state: .finished(picture)),
             GenerationTurn(prompt: "", kind: .text, width: nil, height: nil, attachment: attachment, state: .text("Hello.")),
+            GenerationTurn(
+                prompt: "", kind: .text, width: nil, height: nil, attachment: attachment,
+                state: .transcript(Transcript(segments: [
+                    .init(start: 0, end: 2.5, text: "Hello."), .init(start: 2.5, end: 4, text: "How are you?"),
+                ]))
+            ),
             GenerationTurn(prompt: "Hello.", kind: .audio, width: nil, height: nil, state: .audio(sound)),
             GenerationTurn(prompt: "A fox.", width: 512, height: 512, state: .failed("It ran out of memory.")),
             GenerationTurn(prompt: "A fox.", width: 512, height: 512, state: .cancelled),

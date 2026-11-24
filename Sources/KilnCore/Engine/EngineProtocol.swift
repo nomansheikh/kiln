@@ -8,8 +8,10 @@ enum EngineMessage {
         case progress(stage: String, completed: Int, total: Int)
         case image(path: String, width: Int, height: Int, channels: Int)
         case preview(path: String, width: Int, height: Int, channels: Int)
-        /// A finished transcript, in a UTF-8 file.
-        case text(path: String)
+        /// A finished transcript, in a JSON file of timed segments.
+        case transcript(path: String)
+        /// One stretch of speech, sent as soon as it is written down. Times in milliseconds.
+        case segment(startMS: Double, endMS: Double, text: String)
         /// Finished sound, in a file of raw interleaved 32-bit floats.
         case audio(path: String, sampleRate: Int, channels: Int, frames: Int)
         /// A finished 3D object, in a GLB file.
@@ -21,7 +23,7 @@ enum EngineMessage {
         /// The file the helper says it wrote, for the events that name one.
         var path: String? {
             switch self {
-            case .image(let path, _, _, _), .preview(let path, _, _, _), .audio(let path, _, _, _), .text(let path),
+            case .image(let path, _, _, _), .preview(let path, _, _, _), .audio(let path, _, _, _), .transcript(let path),
                  .object(let path): path
             default: nil
             }
@@ -42,9 +44,14 @@ enum EngineMessage {
         var sampleRate: Int?
         var frames: Int?
         var code: String?
+        var text: String?
+        var startMS: Double?
+        var endMS: Double?
 
         enum CodingKeys: String, CodingKey {
-            case type, version, commit, stage, completed, total, path, width, height, channels, frames, code, message
+            case type, version, commit, stage, completed, total, path, width, height, channels, frames, code, message, text
+            case startMS = "start_ms"
+            case endMS = "end_ms"
             case sampleRate = "sample_rate"
         }
         var message: String?
@@ -67,8 +74,11 @@ enum EngineMessage {
             return raw.type == "image"
                 ? .image(path: path, width: width, height: height, channels: channels)
                 : .preview(path: path, width: width, height: height, channels: channels)
-        case "text":
-            return raw.path.map { .text(path: $0) }
+        case "transcript":
+            return raw.path.map { .transcript(path: $0) }
+        case "segment":
+            guard let start = raw.startMS, let end = raw.endMS, let text = raw.text else { return nil }
+            return .segment(startMS: start, endMS: end, text: text)
         case "audio":
             guard let path = raw.path, let sampleRate = raw.sampleRate, let channels = raw.channels, let frames = raw.frames else {
                 return nil

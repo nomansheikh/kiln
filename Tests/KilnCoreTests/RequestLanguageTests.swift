@@ -15,8 +15,8 @@ import Testing
         let seen = fixture.root.appendingPathComponent("request.json")
         let engine = try fixture.engine(onTranscribe: """
         printf '%s' "$line" > '\(seen.path)'
-        printf 'ok' > "$output"
-        echo "{\\"type\\":\\"text\\",\\"path\\":\\"$output\\"}"
+        printf '{"segments":[{"start_ms":0,"end_ms":500,"text":"ok"}]}' > "$output"
+        echo "{\\"type\\":\\"transcript\\",\\"path\\":\\"$output\\"}"
         echo '{"type":"idle"}'
         """)
         func run(_ language: String?) async throws -> String? {

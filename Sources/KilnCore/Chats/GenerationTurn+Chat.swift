@@ -12,7 +12,7 @@ extension GenerationTurn {
                 state = .failed("This image is no longer in the Gallery.")
             }
         case .text(let text):
-            state = .text(text)
+            state = turn.segments.map { .transcript(Transcript(segments: $0)) } ?? .text(text)
         case .audio(let fileName):
             if let item = sounds.first(where: { $0.url.lastPathComponent == fileName }) {
                 state = .audio(item)
@@ -39,9 +39,13 @@ extension GenerationTurn {
     /// which is what it will be if the app quits before it finishes.
     public var saved: ChatTurn {
         let outcome: ChatTurn.Outcome
+        var segments: [Transcript.Segment]?
         switch state {
         case .finished(let item): outcome = .image(fileName: item.url.lastPathComponent)
         case .text(let text): outcome = .text(text)
+        case .transcript(let transcript):
+            outcome = .text(transcript.text)
+            segments = transcript.segments
         case .audio(let item): outcome = .audio(fileName: item.url.lastPathComponent)
         case .failed(let message): outcome = .failed(message: message)
         case .running, .cancelled: outcome = .cancelled
@@ -53,7 +57,8 @@ extension GenerationTurn {
             width: width,
             height: height,
             outcome: outcome,
-            attachmentFileName: attachment?.lastPathComponent
+            attachmentFileName: attachment?.lastPathComponent,
+            segments: segments
         )
     }
 }

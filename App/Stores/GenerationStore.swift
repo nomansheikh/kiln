@@ -22,6 +22,8 @@ final class GenerationStore {
     private(set) var phase: GenerationPhase = .idle
     /// A rough look at the image being generated, when the model can provide one.
     private(set) var preview: GeneratedImage?
+    /// The transcript of the running turn, as far as it has been written.
+    private(set) var transcriptSoFar = Transcript(segments: [])
     /// The model currently held in memory by the engine, if any.
     private(set) var loadedRecipeID: String?
 
@@ -127,6 +129,8 @@ final class GenerationStore {
                     phase = .running(progress)
                 case .preview(let image):
                     preview = image
+                case .segment(let segment):
+                    transcriptSoFar.append(segment)
                 case .finished(let output):
                     let record = GenerationRecord(
                         recipeID: recipe.id,
@@ -136,6 +140,7 @@ final class GenerationStore {
                     )
                     switch output {
                     case .text(let text): return .text(text)
+                    case .transcript(let transcript): return .transcript(transcript)
                     case .image(let image): return .finished(try gallery.add(image, record: record))
                     case .audio(let sound): return .audio(try audio.add(sound, record: record))
                     // 3D models are run from the 3D screen, which has the viewer for them.
@@ -157,6 +162,7 @@ final class GenerationStore {
     private func finish(_ id: UUID, as state: GenerationTurn.State) {
         phase = .idle
         preview = nil
+        transcriptSoFar = Transcript(segments: [])
         guard let index = turns.firstIndex(where: { $0.id == id }) else { return }
         turns[index].state = state
         saveChat()
@@ -211,8 +217,11 @@ final class GenerationStore {
 
     #if DEBUG
     /// Fills the thread with sample turns for snapshots.
-    func loadPreview(turns: [GenerationTurn], phase: GenerationPhase, preview: GeneratedImage? = nil) {
+    func loadPreview(
+        turns: [GenerationTurn], phase: GenerationPhase, preview: GeneratedImage? = nil, transcript: Transcript = Transcript(segments: [])
+    ) {
         self.turns = turns
+        transcriptSoFar = transcript
         self.phase = phase
         self.preview = preview
     }

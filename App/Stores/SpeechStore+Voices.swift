@@ -46,8 +46,8 @@ extension SpeechStore {
         try AudioSamples.referenceClip(of: recording).wavData().write(to: clip)
         defer { try? FileManager.default.removeItem(at: clip) }
         for try await event in engine.generate(recipe: recipe, request: GenerationRequest(prompt: "", attachment: clip, language: language)) {
-            if case .finished(.text(let words)) = event {
-                return words.trimmingCharacters(in: .whitespacesAndNewlines)
+            if case .finished(.transcript(let transcript)) = event {
+                return transcript.text
             }
         }
         return ""

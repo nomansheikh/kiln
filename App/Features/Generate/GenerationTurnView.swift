@@ -43,6 +43,9 @@ struct GenerationTurnView: View {
             if turn.kind == .image {
                 GenerationPlaceholder(phase: phase, aspectRatio: turn.aspectRatio, preview: preview)
                     .transition(.opacity)
+            } else if turn.kind == .text {
+                TranscriptWorkingView(phase: phase, transcript: model.generation.transcriptSoFar, recording: turn.attachment)
+                    .transition(.opacity)
             } else {
                 GenerationProgressLine(phase: phase)
                     .transition(.opacity)
@@ -54,6 +57,11 @@ struct GenerationTurnView: View {
             .transition(Motion.settle(reduced: reduceMotion))
         case .text(let text):
             TextReplyMessage(text: text) {
+                model.generation.regenerate(turn)
+            }
+            .transition(Motion.settle(reduced: reduceMotion))
+        case .transcript(let transcript):
+            TranscriptReplyMessage(transcript: transcript, recording: turn.attachment) {
                 model.generation.regenerate(turn)
             }
             .transition(Motion.settle(reduced: reduceMotion))
